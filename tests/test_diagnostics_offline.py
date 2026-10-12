@@ -217,3 +217,18 @@ def test_the_guard_module_is_the_only_socket_importer_in_the_package():
 def test_attempt_dataclass_shapes_targets_for_humans():
     attempt = NetworkAttempt(kind="socket.connect", target=EXTERNAL_IP, port=443, allowed=False, at_ns=1, stack_hint="x.py:3")
     assert str(attempt) == f"socket.connect -> {EXTERNAL_IP}:443"
+
+
+def test_findings_are_relative_to_the_scanned_root_not_to_the_package_name(tmp_path):
+    """A checkout whose *directory* happens to be named like the package must not shift
+    every reported path - that is what a relocation exposed, and it failed silently
+    everywhere except here."""
+    from pathlib import Path
+
+    nested = tmp_path / "nativevoice" / "src" / "nativevoice"
+    (nested / "diagnostics").mkdir(parents=True)
+    (nested / "diagnostics" / "offline.py").write_text("import socket\n", encoding="utf-8")
+    (nested / "elsewhere.py").write_text("import socket\n", encoding="utf-8")
+    findings = static_scan(str(nested), allowlist=())
+    assert {finding.file for finding in findings} == {"diagnostics/offline.py", "elsewhere.py"}
+    assert all(not finding.file.startswith("src/") for finding in findings)

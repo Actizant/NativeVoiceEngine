@@ -268,9 +268,14 @@ def static_scan(package_path: str, *, allowlist: Iterable[str] = STATIC_SCAN_ALL
             if not name.endswith(".py"):
                 continue
             full = os.path.join(root, name).replace("\\", "/")
-            relative = full
-            if "nativevoice/" in full:
-                relative = full.split("nativevoice/", 1)[1]
+            # Reported relative to the directory actually being scanned. Splitting the
+            # path on the package name was cheaper until a checkout lived in a directory
+            # called `nativevoice`, at which point the first match was the repository and
+            # every finding came back with a mangled prefix.
+            try:
+                relative = os.path.relpath(full, package_path).replace("\\", "/")
+            except ValueError:
+                relative = full
             if any(relative.endswith(a) or full.endswith(a) for a in allowed):
                 continue
             try:
