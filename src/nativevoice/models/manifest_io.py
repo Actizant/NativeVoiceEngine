@@ -32,6 +32,7 @@ def _provenance_to_dict(value: Provenance) -> dict:
         "licence_notice": value.licence_notice,
         "consent_basis": value.consent_basis,
         "redistributable": value.redistributable,
+        "permissions": value.permissions,
         "notes": value.notes,
     }
 
@@ -44,6 +45,7 @@ def _provenance_from_dict(data: dict) -> Provenance:
         licence_notice=data.get("licence_notice", ""),
         consent_basis=data.get("consent_basis", ""),
         redistributable=data.get("redistributable"),
+        permissions=data.get("permissions", "") or "",
         notes=data.get("notes", ""),
     )
 

@@ -1,0 +1,205 @@
+{
+  "generated": "2026-10-13T01:02:31",
+  "purpose": "human listening comparison; not a quality metric",
+  "identical_conditions": {
+    "text": "same sentences for both engines",
+    "speed": "1.0 for both",
+    "output_sample_rate": 24000,
+    "threads": 4,
+    "chain": "same normalisation and WAVE writer for both"
+  },
+  "engines": {
+    "kokoro": {
+      "model": "kokoro-int8-multi-lang-v1_1",
+      "licence": "Apache-2.0",
+      "languages": [
+        "en",
+        "zh"
+      ]
+    },
+    "kitten": {
+      "model": "kitten-nano-en-v0_8-int8",
+      "licence": "Apache-2.0",
+      "languages": [
+        "en"
+      ]
+    }
+  },
+  "pairs": [
+    {
+      "pair": 1,
+      "slug": "punctuation-list",
+      "text": "Stop! Don't go out without your keys, will you?",
+      "kokoro": {
+        "file": "01_kokoro_punctuation-list.wav",
+        "seconds": 2.625,
+        "wall_seconds": 6.077,
+        "rtf": 2.315,
+        "peak": 0.2196,
+        "rms": 0.0424,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "01_kitten_punctuation-list.wav",
+        "seconds": 2.714,
+        "wall_seconds": 1.544,
+        "rtf": 0.569,
+        "peak": 0.718,
+        "rms": 0.0956,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    },
+    {
+      "pair": 2,
+      "slug": "question",
+      "text": "Could you tell me the time and the nearest train station?",
+      "kokoro": {
+        "file": "02_kokoro_question.wav",
+        "seconds": 2.61,
+        "wall_seconds": 5.317,
+        "rtf": 2.037,
+        "peak": 0.24,
+        "rms": 0.0457,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "02_kitten_question.wav",
+        "seconds": 3.109,
+        "wall_seconds": 1.719,
+        "rtf": 0.553,
+        "peak": 0.5988,
+        "rms": 0.107,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    },
+    {
+      "pair": 3,
+      "slug": "numbers-abbreviation",
+      "text": "The meeting is at 9:30 a.m. on 5 March, room 204, not 240.",
+      "kokoro": {
+        "file": "03_kokoro_numbers-abbreviation.wav",
+        "seconds": 4.838,
+        "wall_seconds": 9.073,
+        "rtf": 1.875,
+        "peak": 0.2811,
+        "rms": 0.0464,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "03_kitten_numbers-abbreviation.wav",
+        "seconds": 6.073,
+        "wall_seconds": 2.923,
+        "rtf": 0.481,
+        "peak": 0.7405,
+        "rms": 0.1142,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    },
+    {
+      "pair": 4,
+      "slug": "long-utterance",
+      "text": "The quick brown fox jumps over the lazy dog, and then it walks slowly home through the quiet park, while the rain falls softly on the empty streets and the lights go out one by one.",
+      "kokoro": {
+        "file": "04_kokoro_long-utterance.wav",
+        "seconds": 8.655,
+        "wall_seconds": 17.003,
+        "rtf": 1.964,
+        "peak": 0.2345,
+        "rms": 0.0453,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "04_kitten_long-utterance.wav",
+        "seconds": 11.917,
+        "wall_seconds": 5.745,
+        "rtf": 0.482,
+        "peak": 0.6947,
+        "rms": 0.108,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    },
+    {
+      "pair": 5,
+      "slug": "short-imperative",
+      "text": "Turn it off now.",
+      "kokoro": {
+        "file": "05_kokoro_short-imperative.wav",
+        "seconds": 1.068,
+        "wall_seconds": 3.148,
+        "rtf": 2.948,
+        "peak": 0.1893,
+        "rms": 0.0425,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "05_kitten_short-imperative.wav",
+        "seconds": 1.689,
+        "wall_seconds": 1.127,
+        "rtf": 0.668,
+        "peak": 0.5596,
+        "rms": 0.0987,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    },
+    {
+      "pair": 6,
+      "slug": "names-and-places",
+      "text": "Anita and Ravi live near the harbour, beside the old bridge in Kochi.",
+      "kokoro": {
+        "file": "06_kokoro_names-and-places.wav",
+        "seconds": 3.43,
+        "wall_seconds": 7.146,
+        "rtf": 2.083,
+        "peak": 0.229,
+        "rms": 0.0454,
+        "clipped_fraction": 0.0,
+        "model": "kokoro-int8-multi-lang-v1_1",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 (asset gives no voice names)"
+      },
+      "kitten": {
+        "file": "06_kitten_names-and-places.wav",
+        "seconds": 5.267,
+        "wall_seconds": 2.709,
+        "rtf": 0.514,
+        "peak": 0.8897,
+        "rms": 0.1307,
+        "clipped_fraction": 0.0,
+        "model": "kitten-nano-en-v0_8-int8",
+        "licence": "Apache-2.0",
+        "voice": "slot 0 = 'Bella' per the upstream card"
+      }
+    }
+  ],
+  "status": "trial evidence only; default engine and shared catalogue unchanged"
+}

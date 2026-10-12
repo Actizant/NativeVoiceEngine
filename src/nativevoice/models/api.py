@@ -52,6 +52,7 @@ class Provenance:
     licence_spdx: str = ""
     licence_notice: str = ""
     consent_basis: str = ""
+    permissions: str = ""
     redistributable: bool | None = None
     notes: str = ""
 

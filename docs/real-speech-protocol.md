@@ -86,3 +86,43 @@ ever written into the capability matrix as a general human-speech benchmark.
 
 Reporting after each run: the JSON artefact under `artifacts/device/`, free RAM and process count at run
 time, the exact device index and rate used, and any clip kept — so a claim can be re-run or deleted.
+
+## Results — step 2, read-aloud English (attempted 2026-10-13, no speech captured)
+
+Command actually run, from the repository root, retention defaulting to `none`:
+
+```
+python tools/real_speech_check.py --countdown 12
+```
+
+Artefact: `artifacts/device/real-speech-read-aloud.json`. Targets were the three predeclared sentences
+(the pangram, the lights sentence, the coffee-and-bread sentence), printed before capture so the reading
+is verifiable rather than reconstructed afterwards.
+
+| Criterion (predeclared above) | Result | Evidence |
+|---|---|---|
+| No audio persisted | **PASS** | 381 files before, 381 after, `created_during_run: []`, `recordings_written: []` |
+| Processed locally, offline | **PASS** | `network_attempts: []` under the runtime `OfflineGuard` |
+| False turn-opens on quiet room | **PASS** | 0 openings in the quiet window, median input level 0.000349, peak 0.0044 |
+| All sentences detected | **FAIL** | 0 segments over 74.98 s of captured audio; all three targets `MISSING_SEGMENT` |
+| Read-aloud WER / CER | **NOT RUN** | nothing to score; `sentences_scored: 0`, both means `null` |
+| Language detection top-1 | **NOT RUN** | `language_detection_top1: null` |
+| VAD onset error ≤ 150 ms | **NOT RUN** | and structurally unreachable this way — a manual read-aloud run has no ground-truth onset timestamp to measure against; it needs a keyed stimulus, not a countdown |
+| Endpointing on 1.5 s pauses | **NOT RUN** | step 3 |
+| Noise, barge-in | **NOT RUN** | steps 4 and 6 |
+
+The failure is an absence of input, not a defect in the capture chain: the same harness on the same
+device recorded 4 s of clean quiet-room audio twice in the previous session, the VAD opened and closed
+correctly on synthetic tones, and the offline and persistence gates held. Peak level across the whole
+75 s window was 0.0044 — the same order as the documented quiet-room baseline, so nothing that could
+be called speech reached the microphone. The honest reading is that **no speaker was present during the
+window** (the run was launched unattended to keep this turn inside the authorised step).
+
+Therefore the two claims the master prompt says only real speech can prove — **recognition quality on
+human audio** and **language detection on human audio** — remain unproven, and `status: NOT RUN` is
+where they stay in the artefact. Step 2 is not closed. It needs one rerun with someone actually reading
+the three sentences into the confirmed default input; the harness is ready and needs no changes, only a
+voice.
+
+Numbers from this run are kept out of the synthetic benchmark set entirely, and the synthetic
+round-trip figures (English WER 0.0494 / CER 0.0242) are not evidence about human speech.

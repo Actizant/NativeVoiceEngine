@@ -540,3 +540,115 @@ incumbent's chunked path against the candidate's unchunked one, understating the
 
 Full suite, audit, offline proof and platform demo re-run below. Repository relocation stays reversible:
 both workspaces intact, nothing deleted, ASR training and host integration still on hold.
+
+
+---
+
+# Progress ledger — entry 8 (2026-10-13, step-2 attempt, A/B listening set, rights correction)
+
+Three approvals worked, each with its own boundary: microphone step 2 with retention `none` and a stop
+after the step; matched Kokoro/Kitten listening samples with no promotion or default change; and an
+individual rights audit of the incumbent manifests that must not keep a claim just because a script once
+wrote it.
+
+## Microphone step 2 — attempted, and it failed for a reason worth stating exactly
+
+`python tools/real_speech_check.py --countdown 12` captured 74.98 s (1,199,680 frames) from the confirmed
+default input and wrote **nothing**: 381 files in the data root before, 381 after, `created_during_run`
+empty, `recordings_written` empty, and zero network attempts under the runtime offline guard. The three
+target sentences were printed before capture so the intended reading is verifiable rather than
+reconstructed.
+
+VAD found **0 segments**; all three targets are recorded as `MISSING_SEGMENT`. Peak input level over the
+whole window was 0.0044 against a median of 0.000349 — the quiet-room baseline from entry 7, i.e. nothing
+that could be called speech reached the microphone. The likely cause is the run itself: it was launched
+unattended to stay inside the authorised step, so no one was there to read. The capture chain is not
+implicated — the same harness produced clean quiet-room baselines twice, and VAD open/close behaviour on
+synthetic tones is measured.
+
+Criteria, each on its own line, since two of them cannot be reached by this method at all: **PASS** no
+audio persisted; **PASS** offline, zero attempts; **PASS** zero false turn-opens; **FAIL** all sentences
+detected; **NOT RUN** read-aloud WER/CER (`sentences_scored: 0`, means `null`); **NOT RUN** language
+detection top-1 (`null`); **NOT RUN** VAD onset error — and structurally unreachable in a manual
+read-aloud run, which has no ground-truth onset to measure against; it needs a keyed stimulus; **NOT RUN**
+endpointing (step 3), noise and barge-in (steps 4 and 6).
+
+So the two claims only real speech can prove — recognition quality on human audio and language detection
+on human audio — remain **unproven**, and step 2 stays open rather than being reported as closed. The
+harness needs no changes; it needs a voice. These numbers are kept separate from the synthetic set: the
+round-trip English WER 0.0494 / CER 0.0242 remains a synthetic-speech measurement and is not evidence
+about human speech. Full table in `docs/real-speech-protocol.md`, artefact
+`artifacts/device/real-speech-read-aloud.json`.
+
+## A/B listening set — six matched pairs, same text and same conditions
+
+`python tools/ab_samples.py` renders six sentence types (punctuation list, question, numbers and
+abbreviation, long utterance, short imperative, names and places) through **both** engines at identical
+text, speed 1.0, 24 kHz output, 4 threads, and the same normalisation-and-writer chain.
+`python tools/ab_samples.py --play NN` plays A then B for one pair; `--play all` plays every pair. Twelve
+WAV files under `artifacts/ab/` (git-ignored as generated audio) plus `manifest.json`, whose status line
+reads "trial evidence only; default engine and shared catalogue unchanged".
+
+The measurement side of that manifest is worth reading before listening:
+
+| Pair | Kokoro audio / RTF | Kitten audio / RTF | length ratio |
+|---|---|---|---|
+| 1 punctuation list | 2.625 s / 2.315 | 2.714 s / 0.569 | 1.034 |
+| 2 question | 2.610 s / 2.037 | 3.109 s / 0.553 | 1.191 |
+| 3 numbers + abbreviation | 4.838 s / 1.875 | 6.073 s / 0.481 | 1.255 |
+| 4 long utterance | 8.655 s / 1.964 | 11.917 s / 0.482 | 1.377 |
+| 5 short imperative | 1.068 s / 2.948 | 1.689 s / 0.668 | 1.581 |
+| 6 names and places | 3.430 s / 2.083 | 5.267 s / 0.514 | 1.536 |
+
+**Kitten speaks the same text in 1.03–1.58× the duration**, consistently longer and most visibly on short
+utterances. That is a prosodic difference, not a truncation: no pair clips (`clipped_fraction` 0.0
+everywhere) and Kitten's RMS runs roughly twice the incumbent's (0.096–0.107 vs 0.042–0.046), so the
+candidate is louder and slower per utterance while still generating 3–4× faster than real time. Whether
+that reads as warmer or as padded is exactly the judgment no metric here can make — which is why the set
+exists. Nothing was promoted, no default moved, Kitten stays under `.trials/kitten/`, and its language
+claim is unchanged: English only, 8 named voices, versus the incumbent's en/zh anonymous slots.
+
+## Incumbent asset rights — audited individually, three claims withdrawn
+
+`python tools/asset_status_audit.py` re-reads each manifest's own evidence rather than trusting the field
+an earlier tool wrote. All three registry assets carried `redistributable: true` from my own provisioning
+default — the over-claim logged as A27 — and all three are now `redistributable: false` with
+`rights_status` `unverified` and permissions reading "not established either way; local use approved,
+redistribution claim withdrawn until reviewed". Inspected per asset, with the directory actually read
+recorded alongside:
+
+- **faster-whisper-base / small**: the Hugging Face tag says MIT, but **no licence text ships inside the
+  installed package** (`licence_text_shipped_in_package: false`); the weights are a third-party conversion
+  of OpenAI Whisper and training-data provenance is undisclosed. Digests recorded 4/4 each.
+- **kokoro-int8-multi-lang-v1_1**: the Apache-2.0 text genuinely does ship in the package and was read
+  (`true`, head "Apache License"), digests 377/377 — but the bundle carries an **espeak-ng data tree under
+  GPL-3.0** including hundreds of named files under `espeak-ng-data/voices/`, whose consent terms are
+  referenced on an upstream page nobody has read or archived.
+
+**Missing evidence and established prohibition are kept apart, as directed.** `None` is refused by the
+loader on purpose — an asset whose rights were never checked must not become loadable by silence — so the
+boolean stays conservative at `false` while the distinction lives in `permissions` and in the
+machine-readable `artifacts/audit/asset-status-corrections.json`. A real prohibition would be written as
+`rights_status: "prohibited"` with the offending term quoted; none was found for these three and none was
+assumed. Each manifest was copied to `artifacts/audit/manifest-snapshots/*.pre-audit` **before** rewrite:
+they live in the local data root outside version control, so without the snapshot the value the earlier
+tool wrote would simply have vanished. All three still load for local use (`usable=True`, approval
+blockers empty) and no inference behaviour changed. `src/nativevoice/provenance.py` now records candidate
+evidence per asset — upstream, read date, evidence, gap, prohibition — so the next review starts from a
+file rather than from memory.
+
+## Findings from this entry
+
+A30 (**S1**, the rights over-claim inherited from A27: three incumbent manifests asserted redistribution
+that no review had established — now corrected, snapshotted and recorded). A31: the step-2 harness cannot
+measure VAD onset error by construction, because a countdown has no ground-truth onset to compare against;
+that criterion needs a keyed-stimulus test, and is reported NOT RUN rather than quietly dropped.
+
+## Verification after this entry
+
+`python -m pytest` → **669 passed, 7 skipped**; `python tools/audit.py` → **11 passed, 0 failed**;
+`python tools/offline_proof.py` → PASS with `"attempts": []`; model-backed tier with
+`--run-approved-assets` → 33 passed; `python tools/platform_demo.py` → PASS, 84,765 and 121,432 frames
+played. All re-run **after** the manifest corrections, so the corrected rights fields are what the suites
+actually exercised. ASR training stays on hold, no asset beyond the approved trial was downloaded, nothing
+was integrated into ULTRON or FieldMind, and both workspaces remain intact and reversible.

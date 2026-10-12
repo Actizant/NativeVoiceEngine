@@ -95,3 +95,40 @@ rightly reports `NO_MODEL` rather than an estimate.
 MIT permits use of their *code* with attribution; §3 rules 1–4 forbid that here regardless, because the
 deliverable must be original. Their architectures informed decisions documented with reasoning in
 `docs/research-report.md` §4 and `docs/architecture.md` §3 — concepts, not transplants.
+
+---
+
+# Dated correction record - redistribution rights on installed assets (2026-10-13)
+
+**What was wrong:** `tools/provision.py` wrote `redistributable: true` into every manifest it created, as a
+hard-coded default rather than a decision. Three installed assets therefore carried a redistribution claim
+that no review had established - including the Kitten trial asset, whose model card discloses no training
+data and no voice-actor consent at all. That is the failure rule 9 of the mandate exists to prevent, and it
+was ours, not a reference project's.
+
+**What was done:** `tools/asset_status_audit.py` audits each manifest individually, records what evidence
+exists locally and upstream, and rewrites the claim to what that evidence supports.
+
+| Asset | Previous claim | Corrected status | Evidence inspected locally | Loads for local use after |
+|---|---|---|---|---|
+| `faster-whisper-base` | `true` | **unverified** (`False`) | HF tag `license:mit`; no licence text archived locally; third-party conversion of OpenAI weights; training-data provenance undisclosed | yes |
+| `faster-whisper-small` | `true` | **unverified** (`False`) | as above | yes |
+| `kokoro-int8-multi-lang-v1_1` | `true` | **unverified** (`False`) | Apache-2.0 text shipped inside the package, read directly; bundled espeak-ng data is GPL-3.0; per-voice consent page referenced upstream, never read or archived | yes |
+| `kitten-nano-en-v0_8-int8` (trial) | never over-claimed | **unverified** (`False`) | card front matter `apache-2.0`; tarball carries no licence of its own; no training-data or voice-actor disclosure | yes (trial root) |
+
+**Missing evidence is not the same as an established prohibition, and the record keeps them apart.** The
+boolean exists only to gate loading: `None` means unknown and is deliberately refused, because a model whose
+rights were never checked must not become loadable by silence. So the conservative `False` is used and the
+distinction lives in `provenance.permissions` - "not established either way; local use approved,
+redistribution claim withdrawn until reviewed" - plus the machine-readable
+`artifacts/audit/asset-status-corrections.json`. A genuine prohibition would be written as
+`rights_status: "prohibited"` with the term quoted; none was found for these four, and none was assumed.
+
+**History preserved:** each manifest was copied verbatim to
+`artifacts/audit/manifest-snapshots/*.pre-audit` before being rewritten. The manifests live in the local
+data root and are not under version control, so without that snapshot the value the earlier tool wrote
+would simply have disappeared.
+
+**Still outstanding for any distributable bundle**, now stated per asset rather than in general: the
+espeak-ng GPL-3.0 obligation on every option that needs its data; the Whisper conversion's upstream terms;
+and a voice-consent review for any speaker asset. None of this blocks local use, which is what was approved.

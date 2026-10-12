@@ -1,0 +1,71 @@
+{
+  "model_id": "faster-whisper-base",
+  "engine": "faster-whisper",
+  "task": "stt",
+  "display_name": "Whisper base (CT2)",
+  "version": "1",
+  "languages": [
+    "bn",
+    "en",
+    "hi"
+  ],
+  "sample_rate": 16000,
+  "quantization": "ct2-default",
+  "provenance": {
+    "source": "https://huggingface.co/Systran/faster-whisper-base",
+    "upstream_project": "OpenAI Whisper, converted by Systran for CTranslate2",
+    "licence_spdx": "MIT",
+    "licence_notice": "Hugging Face tag license:mit on Systran/faster-whisper-base, read 2026-10-12.  Digest computed at provisioning 2026-10-12T23:03:59; upstream publishes no digest for this artefact, so this pins drift-detection not authenticity.",
+    "consent_basis": "not applicable: pretrained weights carry no personal data; voice recordings and profiles are governed separately",
+    "redistributable": true,
+    "notes": ""
+  },
+  "review": "approved",
+  "approved_by": "Shreshtha",
+  "approved_on": "2026-10-12",
+  "requirements": {
+    "ram_mb": 200,
+    "vram_mb": 0,
+    "disk_mb": 141,
+    "threads": 2,
+    "needs_gpu": false,
+    "measured": false,
+    "rtf_cpu": null,
+    "rtf_gpu": null,
+    "first_audio_ms": null,
+    "measured_on": ""
+  },
+  "assets": [
+    {
+      "kind": "tokenizer",
+      "relative_path": "snapshots/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/config.json",
+      "sha256": "56a6d8110d311f19c8f0471e562832c7527f146b567275bfca59fcf7c184da9a",
+      "size_bytes": 2309,
+      "url": ""
+    },
+    {
+      "kind": "model",
+      "relative_path": "snapshots/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/model.bin",
+      "sha256": "d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9",
+      "size_bytes": 145217532,
+      "url": ""
+    },
+    {
+      "kind": "tokenizer",
+      "relative_path": "snapshots/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/tokenizer.json",
+      "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab",
+      "size_bytes": 2203239,
+      "url": ""
+    },
+    {
+      "kind": "tokenizer",
+      "relative_path": "snapshots/ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66/vocabulary.txt",
+      "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913",
+      "size_bytes": 459861,
+      "url": ""
+    }
+  ],
+  "asset_root": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base",
+  "minimum_profile": "lite",
+  "notes": "Already resident in the local Hugging Face cache; provisioning verifies digests, it does not download. Authorisation relied on: Use pretrained weights already resident locally or provisioned with verified licence (2026-10-12). OpenAI Whisper's published 97-language list includes English, Hindi and Bengali; vendor claim, measured here only for the languages the round-trip evaluation covers"
+}
