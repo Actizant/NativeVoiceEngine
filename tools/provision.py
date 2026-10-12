@@ -70,6 +70,35 @@ CATALOGUE: dict[str, dict] = {
         "language_basis": "front-end files shipped in the package: lexicon-us-en, lexicon-gb-en, lexicon-zh and the zh date/number FSTs. Languages without a lexicon here are not supported by this asset, whatever espeak-ng could romanise.",
         "notes": "Multi-language offline TTS. Language coverage is verified by inspecting the extracted files, not assumed.",
     },
+    "kitten-nano-en-v0_8-int8": {
+        "task": Task.TTS,
+        "engine": "sherpa-onnx-kitten",
+        "display_name": "KittenTTS nano 0.8 (int8, English)",
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_8-int8.tar.bz2",
+        "upstream_project": "KittenML/kitten-tts-nano-0.8-int8, packaged by k2-fsa sherpa-onnx",
+        "licence_spdx": "Apache-2.0",
+        "licence_evidence": (
+            "Hugging Face front matter license: apache-2.0 on KittenML/kitten-tts-nano-0.8-int8, "
+            "read 2026-10-13; the sherpa release tarball publishes no licence text of its own, so the "
+            "upstream repository is the licence source"
+        ),
+        "bundled_notice": (
+            "Redistribution rights are NOT established for this asset: `redistributable` is recorded as "
+            "False because the runtime needs an espeak-ng data directory, which is GPL-3.0, and the model card "
+            "discloses neither training data nor voice-actor consent. The eight named voices are the only "
+            "identity evidence available. The model card names eight "
+            "voices (Bella, Jasper, Luna, Bruno, Rosie, Hugo, Kiki, Leo) but discloses no training data and "
+            "no voice-actor consent basis, so redistribution rights are unestablished even though the "
+            "checkpoint itself is Apache-2.0"
+        ),
+        "sample_rate": 24000,
+        "quantization": "int8",
+        "ram_mb_estimate": 250,
+        "declared_languages": ("en",),
+        "language_basis": "English-only per the upstream model card and the packaged tokens/lexicon",
+        "notes": "Isolated candidate under evaluation for latency; not a default and not promoted. Acquired into a trial root so the installed Kokoro asset and the shared catalogue are untouched.",
+        "trial": True,
+    },
     "faster-whisper-base": {
         "task": Task.STT,
         "engine": "faster-whisper",
@@ -196,7 +225,7 @@ def build_manifest(name: str, directory: Path, files: list[Path], args) -> Model
         + f" Digest computed at provisioning {time.strftime('%Y-%m-%dT%H:%M:%S')}; "
         "upstream publishes no digest for this artefact, so this pins drift-detection not authenticity.",
         consent_basis="not applicable: pretrained weights carry no personal data; voice recordings and profiles are governed separately",
-        redistributable=True,
+        redistributable=spec.get("redistributable", False),
         notes=spec.get("bundled_notice", ""),
     )
     return ModelManifest(
@@ -220,7 +249,7 @@ def build_manifest(name: str, directory: Path, files: list[Path], args) -> Model
             measured=False,
         ),
         assets=assets,
-        asset_root=str(directory),
+        asset_root=str(Path(directory).resolve()),
         notes=(
             spec["notes"]
             + f" Authorisation relied on: {args.authority}."

@@ -45,3 +45,8 @@ venv/
 Thumbs.db
 DS_Store
 desktop.ini
+
+# --- isolated asset trials: verified locally, never committed --------------------
+# A candidate downloaded for measurement lives outside the repository by policy; only its
+# manifest-derived evidence (hashes, sizes, licence verdicts) is versioned.
+.trials/

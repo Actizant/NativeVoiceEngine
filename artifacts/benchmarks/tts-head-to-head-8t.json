@@ -1,0 +1,93 @@
+{
+  "generated": "2026-10-13T00:46:20",
+  "threads": 8,
+  "sentences": 8,
+  "repeats": 2,
+  "engines": {
+    "incumbent_kokoro": {
+      "first_audio_ms_median": 5990.8,
+      "first_audio_ms_best": 5453.4,
+      "first_audio_ms_worst": 6705.9,
+      "synthesis_ms_median": 5991.5,
+      "audio_seconds_median": 2.537,
+      "rtf_median": 2.3615,
+      "rtf_best": 2.1508,
+      "roundtrip_wer_mean": 0.052,
+      "roundtrip_cer_mean": 0.0238,
+      "exact_matches_of": "10/16",
+      "trials": 16,
+      "chunks_per_sentence_max": 1,
+      "asset": "kokoro-int8-multi-lang-v1_1",
+      "licence": "Apache-2.0",
+      "redistributable": true,
+      "engine_init_s": 4.123,
+      "peak_rss_mib": 1048.9,
+      "languages": [
+        "en",
+        "zh"
+      ],
+      "num_speakers": 103,
+      "voices_named_in_asset": false,
+      "chunked_stream_first_audio_ms_median": 6318.3,
+      "measurement_basis": "single sentence, whole-utterance generate on both engines"
+    },
+    "candidate_kitten": {
+      "first_audio_ms_median": 2156.4,
+      "first_audio_ms_best": 1652.5,
+      "first_audio_ms_worst": 2376.1,
+      "synthesis_ms_median": 2156.4,
+      "audio_seconds_median": 3.5,
+      "rtf_median": 0.6161,
+      "rtf_best": 0.5345,
+      "roundtrip_wer_mean": 0.0239,
+      "roundtrip_cer_mean": 0.0087,
+      "exact_matches_of": "13/16",
+      "trials": 16,
+      "asset": "kitten-nano-en-v0_8-int8",
+      "licence": "Apache-2.0",
+      "redistributable": false,
+      "engine_init_s": 1.625,
+      "peak_rss_mib": 769.0,
+      "languages": [
+        "en"
+      ],
+      "num_speakers": 8,
+      "voices_named_in_asset": true,
+      "chunked_stream_first_audio_ms_median": null,
+      "measurement_basis": "single sentence, whole-utterance generate on both engines"
+    }
+  },
+  "conditions": {
+    "free_ram_gb_at_start": 4.09,
+    "processes": 270,
+    "logical_cpus": 16
+  },
+  "playback_startup": {
+    "available": true,
+    "stream_open_ms_median": 59.0,
+    "audio_played": false
+  },
+  "comparison": {
+    "first_audio_speedup_x": 2.78,
+    "rtf_ratio_candidate_over_incumbent": 0.261,
+    "quality_wer_delta": -0.0281,
+    "candidate_reaches_realtime": true,
+    "candidate_under_500ms_first_audio": false,
+    "language_coverage": {
+      "incumbent": [
+        "en",
+        "zh"
+      ],
+      "candidate": [
+        "en"
+      ]
+    },
+    "distribution": {
+      "incumbent_redistributable": true,
+      "candidate_redistributable": false,
+      "note": "both bundle GPL-3.0 espeak-ng data; the candidate additionally discloses no training-data or voice-actor provenance"
+    },
+    "status": "report only - default engine and shared catalogue unchanged, promotion needs approval"
+  },
+  "network_attempts": []
+}

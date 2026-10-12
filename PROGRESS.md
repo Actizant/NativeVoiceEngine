@@ -461,3 +461,82 @@ the GPL-3.0 espeak-ng redistribution pass; voice cloning (no suitable licensed a
 validation (one of five threshold fields measured); VAD and barge-in on real speech. Nothing was
 integrated into ULTRON or FieldMind, no asset was downloaded, nothing was trained, and no package was
 installed.
+
+
+---
+
+# Progress ledger — entry 7 (2026-10-13, microphone baseline and KittenTTS trial)
+
+Two approvals taken with their boundaries: step 1 only of the microphone protocol, retention `none`; and a
+controlled isolated KittenTTS trial, verified before acquisition, with Kokoro and every default unchanged
+and no promotion without a further decision.
+
+## Microphone baseline — quiet room, 8 s, nothing persisted
+
+Device confirmed before capture: default input **index 1, "Microphone Array (Intel Smart Sound Technology
+for Digital Microphones)"**, 4 channels at 44.1 kHz native, MME host API, low/high latency 0.09 / 0.18 s.
+The capture stream requests 16 kHz mono int16 directly, so PortAudio resamples for live capture - our own
+band-limited resampler is used on files and synthesis output, not on this path.
+
+Two identical runs, `--retention none`:
+
+| Measurement | Run 1 | Run 2 |
+|---|---|---|
+| Audio captured | 7.98 s in 8.101 s wall (RTF 1.0152) | 7.98 s in ~8.08 s (RTF 1.0149) |
+| Chunks / dropped frames | 399 / **0** | 399 / **0** |
+| Median input level | 0.000412 | 0.000358 |
+| Peak input level | 0.0086 | 0.0021 |
+| Silence fraction | 0.9967 | 1.0 |
+| **Turns opened** | **0** | **0** |
+| Recordings written | `[]`, `retained: false` | `[]`, `retained: false` |
+
+Persistence verified independently of the tool's own claim: 381 files under the data root before, **381
+after, nothing created and nothing deleted**, and the host recordings directory was never created at all.
+
+One predictive observation rather than a pass/fail: run 1's peak (0.0086) reached ~72% of the rise
+threshold (0.012) while the median sat ~29x below it. The gate is comfortable on a quiet room, and a fan,
+traffic or a neighbouring conversation is expected to open turns - which is the case step 4 of the
+protocol exists to measure, not a defect in the quiet-room result. **No human speech was recorded and
+nothing was transcribed from the microphone**, as instructed; results in `artifacts/device/mic-baseline-quiet*.json`.
+
+## KittenTTS nano — trial measured, incumbent still the default
+
+Verified before acquiring (Apache-2.0 on the model card, `kitten-nano-en-v0_8-int8.tar.bz2` 29.8 MB, only
+the four needed components, no package installed), then provisioned into `.trials/kitten/` with 360
+recorded digests and `redistributable: False` because training data and voice-actor consent are undisclosed.
+
+Two runs, 16 trials each per engine, single-sentence whole-utterance basis on both:
+
+| | Kokoro int8 | Kitten nano int8 |
+|---|---|---|
+| RTF | 2.3206 / 2.3615 | **0.5701 / 0.6161** |
+| First audio (median) | 5.89 s / 5.99 s | **1.99 s / 2.16 s** |
+| Engine init | 3.64 s / 4.12 s | **1.49 s / 1.63 s** |
+| Peak RSS | 1,044 / 1,049 MiB | **764 / 769 MiB** |
+| Round-trip WER | 0.052 / 0.052 | 0.0364 / 0.0239 |
+| Languages | en, zh | **en only** |
+| Speaker slots | 103 unnamed | **8 named** |
+| Offline | 0 attempts | 0 attempts |
+
+Playback startup measured separately as a device cost: stream open median **62.4 ms**, no audio emitted.
+
+**First configuration on this machine measured generating faster than real time.** Not established, and
+recorded as such in `docs/tts-kitten-trial.md`: naturalness (nobody has listened), anything about human
+speech, Chinese coverage (Kitten loses it), and distribution clarity (it is worse, not better - no
+disclosed training or consent provenance). First audio is still ~2 s, so press-to-hear remains the honest
+description. Recommendation offered, not executed: add Kitten as a selectable English voice and leave
+Kokoro the default until he decides.
+
+## Findings from this entry
+
+A27 (**S1**, my own provisioning tool asserted `redistributable=True` for every asset - the tool now
+defaults to False and per-asset, but the incumbent's existing manifest still says `true`, which is his
+correction to make, not mine to sneak in); A28 relative `asset_root` making a provisioned asset
+unresolvable; A29 a shared-text edit that injected a field into the wrong engine row and crashed the
+first benchmark. Method note kept in the register: the first harness draft would have compared the
+incumbent's chunked path against the candidate's unchunked one, understating the gap.
+
+## Verification after this entry
+
+Full suite, audit, offline proof and platform demo re-run below. Repository relocation stays reversible:
+both workspaces intact, nothing deleted, ASR training and host integration still on hold.

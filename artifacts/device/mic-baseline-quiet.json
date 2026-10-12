@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-10-13T00:31:22",
+  "runs": [
+    {
+      "turn": 1,
+      "capture": {
+        "recordings_written": [],
+        "retained": false,
+        "requested_seconds": 8.0,
+        "wall_seconds": 8.101,
+        "frames_captured": 127680,
+        "audio_seconds": 7.98,
+        "capture_real_time_factor": 1.0152,
+        "chunks": 399,
+        "overflow_frames_dropped": 0,
+        "segments": [],
+        "segment_count": 0,
+        "median_input_level": 0.0004124850339504585,
+        "peak_input_level": 0.0086,
+        "silence_fraction": 0.9967
+      },
+      "retention": "none"
+    }
+  ]
+}

@@ -130,3 +130,17 @@ more defects, all in the same category — a boundary that existed in prose but 
 The defect was invisible in the original workspace purely because of where the repository happened to
 live. It is the strongest argument in this audit for relocating early: a test suite can be green for
 reasons that are properties of a directory name rather than of the code.
+
+
+### Addendum 3 — findings from the KittenTTS trial
+
+| # | Severity | Component | Defect | Evidence | Status |
+|---|---|---|---|---|---|
+| A27 | **S1** | `tools/provision.py` | `redistributable` was hard-coded **`True`** for every asset it wrote, asserting a redistribution right nobody had reviewed - exactly the claim rule 9 forbids | the generated Kitten manifest carried `redistributable: true` while its card discloses no training data or voice consent | **FIXED** in the tool: rights are a per-asset catalogue value defaulting to **False**, and the Kitten record now reads `False` with the reason attached. **OPEN on the incumbent:** the existing `faster-whisper`/`Kokoro` manifests still assert `true` from the earlier run. Correcting an approved asset's licence record is the approver's call, so it is reported rather than silently rewritten |
+| A28 | S2 | `tools/provision.py` | `asset_root` was written as a path **relative to the invoking working directory**, so a registry opened from anywhere else could not resolve the asset and reported it missing | first Kitten provision: `usable=False`, asset missing, while all 360 files existed | **FIXED** - absolute resolved path; the trial asset now reports `installed/verified/usable` with 360 digests |
+| A29 | S3 | `tools/tts_head_to_head.py` | A replace anchor that matched two near-identical code blocks applied to **both**, injecting a Kokoro-only field into the Kitten row (`NameError` at run time) | first benchmark run crashed in the candidate stage | **FIXED**, and the incident is why the two rows are now built by separate explicit functions rather than shared text surgery |
+
+Method note worth keeping: the comparison is only meaningful because both engines were timed on the
+**same basis** - single-sentence, whole-utterance generation - since Kitten's runtime has no chunked path.
+The first draft of the harness measured the incumbent through our sentence chunker and the candidate
+without it, which would have understated the gap. The chunked figure is measured separately and labelled.
