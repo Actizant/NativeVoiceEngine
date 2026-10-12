@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-12T22:44:24",
+  "runs": [
+    {
+      "turn": 1,
+      "playback": {
+        "requested_frames": 24000,
+        "emitted_frames": 24000,
+        "cancelled_after_s": null,
+        "recovery_frames_emitted": 6000,
+        "playback_wall_seconds": 1.623,
+        "device_recovered_after_stop": true,
+        "full_length_reference": null
+      }
+    },
+    {
+      "turn": 2,
+      "playback": {
+        "requested_frames": 24000,
+        "emitted_frames": 24000,
+        "cancelled_after_s": null,
+        "recovery_frames_emitted": 6000,
+        "playback_wall_seconds": 1.073,
+        "device_recovered_after_stop": true,
+        "full_length_reference": null
+      }
+    }
+  ]
+}

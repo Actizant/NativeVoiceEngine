@@ -1,0 +1,226 @@
+{
+  "name": "en-synthetic-01",
+  "generated": "2026-10-12T23:56:00",
+  "language": "en",
+  "kind": "synthetic",
+  "usable_for": [
+    "training",
+    "adaptation",
+    "asr-domain-evaluation"
+  ],
+  "not_usable_for": [
+    "human speech quality claims",
+    "intelligibility scoring of real speech"
+  ],
+  "synthetic": true,
+  "licence_basis": "Audio derived from an Apache-2.0 pretrained checkpoint (Kokoro-82M) selected for local inference; transcripts authored for this project. No scraped audio, no donor recordings, no third-party dataset. Redistribution of derived models must respect the checkpoint's Apache-2.0 attribution and the bundled espeak-ng GPL-3.0 data terms.",
+  "consent_basis": "not applicable: no human speaker contributed a recording to this corpus",
+  "generator": {
+    "engine": "sherpa-onnx-kokoro",
+    "model_id": "kokoro-int8-multi-lang-v1_1",
+    "licence": "Apache-2.0",
+    "slots": [
+      0
+    ]
+  },
+  "verifier": {
+    "engine": "faster-whisper",
+    "model_id": "faster-whisper-base",
+    "licence": "MIT",
+    "policy": "clip kept only when round-trip WER <= 0.0"
+  },
+  "counts": {
+    "generated": 16,
+    "kept": 8,
+    "dropped": 8
+  },
+  "dropped": [
+    {
+      "clip": "en_slot0_000.wav",
+      "wer": 0.07692,
+      "text": "The quick brown fox jumps over the lazy dog near the river bank.",
+      "heard": "The quick brown fox jumps over the lazy dog near the riv bank."
+    },
+    {
+      "clip": "en_slot0_004.wav",
+      "wer": 0.09091,
+      "text": "My favourite book is about a young engineer building a bridge.",
+      "heard": "My favorite book is about a young engineer building a bridge."
+    },
+    {
+      "clip": "en_slot0_005.wav",
+      "wer": 0.30769,
+      "text": "We walked to the park and watched the children play for an hour.",
+      "heard": "We walk to the park and watch the children play for now."
+    },
+    {
+      "clip": "en_slot0_007.wav",
+      "wer": 0.1,
+      "text": "She sells seashells by the seashore every single summer morning.",
+      "heard": "She sells seashells by the seashore every single some morning."
+    },
+    {
+      "clip": "en_slot0_010.wav",
+      "wer": 0.16667,
+      "text": "Remember to water the plants on the balcony before the heat arrives.",
+      "heard": "Remember to wash the plants on the balcony before the heat rives."
+    },
+    {
+      "clip": "en_slot0_011.wav",
+      "wer": 0.08333,
+      "text": "The library closes at eight and returns must be made by then.",
+      "heard": "The library closes at 8 and returns must be made by then."
+    },
+    {
+      "clip": "en_slot0_012.wav",
+      "wer": 0.33333,
+      "text": "A sudden storm forced the sailors to shelter behind the northern cape.",
+      "heard": "A sudden storm forced the sails to shout behind the north of Cape."
+    },
+    {
+      "clip": "en_slot0_013.wav",
+      "wer": 0.08333,
+      "text": "They painted the old door blue and hung a lantern beside it.",
+      "heard": "They painted the old door blue and hung a lamp beside it."
+    }
+  ],
+  "wall_seconds": 100.17,
+  "samples": [
+    {
+      "index": 1,
+      "slot": 0,
+      "text": "Please turn off the lights before you leave the meeting room.",
+      "heard": "Please turn off the lights before you leave the meeting room.",
+      "normalised_reference": "please turn off the lights before you leave the meeting room",
+      "normalised_heard": "please turn off the lights before you leave the meeting room",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_001.wav",
+      "sha256": "9198dd400e5cba0995ab465b2e7b356e324b5ea8809c611c0a3f22eab7a35834",
+      "seconds": 2.613,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 2,
+      "slot": 0,
+      "text": "I would like a cup of coffee and a slice of banana bread.",
+      "heard": "I would like a cup of coffee and a slice of banana bread.",
+      "normalised_reference": "i would like a cup of coffee and a slice of banana bread",
+      "normalised_heard": "i would like a cup of coffee and a slice of banana bread",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_002.wav",
+      "sha256": "cfedcae916d6deb7d373e4d09e186597af3444d4a2549b57009279c21bc17051",
+      "seconds": 2.895,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 3,
+      "slot": 0,
+      "text": "The weather today is pleasant and the sky is completely clear.",
+      "heard": "The weather today is pleasant and the sky is completely clear.",
+      "normalised_reference": "the weather today is pleasant and the sky is completely clear",
+      "normalised_heard": "the weather today is pleasant and the sky is completely clear",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_003.wav",
+      "sha256": "9c6f01ca8c672afed061144d4262a89e4083a6c84df0af1321a3b96b33e7cfb0",
+      "seconds": 3.1183,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 6,
+      "slot": 0,
+      "text": "Could you tell me the time and the nearest train station?",
+      "heard": "Could you tell me the time and the nearest train station?",
+      "normalised_reference": "could you tell me the time and the nearest train station",
+      "normalised_heard": "could you tell me the time and the nearest train station",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_006.wav",
+      "sha256": "524c38ebe309a9c48e3e4c9b3982479095e43b9454b497d36d94eecf7b3738f4",
+      "seconds": 2.6092,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 8,
+      "slot": 0,
+      "text": "The train departed late, so we missed the connection at the junction.",
+      "heard": "The train departed late, so we missed the connection at the junction.",
+      "normalised_reference": "the train departed late so we missed the connection at the junction",
+      "normalised_heard": "the train departed late so we missed the connection at the junction",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_008.wav",
+      "sha256": "8303bf9a0c950ab864919c037ff97c82d60d10adfb026c01f00e533be1c18910",
+      "seconds": 3.0985,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 9,
+      "slot": 0,
+      "text": "He kept a small notebook in his pocket to write down strange words.",
+      "heard": "He kept a small notebook in his pocket to write down strange words.",
+      "normalised_reference": "he kept a small notebook in his pocket to write down strange words",
+      "normalised_heard": "he kept a small notebook in his pocket to write down strange words",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_009.wav",
+      "sha256": "39a50411677c76f69683f6187bec06e6a5377ce653912517a991bd4bed385c44",
+      "seconds": 3.6246,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 14,
+      "slot": 0,
+      "text": "This recipe needs two eggs, a cup of flour and plenty of patience.",
+      "heard": "This recipe needs two eggs, a cup of flour and plenty of patience.",
+      "normalised_reference": "this recipe needs two eggs a cup of flour and plenty of patience",
+      "normalised_heard": "this recipe needs two eggs a cup of flour and plenty of patience",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_014.wav",
+      "sha256": "6ed91d39710139f2cffd96102f54c4c40dfb01bc466bdb78a17d285706f01c26",
+      "seconds": 3.5048,
+      "sample_rate": 16000,
+      "status": "ok"
+    },
+    {
+      "index": 15,
+      "slot": 0,
+      "text": "Silence in the archive allowed her to read the letter twice.",
+      "heard": "Silence in the archive allowed her to read the letter twice.",
+      "normalised_reference": "silence in the archive allowed her to read the letter twice",
+      "normalised_heard": "silence in the archive allowed her to read the letter twice",
+      "wer": 0.0,
+      "cer": 0.0,
+      "exact_match": true,
+      "kept": true,
+      "clip": "en_slot0_015.wav",
+      "sha256": "48759307e5ae918c772514069ea37d2001c0e65adb5ae8f5647f8b885dd32960",
+      "seconds": 2.9637,
+      "sample_rate": 16000,
+      "status": "ok"
+    }
+  ]
+}

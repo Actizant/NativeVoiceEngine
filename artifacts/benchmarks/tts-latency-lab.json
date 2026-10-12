@@ -1,0 +1,129 @@
+{
+  "generated": "2026-10-13T00:01:12",
+  "asset": "kokoro-int8-multi-lang-v1_1",
+  "context": {
+    "free_ram_gb": 3.62,
+    "processes": 272,
+    "logical_cpus": 16
+  },
+  "runtime_streaming_support": {
+    "signature_lines": [
+      "generate(*args, **kwargs)",
+      "Overloaded function.",
+      "1. generate(self: sherpa_onnx.lib._sherpa_onnx.OfflineTts, text: str, sid: typing.SupportsInt = 0, speed: typing.SupportsFloat = 1.0, callback: collections.abc.Callable[[typing.Annotated[numpy.typing.ArrayLike, numpy.float32], typing.SupportsFloat], int] = None) -> sherpa_onnx.lib._sherpa_onnx.GeneratedAudio",
+      "Generate speech from text.",
+      "Args:",
+      "text:"
+    ],
+    "mentions_callback": true
+  },
+  "single_short_sentence_reference_ms": 1883.8,
+  "thread_sweep": [
+    {
+      "threads": 1,
+      "chunk_tokens": 50,
+      "load_seconds": 2.74,
+      "first_audio_ms_median": 14141.1,
+      "first_audio_ms_best": 13956.9,
+      "utterance_wall_ms_median": 14141.2,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 2.0138,
+      "measure": "measured"
+    },
+    {
+      "threads": 2,
+      "chunk_tokens": 50,
+      "load_seconds": 3.247,
+      "first_audio_ms_median": 13977.5,
+      "first_audio_ms_best": 12585.5,
+      "utterance_wall_ms_median": 13977.5,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.9906,
+      "measure": "measured"
+    },
+    {
+      "threads": 4,
+      "chunk_tokens": 50,
+      "load_seconds": 3.728,
+      "first_audio_ms_median": 13728.5,
+      "first_audio_ms_best": 13503.3,
+      "utterance_wall_ms_median": 13728.6,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.9551,
+      "measure": "measured"
+    },
+    {
+      "threads": 6,
+      "chunk_tokens": 50,
+      "load_seconds": 2.88,
+      "first_audio_ms_median": 12557.7,
+      "first_audio_ms_best": 12543.5,
+      "utterance_wall_ms_median": 12557.7,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.7883,
+      "measure": "measured"
+    },
+    {
+      "threads": 8,
+      "chunk_tokens": 50,
+      "load_seconds": 3.054,
+      "first_audio_ms_median": 11176.2,
+      "first_audio_ms_best": 11039.9,
+      "utterance_wall_ms_median": 11176.3,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.5916,
+      "measure": "measured"
+    },
+    {
+      "threads": 12,
+      "chunk_tokens": 50,
+      "load_seconds": 2.84,
+      "first_audio_ms_median": 13864.9,
+      "first_audio_ms_best": 13585.9,
+      "utterance_wall_ms_median": 13865.0,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.9745,
+      "measure": "measured"
+    }
+  ],
+  "chunk_sweep": [
+    {
+      "threads": 8,
+      "chunk_tokens": 50,
+      "load_seconds": 3.102,
+      "first_audio_ms_median": 11545.4,
+      "first_audio_ms_best": 11529.3,
+      "utterance_wall_ms_median": 11545.4,
+      "audio_seconds_per_utterance": 7.0221,
+      "rtf_median": 1.6441,
+      "measure": "measured"
+    },
+    {
+      "threads": 8,
+      "chunk_tokens": 24,
+      "load_seconds": 3.095,
+      "first_audio_ms_median": 5061.3,
+      "first_audio_ms_best": 4941.8,
+      "utterance_wall_ms_median": 13267.5,
+      "audio_seconds_per_utterance": 7.3271,
+      "rtf_median": 1.8108,
+      "measure": "measured"
+    },
+    {
+      "threads": 8,
+      "chunk_tokens": 12,
+      "load_seconds": 2.993,
+      "first_audio_ms_median": 5270.2,
+      "first_audio_ms_best": 5067.6,
+      "utterance_wall_ms_median": 13193.7,
+      "audio_seconds_per_utterance": 7.3271,
+      "rtf_median": 1.8007,
+      "measure": "measured"
+    }
+  ],
+  "language_switch": {
+    "switch_en_to_zh_seconds": 3.324,
+    "succeeded": true
+  },
+  "best_rtf_short_sentence": 1.8838
+}

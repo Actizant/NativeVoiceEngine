@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-10-12T22:43:38",
+  "runs": [
+    {
+      "turn": 1,
+      "capture": {
+        "requested_seconds": 4.0,
+        "wall_seconds": 4.099,
+        "frames_captured": 63680,
+        "audio_seconds": 3.98,
+        "capture_real_time_factor": 1.0299,
+        "chunks": 199,
+        "overflow_frames_dropped": 0,
+        "segments": [],
+        "segment_count": 0,
+        "median_input_level": 0.0002816011485158793,
+        "peak_input_level": 0.0019,
+        "silence_fraction": 1.0
+      }
+    }
+  ]
+}

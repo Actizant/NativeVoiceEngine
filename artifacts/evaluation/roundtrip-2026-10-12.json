@@ -1,0 +1,363 @@
+{
+  "title": "ULTRON Native Voice - round-trip intelligibility evaluation",
+  "generated_on": "2026-10-12",
+  "provenance": "Round-trip intelligibility of the TTS+STT pair on machine-generated, licence-clean audio; NOT a human-speech quality measurement.",
+  "self_check": {
+    "language": "en",
+    "forced_wer": 0.049383,
+    "threshold": 0.05,
+    "passed": true,
+    "meaning": "English round-trip is the harness self-check; if it fails, the chain is broken."
+  },
+  "engines": {
+    "tts": {
+      "model_id": "kokoro-int8-multi-lang-v1_1",
+      "engine": "sherpa-onnx-kokoro",
+      "review": "approved"
+    },
+    "stt": {
+      "model_id": "faster-whisper-base",
+      "engine": "faster-whisper",
+      "review": "approved"
+    }
+  },
+  "environment": {
+    "free_ram_gb_at_start": 3.846,
+    "elapsed_s": 170.66
+  },
+  "resources": {
+    "peak_rss_mb_observed": 708.8,
+    "measured": true,
+    "final_memory": {
+      "measured": true,
+      "peak_bytes": 743223296,
+      "peak_mb": 708.793,
+      "current_bytes": 141180928,
+      "current_mb": 134.641,
+      "source": "windows:k32GetProcessMemoryInfo",
+      "reason": ""
+    },
+    "wall_s": 170.43
+  },
+  "results": [
+    {
+      "language": "en",
+      "tts_engine": "sherpa-onnx-kokoro",
+      "stt_engine": "faster-whisper",
+      "pairs": 8,
+      "utterances": [
+        {
+          "index": 0,
+          "reference": "The quick brown fox jumps over the lazy dog.",
+          "hypothesis_auto": "The quick brown fox jumps over the lazy dog.",
+          "hypothesis_forced": "The quick brown fox jumps over the lazy dog.",
+          "detected_language": "en",
+          "auto_wer": 0.0,
+          "auto_cer": 0.0,
+          "forced_wer": 0.0,
+          "forced_cer": 0.0,
+          "tts_real_time_factor": 2.393503614934456,
+          "tts_first_audio_ms": 6140.3087,
+          "tts_audio_duration_s": 2.5657,
+          "stt_real_time_factor": 2.5307,
+          "audio_rms": 0.04329
+        },
+        {
+          "index": 1,
+          "reference": "She sells seashells by the seashore every summer.",
+          "hypothesis_auto": "She sells seashells by the seashore every sum.",
+          "hypothesis_forced": "She sells seashells by the seashore every sum.",
+          "detected_language": "en",
+          "auto_wer": 0.125,
+          "auto_cer": 0.073171,
+          "forced_wer": 0.125,
+          "forced_cer": 0.073171,
+          "tts_real_time_factor": 2.2600131179614227,
+          "tts_first_audio_ms": 5736.328,
+          "tts_audio_duration_s": 2.5385,
+          "stt_real_time_factor": 2.2858,
+          "audio_rms": 0.04218
+        },
+        {
+          "index": 2,
+          "reference": "Please turn off the lights before you leave the room.",
+          "hypothesis_auto": "Please turn off the lights before you leave the room.",
+          "hypothesis_forced": "Please turn off the lights before you leave the room.",
+          "detected_language": "en",
+          "auto_wer": 0.0,
+          "auto_cer": 0.0,
+          "forced_wer": 0.0,
+          "forced_cer": 0.0,
+          "tts_real_time_factor": 2.35608457884355,
+          "tts_first_audio_ms": 5453.6672,
+          "tts_audio_duration_s": 2.315,
+          "stt_real_time_factor": 2.751,
+          "audio_rms": 0.04381
+        },
+        {
+          "index": 3,
+          "reference": "I would like a cup of coffee and a slice of bread.",
+          "hypothesis_auto": "I would like a cup of coffee and a slice of bread.",
+          "hypothesis_forced": "I would like a cup of coffee and a slice of bread.",
+          "detected_language": "en",
+          "auto_wer": 0.0,
+          "auto_cer": 0.0,
+          "forced_wer": 0.0,
+          "forced_cer": 0.0,
+          "tts_real_time_factor": 2.4334259152393836,
+          "tts_first_audio_ms": 6097.6784,
+          "tts_audio_duration_s": 2.5063,
+          "stt_real_time_factor": 3.1041,
+          "audio_rms": 0.04142
+        },
+        {
+          "index": 4,
+          "reference": "The weather today is pleasant and the sky is clear.",
+          "hypothesis_auto": "The weather today is pleasant and the sky is clear.",
+          "hypothesis_forced": "The weather today is pleasant and the sky is clear.",
+          "detected_language": "en",
+          "auto_wer": 0.0,
+          "auto_cer": 0.0,
+          "forced_wer": 0.0,
+          "forced_cer": 0.0,
+          "tts_real_time_factor": 2.5270867920634066,
+          "tts_first_audio_ms": 6407.9873,
+          "tts_audio_duration_s": 2.536,
+          "stt_real_time_factor": 2.3831,
+          "audio_rms": 0.0455
+        },
+        {
+          "index": 5,
+          "reference": "My favourite book is about a young engineer in the city.",
+          "hypothesis_auto": "My favorite book is about a young engineer in the city.",
+          "hypothesis_forced": "My favorite book is about a young engineer in the city.",
+          "detected_language": "en",
+          "auto_wer": 0.090909,
+          "auto_cer": 0.022222,
+          "forced_wer": 0.090909,
+          "forced_cer": 0.022222,
+          "tts_real_time_factor": 2.2160929077926492,
+          "tts_first_audio_ms": 6471.1826,
+          "tts_audio_duration_s": 2.9205,
+          "stt_real_time_factor": 2.0595,
+          "audio_rms": 0.04473
+        },
+        {
+          "index": 6,
+          "reference": "We walked to the park and watched the children play.",
+          "hypothesis_auto": "We walk to the park and watch the children play.",
+          "hypothesis_forced": "We walk to the park and watch the children play.",
+          "detected_language": "en",
+          "auto_wer": 0.2,
+          "auto_cer": 0.095238,
+          "forced_wer": 0.2,
+          "forced_cer": 0.095238,
+          "tts_real_time_factor": 2.3692145483563847,
+          "tts_first_audio_ms": 5927.0778,
+          "tts_audio_duration_s": 2.502,
+          "stt_real_time_factor": 2.2359,
+          "audio_rms": 0.04505
+        },
+        {
+          "index": 7,
+          "reference": "Could you tell me the time and the nearest train station?",
+          "hypothesis_auto": "Could you tell me the time and the nearest train station?",
+          "hypothesis_forced": "Could you tell me the time and the nearest train station?",
+          "detected_language": "en",
+          "auto_wer": 0.0,
+          "auto_cer": 0.0,
+          "forced_wer": 0.0,
+          "forced_cer": 0.0,
+          "tts_real_time_factor": 2.345606359555859,
+          "tts_first_audio_ms": 6121.7584,
+          "tts_audio_duration_s": 2.6103,
+          "stt_real_time_factor": 2.1916,
+          "audio_rms": 0.04576
+        }
+      ],
+      "tts_status": "synthesised",
+      "auto_wer": 0.049383,
+      "auto_cer": 0.024169,
+      "forced_wer": 0.049383,
+      "forced_cer": 0.024169,
+      "mean_tts_rtf": 2.3626,
+      "mean_tts_first_audio_ms": 6044.4986,
+      "mean_stt_rtf": 2.4427,
+      "tts_status_enum": "measured",
+      "verdict": "PASS"
+    },
+    {
+      "language": "hi",
+      "tts_engine": "sherpa-onnx-kokoro",
+      "stt_engine": "faster-whisper",
+      "pairs": 6,
+      "utterances": [],
+      "tts_status": "refused",
+      "tts_error": "LanguageUnsupported: this Kokoro asset has no front-end for this language (language='hi', remedy='only the languages recorded and present in the asset are synthesable', renderable=('en', 'zh'), task='tts')",
+      "verdict": "UNSUPPORTED",
+      "conclusion": "the Kokoro asset has no front-end for this language; it refuses rather than emit romanised gibberish, so no round-trip number exists",
+      "tts_status_enum": "unsupported"
+    },
+    {
+      "language": "bn",
+      "tts_engine": "sherpa-onnx-kokoro",
+      "stt_engine": "faster-whisper",
+      "pairs": 6,
+      "utterances": [],
+      "tts_status": "refused",
+      "tts_error": "LanguageUnsupported: this Kokoro asset has no front-end for this language (language='bn', remedy='only the languages recorded and present in the asset are synthesable', renderable=('en', 'zh'), task='tts')",
+      "verdict": "UNSUPPORTED",
+      "conclusion": "the Kokoro asset has no front-end for this language; it refuses rather than emit romanised gibberish, so no round-trip number exists",
+      "tts_status_enum": "unsupported"
+    },
+    {
+      "language": "zh",
+      "tts_engine": "sherpa-onnx-kokoro",
+      "stt_engine": "faster-whisper",
+      "pairs": 6,
+      "utterances": [
+        {
+          "index": 0,
+          "reference": "今天天气很好。",
+          "hypothesis_auto": "今天天气很好",
+          "hypothesis_forced": "今天天气很好",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.142857,
+          "forced_wer": 1.0,
+          "forced_cer": 0.142857,
+          "tts_real_time_factor": 2.4530854518612153,
+          "tts_first_audio_ms": 4026.8478,
+          "tts_audio_duration_s": 1.642,
+          "stt_real_time_factor": 3.2328,
+          "audio_rms": 0.03712
+        },
+        {
+          "index": 1,
+          "reference": "我喜欢学习中文。",
+          "hypothesis_auto": "我喜歡學習中文",
+          "hypothesis_forced": "我喜歡學習中文",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.5,
+          "forced_wer": 1.0,
+          "forced_cer": 0.5,
+          "tts_real_time_factor": 2.397179403088372,
+          "tts_first_audio_ms": 4336.6966,
+          "tts_audio_duration_s": 1.8093,
+          "stt_real_time_factor": 3.0783,
+          "audio_rms": 0.03639
+        },
+        {
+          "index": 2,
+          "reference": "请帮我打开窗户。",
+          "hypothesis_auto": "先幫我打開窗戶",
+          "hypothesis_forced": "先幫我打開窗戶",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.625,
+          "forced_wer": 1.0,
+          "forced_cer": 0.625,
+          "tts_real_time_factor": 2.403336431486121,
+          "tts_first_audio_ms": 4494.367,
+          "tts_audio_duration_s": 1.8703,
+          "stt_real_time_factor": 3.0332,
+          "audio_rms": 0.03707
+        },
+        {
+          "index": 3,
+          "reference": "他在图书馆里看书。",
+          "hypothesis_auto": "它在圖書館裡看書",
+          "hypothesis_forced": "它在圖書館裡看書",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.777778,
+          "forced_wer": 1.0,
+          "forced_cer": 0.777778,
+          "tts_real_time_factor": 2.164810459505457,
+          "tts_first_audio_ms": 4677.1365,
+          "tts_audio_duration_s": 2.1607,
+          "stt_real_time_factor": 2.8683,
+          "audio_rms": 0.03688
+        },
+        {
+          "index": 4,
+          "reference": "我们的学校非常大而漂亮。",
+          "hypothesis_auto": "我們的學校非常大而漂亮",
+          "hypothesis_forced": "我們的學校非常大而漂亮",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.25,
+          "forced_wer": 1.0,
+          "forced_cer": 0.25,
+          "tts_real_time_factor": 2.058489768692887,
+          "tts_first_audio_ms": 4704.5772,
+          "tts_audio_duration_s": 2.2859,
+          "stt_real_time_factor": 2.6349,
+          "audio_rms": 0.03908
+        },
+        {
+          "index": 5,
+          "reference": "妈妈做了可口的饭菜。",
+          "hypothesis_auto": "媽媽做了可口的粉彩",
+          "hypothesis_forced": "媽媽做了可口的粉彩",
+          "detected_language": "zh",
+          "auto_wer": 1.0,
+          "auto_cer": 0.5,
+          "forced_wer": 1.0,
+          "forced_cer": 0.5,
+          "tts_real_time_factor": 2.4848660271403022,
+          "tts_first_audio_ms": 4824.0285,
+          "tts_audio_duration_s": 1.9416,
+          "stt_real_time_factor": 3.439,
+          "audio_rms": 0.04024
+        }
+      ],
+      "tts_status": "synthesised",
+      "auto_wer": 1.0,
+      "auto_cer": 0.462963,
+      "forced_wer": 1.0,
+      "forced_cer": 0.462963,
+      "mean_tts_rtf": 2.327,
+      "mean_tts_first_audio_ms": 4510.6089,
+      "mean_stt_rtf": 3.0478,
+      "tts_status_enum": "measured",
+      "verdict": "FAIL"
+    }
+  ],
+  "verdicts": {
+    "en": "PASS",
+    "hi": "UNSUPPORTED",
+    "bn": "UNSUPPORTED",
+    "zh": "FAIL"
+  },
+  "hardware_profiles": {
+    "marked_profiles": {
+      "balanced": {
+        "name": "balanced",
+        "measured": true,
+        "provisional": true,
+        "max_resident_mib": 964,
+        "validation_evidence": "observed process peak RSS 709 MiB during round-trip eval",
+        "still_provisional_fields": [
+          "max_threads",
+          "max_audio_buffer_frames",
+          "concurrency",
+          "allowed_quantizations"
+        ]
+      }
+    },
+    "observed_peak_rss_mib": 708.8,
+    "thresholds_still_unmeasured": [
+      "max_threads",
+      "max_audio_buffer_frames",
+      "concurrency",
+      "allowed_quantizations"
+    ],
+    "note": "mark_measured flips a profile to measured=True but only max_resident_mib was backed by an observation here; the listed thresholds remain provisional seeds and must not be treated as validated."
+  },
+  "capability_ledger_report": {
+    "tts": "Capability report - task=tts\nLanguage  Code  Engine              Status           Metric               Evidence                   \n--------  ----  ------------------  ---------------  -------------------  ---------------------------\nbn        bn    sherpa-onnx-kokoro  unsupported                           kokoro-int8-multi-lang-v1_1\nen        en    sherpa-onnx-kokoro  measured         roundtrip_wer=0.049  kokoro-int8-multi-lang-v1_1\nhi        hi    sherpa-onnx-kokoro  unsupported                           kokoro-int8-multi-lang-v1_1\nzh        zh    sherpa-onnx-kokoro  measured_failed  roundtrip_cer=0.463  kokoro-int8-multi-lang-v1_1",
+    "stt": "Capability report - task=stt\nLanguage  Code  Engine          Status    Metric               Evidence           \n--------  ----  --------------  --------  -------------------  -------------------\nbn        bn    faster-whisper  declared                       faster-whisper-base\nen        en    faster-whisper  measured  roundtrip_wer=0.049  faster-whisper-base\nhi        hi    faster-whisper  declared                       faster-whisper-base\nzh        zh    faster-whisper  declared                       faster-whisper-base"
+  }
+}

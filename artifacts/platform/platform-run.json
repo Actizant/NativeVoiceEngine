@@ -1,0 +1,66 @@
+{
+  "generated": "2026-10-12T23:48:56",
+  "hosts": {
+    "ultron": {
+      "default_voice": "voice.platform.default",
+      "heard": "Please tell me what the weth will do this afternoon.",
+      "answer": "Your summary is ready: three decisions and one follow-up for tomorrow.",
+      "spoken": true,
+      "silenced": false,
+      "language": "en",
+      "frames_played": 84644,
+      "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\ultron-reply.wav",
+      "notes": [],
+      "voice_refusal": "",
+      "data_root": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\ultron",
+      "store_isolated": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\ultron\\recordings"
+    },
+    "fieldmind": {
+      "default_voice": "voice.host.fieldmind.speaker7",
+      "heard": "Please tell me what the weth will do this afternoon.",
+      "answer": "Field report: soil moisture is adequate and the next irrigation window is at six.",
+      "spoken": true,
+      "silenced": false,
+      "language": "en",
+      "frames_played": 121744,
+      "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\fieldmind-reply.wav",
+      "notes": [],
+      "voice_refusal": "",
+      "data_root": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\fieldmind",
+      "store_isolated": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\fieldmind\\recordings"
+    }
+  },
+  "measurements": {
+    "slot_0": {
+      "wer": 0.0,
+      "heard": "The voice platform serves several applications from one engine.",
+      "status": "measured"
+    },
+    "slot_7": {
+      "wer": 0.0,
+      "heard": "The voice platform serves several applications from one engine.",
+      "status": "measured"
+    },
+    "pass_bar": 0.15
+  },
+  "spoken_input": {
+    "text": "Please tell me what the weather will do this afternoon.",
+    "seconds": 2.366
+  },
+  "identities": {
+    "voice.host.fieldmind.speaker7": {
+      "slot": 7,
+      "named": false,
+      "en": "measured",
+      "installed": "installed"
+    },
+    "voice.platform.default": {
+      "slot": 0,
+      "named": false,
+      "en": "measured",
+      "installed": "installed"
+    }
+  },
+  "network_attempts": [],
+  "verdict": "PASS"
+}

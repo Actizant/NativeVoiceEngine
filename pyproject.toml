@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nativevoice"
+version = "0.1.0"
+description = "ULTRON Native Voice - original, local-first, hardware-adaptive voice infrastructure"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+mic = ["sounddevice>=0.5"]
+onnx = ["onnxruntime>=1.20"]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "device: requires real audio hardware",
+    "slow: takes more than a second",
+    "network: must not run during offline acceptance",
+    "requires_approved_asset: needs a model asset that has passed provenance review",
+]

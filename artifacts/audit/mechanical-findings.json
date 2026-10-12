@@ -1,0 +1,57 @@
+[
+  {
+    "check": "error taxonomy",
+    "status": "PASS",
+    "detail": "0 raise site(s) outside core.errors"
+  },
+  {
+    "check": "offline isolation (static)",
+    "status": "PASS",
+    "detail": "0 network import(s) on the speech path"
+  },
+  {
+    "check": "optional runtimes imported lazily",
+    "status": "PASS",
+    "detail": "0 module-level heavy import(s)"
+  },
+  {
+    "check": "host independence",
+    "status": "PASS",
+    "detail": "0 host/reference import(s)"
+  },
+  {
+    "check": "resource lifecycle symmetry",
+    "status": "PASS",
+    "detail": "0 unbalanced lifecycle(s)"
+  },
+  {
+    "check": "no mutable module-level state",
+    "status": "PASS",
+    "detail": "0 mutable global(s)"
+  },
+  {
+    "check": "speech path persists nothing",
+    "status": "PASS",
+    "detail": "10 full turns wrote no file anywhere in the working directory"
+  },
+  {
+    "check": "asset load paths are offline-forced",
+    "status": "PASS",
+    "detail": "0 load call(s) without an offline guarantee"
+  },
+  {
+    "check": "approval gate default-deny",
+    "status": "PASS",
+    "detail": "accepted without review: none; env bypass present: False"
+  },
+  {
+    "check": "declared-only capability cannot be routed",
+    "status": "PASS",
+    "detail": "DECLARED -> unavailable; after MEASURED -> routed"
+  },
+  {
+    "check": "no thread leak across 25 turns",
+    "status": "PASS",
+    "detail": "25 full turns opened and closed cleanly"
+  }
+]

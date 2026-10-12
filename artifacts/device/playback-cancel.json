@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-12T22:45:49",
+  "runs": [
+    {
+      "turn": 1,
+      "playback": {
+        "requested_frames": 72000,
+        "emitted_frames": 12000,
+        "cancelled_after_s": 1.0,
+        "recovery_frames_emitted": 6000,
+        "playback_wall_seconds": 1.01,
+        "device_recovered_after_stop": true,
+        "full_length_reference": 72000,
+        "thread_error": ""
+      }
+    }
+  ]
+}

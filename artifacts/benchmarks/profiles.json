@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-10-12T23:06:48",
+  "host": "Windows 11 / python 3.14.7 / AMD64 / 16 logical cores / RTX 3050 4 GB / onnxruntime CPU-only",
+  "free_ram_gb_at_start": 4.17,
+  "background_processes": 269,
+  "logical_cpus": 16,
+  "repeats_per_profile": 1,
+  "sentences": 3,
+  "profiles": [
+    {
+      "profile": "lite",
+      "threads": 2,
+      "quantizations": [
+        "int8"
+      ],
+      "gpu_allowed": false,
+      "buffer_frames": 16000,
+      "concurrency": 1,
+      "tts_load_seconds": 2.066,
+      "tts_rtf_median": 2.3766,
+      "tts_first_chunk_ms_median": 8326.0,
+      "tts_audio_seconds_total": 10.51,
+      "stt_load_seconds": 1.116,
+      "stt_rtf_median": 0.8527,
+      "stt_heard_example": "The voice engine is running locally on my machine.",
+      "stt_exact_match_rate": 1.0,
+      "peak_rss_mb": 1000.7,
+      "proposed_limits": {
+        "max_resident_mib": 1536,
+        "observed_rss_mb": 1000.7,
+        "observed_tts_rtf": 2.3766,
+        "observed_stt_rtf": 0.8527,
+        "observed_first_chunk_ms": 8326.0,
+        "headroom_factor": 1.5
+      }
+    },
+    {
+      "profile": "balanced",
+      "threads": 4,
+      "quantizations": [
+        "int8",
+        "int16",
+        "fp16"
+      ],
+      "gpu_allowed": true,
+      "buffer_frames": 48000,
+      "concurrency": 2,
+      "tts_load_seconds": 3.151,
+      "tts_rtf_median": 2.0783,
+      "tts_first_chunk_ms_median": 7280.9,
+      "tts_audio_seconds_total": 10.51,
+      "stt_load_seconds": 0.678,
+      "stt_rtf_median": 0.4985,
+      "stt_heard_example": "The voice engine is running locally on my machine.",
+      "stt_exact_match_rate": 1.0,
+      "peak_rss_mb": 1014.9,
+      "proposed_limits": {
+        "max_resident_mib": 1536,
+        "observed_rss_mb": 1014.9,
+        "observed_tts_rtf": 2.0783,
+        "observed_stt_rtf": 0.4985,
+        "observed_first_chunk_ms": 7280.9,
+        "headroom_factor": 1.5
+      }
+    },
+    {
+      "profile": "performance",
+      "threads": 8,
+      "quantizations": [
+        "int8",
+        "fp16",
+        "fp32"
+      ],
+      "gpu_allowed": true,
+      "buffer_frames": 160000,
+      "concurrency": 4,
+      "tts_load_seconds": 2.94,
+      "tts_rtf_median": 1.7913,
+      "tts_first_chunk_ms_median": 6275.5,
+      "tts_audio_seconds_total": 10.51,
+      "stt_load_seconds": 0.775,
+      "stt_rtf_median": 0.4351,
+      "stt_heard_example": "The voice engine is running locally on my machine.",
+      "stt_exact_match_rate": 1.0,
+      "peak_rss_mb": 1045.8,
+      "proposed_limits": {
+        "max_resident_mib": 1792,
+        "observed_rss_mb": 1045.8,
+        "observed_tts_rtf": 1.7913,
+        "observed_stt_rtf": 0.4351,
+        "observed_first_chunk_ms": 6275.5,
+        "headroom_factor": 1.5
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+# --- build and tooling noise -------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- never a repository: this is somebody else's interpreter, not our code -----
+# A Windows Python runtime store ("pythoncore-3.15-64") materialised inside the
+# working directory during development. It is not part of this project and must
+# never be committed, vendored or deleted by a tool that did not create it.
+/Python/
+pythoncore-*/
+
+# --- generated evidence ------------------------------------------------------
+# Machine-generated output. The JSON and Markdown are reports a run produced; the
+# audio is a byproduct of a synthesis or capture and can be re-generated, so it is
+# excluded to keep the repository light while the *evidence* stays versioned.
+artifacts/**/*.wav
+artifacts/**/*.mp3
+artifacts/**/*.raw
+artifacts/**/*.part
+
+# --- local state and anything that could hold a credential -------------------
+.env
+.env.*
+*.local
+*.pem
+*.key
+*_token*
+*secret*
+credentials*
+.cache/
+venv/
+.venv/
+
+# --- editor and OS detritus --------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+DS_Store
+desktop.ini
