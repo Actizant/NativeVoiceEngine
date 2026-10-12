@@ -328,3 +328,77 @@ PASS, 0 attempts. `python tools/platform_demo.py` → PASS. `python tools/corpus
 TTS is slower than real time at every profile; Bengali/Hindi synthesis and acoustic LID remain gaps;
 distribution needs the GPL-3.0 espeak-ng pass and cloning stays out of scope; profiles stay provisional
 (1 of 5 threshold fields measured); and real human speech at the microphone is still untested.
+
+---
+
+# Progress ledger — entry 5 (2026-10-13, namespace, version control, TTS latency)
+
+Authorisation relied on: approve the neutral namespace rename; **hold** ASR fine-tuning (no torch, no new
+checkpoint, no training); investigate TTS performance against the current implementation with no new asset
+without approval; establish version control safely.
+
+## Namespace migration: `ultron_voice` → `nativevoice`
+
+Directory moved, 60 text files rewritten (imports, packaging, tests, tools, docs), `ULTRON_VOICE_HOME` →
+`NATIVEVOICE_HOME`, distribution name `ultron-native-voice` → `nativevoice`. **No behaviour change and no
+unrelated refactoring**: 668 tests pass exactly as before plus one new test, the audit passes 11/11, and
+importing `nativevoice` still pulls in zero third-party modules. Historical artefacts under `artifacts/`
+were deliberately **not** rewritten — they record what a past run actually did, and editing them would
+make the evidence agree with the code instead of with history.
+
+Two things left alone on purpose, both recorded rather than tidied:
+- the local data directory is still `%LOCALAPPDATA%\ultron-voice`, because renaming it would strand the
+  verified assets, manifests and installed voice identities. Migration is a one-command move plus digest
+  re-verification, held as decision **N6**.
+- a Windows Python runtime store (`Python/pythoncore-3.15-64`, 45 MB) materialised inside the working
+  directory during the session. It is not ours, was not created by any command here, and was **not
+  deleted** — it is git-ignored and reported instead.
+
+## Version control baseline
+
+No parent repository exists at any level up to `/c/Users/shres`, so this is a new root, not a nested one.
+`.gitignore` excludes build noise, generated audio (the corpus keeps its digests, so the manifest is the
+evidence and the WAVs are reproducible), credential-shaped files, and the stray interpreter directory.
+`.gitattributes` pins `text=auto eol=lf`, so the CRLF churn git warned about cannot become a diff.
+
+Reviewed before committing: 157 files, 29,867 insertions, **no binaries staged**, secret-pattern scan
+(api key / password / private key / AWS / GitHub token forms) clean, exclusions verified by querying the
+index rather than trusting the ignore file. Identity was already configured as Shreshtha, so the author is
+his, not an invented one. `git init` deliberately ran **without** `-b main` because this git's
+`init.defaultBranch` is unset — the flag would have failed the command outright; the branch is `master`.
+
+## TTS latency: measured, not assumed
+
+`tools/tts_latency_lab.py` sweeps the levers that exist **without a new asset**, on a two-sentence reply,
+with 3.62 GB free and 272 processes running (recorded beside the numbers).
+
+| Lever | Result | Measured |
+|---|---|---|
+| Threads 1 → 8 | RTF 2.01 → **1.59**, first-audio 14.1 s → 11.2 s | yes |
+| Threads 12 | **worse**: RTF 1.97, first-audio 13.9 s — oversubscription | yes |
+| Chunk budget 50 → 24 tokens | first-audio **11,545 ms → 5,061 ms**; RTF essentially unchanged | yes |
+| Chunk budget 12 tokens | no further gain (5,270 ms) | yes |
+| Language switch en → zh | **+3.32 s**, because the adapter reloads the engine per language | yes |
+| Runtime streaming callback | `OfflineTts.generate` **does** accept a per-chunk callback — chunk-level latency is our choice, not a hard limit | inspected |
+| Model variants in the asset | only `model.int8.onnx` exists, so quantization comparison is impossible without a new asset | verified |
+
+**Action taken:** the default chunk budget is now 24 tokens, chosen from the measurement, with the reason
+and the trade-off (more crossfade seams, not less throughput) in the code, and pinned by a test so it
+cannot drift back silently. **Not taken:** changing threads past 8, or pretending the remaining gap to
+real time is closed. RTF is still ~1.6 at best and first audio ~5 s, so conversational output is **not**
+met on this machine with this asset; press-to-hear stays the working mode, and the replacement case now
+rests on measured numbers.
+
+## ASR fine-tuning: held, as directed
+
+Nothing installed, nothing downloaded, no training started. The record states plainly why the corpus is not
+evidence of ASR quality: **24.4 seconds of audio, 8 clips kept by exact round-trip match**, which measures
+agreement between two models we already have on sentences both could handle. It is training material with
+documented provenance; it is not a quality result. A baseline, a held-out evaluation set and a concrete
+checkpoint/training proposal come before any training decision.
+
+## Verification at this entry
+
+`python -m pytest` → **668 passed, 7 skipped**. `python tools/audit.py` → **11/11 PASS**.
+`python tools/offline_proof.py` → PASS, zero network attempts. `python tools/platform_demo.py` → PASS
+(two hosts, two slots, isolated roots). `git log` → one commit, clean working tree.
