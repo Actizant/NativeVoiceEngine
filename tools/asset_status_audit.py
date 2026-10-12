@@ -155,8 +155,12 @@ def main() -> int:
         "reason": "a provisioning default had written a redistribution claim no review had established",
         "schema_note": (
             "`redistributable` is a boolean gate for loading; `None` means unknown and is refused by design. "
-            "The missing-evidence versus prohibited distinction therefore lives in `rights_status`, `permissions` "
-            "and this record, not in the boolean."
+            "The model manifest schema has no separate rights-status field, so \"unverified\" can only be written "
+            "as the conservative `False` plus the `permissions` sentence and a dated line in `notes`. "
+            "The missing-evidence versus prohibited distinction therefore lives in this record's "
+            "`rights_status` and `why` text, and in `permissions` - not in the boolean. A prohibited "
+            "asset would be recorded here as `rights_status: prohibited` with the term quoted; none "
+            "was found for these assets."
         ),
         "corrections": corrections,
     }

@@ -612,10 +612,12 @@ claim is unchanged: English only, 8 named voices, versus the incumbent's en/zh a
 
 `python tools/asset_status_audit.py` re-reads each manifest's own evidence rather than trusting the field
 an earlier tool wrote. All three registry assets carried `redistributable: true` from my own provisioning
-default — the over-claim logged as A27 — and all three are now `redistributable: false` with
-`rights_status` `unverified` and permissions reading "not established either way; local use approved,
-redistribution claim withdrawn until reviewed". Inspected per asset, with the directory actually read
-recorded alongside:
+default — the over-claim logged as A27 — and all three are now `redistributable: false`, with permissions
+reading "not established either way; local use approved, redistribution claim withdrawn until reviewed"
+and a dated correction line in `notes`. **The manifest schema has no rights-status field**, so the
+`unverified` verdict is expressible on an asset only as that conservative boolean plus prose; the word
+itself lives in the corrections record (logged as A32). Inspected per asset, with the directory actually
+read recorded alongside:
 
 - **faster-whisper-base / small**: the Hugging Face tag says MIT, but **no licence text ships inside the
   installed package** (`licence_text_shipped_in_package: false`); the weights are a third-party conversion
@@ -628,9 +630,9 @@ recorded alongside:
 **Missing evidence and established prohibition are kept apart, as directed.** `None` is refused by the
 loader on purpose — an asset whose rights were never checked must not become loadable by silence — so the
 boolean stays conservative at `false` while the distinction lives in `permissions` and in the
-machine-readable `artifacts/audit/asset-status-corrections.json`. A real prohibition would be written as
-`rights_status: "prohibited"` with the offending term quoted; none was found for these three and none was
-assumed. Each manifest was copied to `artifacts/audit/manifest-snapshots/*.pre-audit` **before** rewrite:
+machine-readable `artifacts/audit/asset-status-corrections.json`. A real prohibition would be recorded in
+that file as `rights_status: prohibited` with the offending term quoted; none was found for these three
+and none was assumed. Each manifest was copied to `artifacts/audit/manifest-snapshots/*.pre-audit` **before** rewrite:
 they live in the local data root outside version control, so without the snapshot the value the earlier
 tool wrote would simply have vanished. All three still load for local use (`usable=True`, approval
 blockers empty) and no inference behaviour changed. `src/nativevoice/provenance.py` now records candidate

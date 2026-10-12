@@ -118,11 +118,13 @@ exists locally and upstream, and rewrites the claim to what that evidence suppor
 
 **Missing evidence is not the same as an established prohibition, and the record keeps them apart.** The
 boolean exists only to gate loading: `None` means unknown and is deliberately refused, because a model whose
-rights were never checked must not become loadable by silence. So the conservative `False` is used and the
-distinction lives in `provenance.permissions` - "not established either way; local use approved,
-redistribution claim withdrawn until reviewed" - plus the machine-readable
-`artifacts/audit/asset-status-corrections.json`. A genuine prohibition would be written as
-`rights_status: "prohibited"` with the term quoted; none was found for these four, and none was assumed.
+rights were never checked must not become loadable by silence. **The manifest schema has no rights-status
+field**, so `unverified` cannot be stored on an asset as a value distinct from `false`: it is written as the
+conservative `False`, a `provenance.permissions` sentence - "not established either way; local use approved,
+redistribution claim withdrawn until reviewed" - and a dated line in `provenance.notes`, while the word
+itself is carried by the machine-readable `artifacts/audit/asset-status-corrections.json`. A genuine
+prohibition would be recorded there as `rights_status: prohibited` with the offending term quoted; none was
+found for these four, and none was assumed.
 
 **History preserved:** each manifest was copied verbatim to
 `artifacts/audit/manifest-snapshots/*.pre-audit` before being rewritten. The manifests live in the local
