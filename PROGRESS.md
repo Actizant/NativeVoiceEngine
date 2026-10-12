@@ -402,3 +402,62 @@ checkpoint/training proposal come before any training decision.
 `python -m pytest` → **668 passed, 7 skipped**. `python tools/audit.py` → **11/11 PASS**.
 `python tools/offline_proof.py` → PASS, zero network attempts. `python tools/platform_demo.py` → PASS
 (two hosts, two slots, isolated roots). `git log` → one commit, clean working tree.
+
+---
+
+# Progress ledger — entry 6 (2026-10-13, relocation, speech protocol, TTS proposal)
+
+Directives taken: relocate safely (N9); keep the data directory (N6) and the commit history (N7) as they
+are; keep the stray interpreter ignored and untouched (N10); prepare a real-speech procedure and **wait**
+before recording; produce a TTS comparison as a proposal only; ASR fine-tuning stays on hold.
+
+## Relocation (N9) - verified in the new copy, original untouched
+
+`C:\Users\shres\Documents\Qoder\2026-10-12\nativevoice` now holds a `git clone` of the repository. A
+clone rather than a copy, deliberately: it can only contain tracked history, so anything missing is
+something that was never versioned, which is the question a relocation should answer.
+
+Verified from the new location: 6 commits, identical `HEAD` and identical tree hash, 157 = 157 tracked
+files, ignored material absent (`Python/`, generated WAVs, corpus clips, caches), `.gitignore` and
+`.gitattributes` tracked, working tree clean, **669 passed / 7 skipped**, audit **11/11**, assets resolve
+to the same absolute data root with all three models `installed/verified/usable`, the installed identity
+reads `en measured 0.049383 / zh measured_failed 0.462963 / hi,bn unsupported`, and a real offline
+round-trip transcribed correctly with **zero network attempts**. The original workspace was not deleted.
+
+Full record: `docs/relocation.md`, including the remaining steps that are his - choosing the permanent
+path, deleting the original, and repointing the clone's `origin` before the original goes away.
+
+**Finding A26** came out of this and is fixed: the offline static scan built reported paths by splitting
+on the package name, which only worked while the repository directory was not named `nativevoice`. A green
+suite had been green partly because of a directory name.
+
+## Real-speech procedure (not executed)
+
+`docs/real-speech-protocol.md` specifies the seven steps, the acceptance bars agreed **before** recording
+(so no bar is chosen after seeing a number), and what synthetic results may never be presented as.
+Retention and deletion are implemented rather than promised: default `--retention none` writes **no audio
+at all**, `keep` writes detected segments only under the local data root with timestamps in the filenames,
+and `--delete-recordings DIR` lists every path it removes and refuses if the directory is absent.
+**Awaiting his confirmation before any microphone is opened.**
+
+## TTS comparison (N8) - proposal only, nothing downloaded
+
+`docs/tts-options.md`: measured baseline, the execution headroom that needs no asset (two changes
+remaining: per-chunk callback playback, which the runtime does support, and a per-language engine cache to
+remove the measured 3.32 s switch cost), and seven candidates with identity, terms, runtime compatibility,
+expected effect and quality evidence. KittenTTS nano int8 is the recommended first trial: Apache-2.0
+verified, 25.6-61 MB, and already supported by the installed sherpa-onnx, so no package would be
+installed. Supertonic is OpenRail (not OSI-approved) and blocked pending his reading of the terms;
+matcha-icefall and the piper/Coqui repositories carry **no licence tag at all** and therefore fail our own
+provenance gate rather than being excluded by taste.
+
+Stated plainly in the document: **no candidate has a measured number**, and none of the permissively
+licensed ones provides Bengali or Hindi synthesis - coverage and latency are separate decisions.
+
+## Standing gaps, unchanged and still marked
+
+Bengali/Hindi synthesis and acoustic language identification; human-speech recognition accuracy;
+the GPL-3.0 espeak-ng redistribution pass; voice cloning (no suitable licensed asset); profile
+validation (one of five threshold fields measured); VAD and barge-in on real speech. Nothing was
+integrated into ULTRON or FieldMind, no asset was downloaded, nothing was trained, and no package was
+installed.

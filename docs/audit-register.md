@@ -120,3 +120,13 @@ more defects, all in the same category — a boundary that existed in prose but 
 
 `python -m pytest` → **667 passed, 7 skipped**. `python tools/audit.py` → 11 checks, all PASS, with the
 `voices` package now inside the audited speech path. `python tools/platform_demo.py` → PASS.
+
+### Addendum 2 — finding from the repository relocation
+
+| # | Severity | Component | Defect | Evidence | Status |
+|---|---|---|---|---|---|
+| A26 | S2 | `diagnostics/offline.py` | `static_scan` derived reported paths by splitting the full path on the literal package name at its **first** occurrence. In a checkout whose directory is itself named `nativevoice`, the first match is the repository, so every finding was returned as `src/nativevoice/diagnostics/offline.py` and stopped matching the allowlist - the offline-compliance scan would have reported the guard module as an unexplained network importer | the relocated clone failed `test_the_guard_module_is_the_only_socket_importer_in_the_package`; the original passed | **FIXED** - paths are now relative to the directory actually scanned, with a regression test that recreates the nested-directory case in a temporary tree |
+
+The defect was invisible in the original workspace purely because of where the repository happened to
+live. It is the strongest argument in this audit for relocating early: a test suite can be green for
+reasons that are properties of a directory name rather than of the code.

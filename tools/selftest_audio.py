@@ -61,7 +61,7 @@ def tone(rate: int = 24000, seconds: float = 1.0, frequency: float = 440.0, ampl
     return AudioBuffer(samples, AudioFormat(rate, 1))
 
 
-def record(seconds: float, rate: int, stall_s: float) -> dict:
+def record(seconds: float, rate: int, stall_s: float, save_to: Path | None = None) -> dict:
     """Capture from the default input device and describe what came back."""
     source = SounddeviceInput(target_rate=rate, frame_size=int(rate * 0.02), capture_stall_s=stall_s)
     source.open()
@@ -99,7 +99,18 @@ def record(seconds: float, rate: int, stall_s: float) -> dict:
         source.close()
     wall_s = (monotonic_ns() - wall_start) / 1e9
     captured = ring.drain_all()
+    written: list[str] = []
+    if save_to is not None:
+        save_to.mkdir(parents=True, exist_ok=True)
+        for index, segment in enumerate(segments):
+            if segment.audio is None or segment.audio.frame_count == 0:
+                continue
+            destination = save_to / f"speech_{int(time.time())}_{index:02d}.wav"
+            write_wav(str(destination), segment.audio)
+            written.append(str(destination))
     return {
+        "recordings_written": written,
+        "retained": bool(written),
         "requested_seconds": seconds,
         "wall_seconds": round(wall_s, 3),
         "frames_captured": captured.frame_count,
@@ -167,7 +178,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rate", type=int, default=16000)
     parser.add_argument("--play-seconds", type=float, default=1.0)
     parser.add_argument("--out", default="artifacts/device/selftest.json")
+    parser.add_argument("--retention", choices=("none", "keep"), default="none",
+                        help="none records and measures without writing any audio to disk")
+    parser.add_argument("--recordings-dir", default="",
+                        help="where kept recordings go; defaults to the host recordings directory")
+    parser.add_argument("--delete-recordings", default="", metavar="DIR",
+                        help="remove every WAV under DIR and exit (explicit, auditable purge)")
     args = parser.parse_args(argv)
+
+    if args.delete_recordings:
+        target = Path(args.delete_recordings)
+        if not target.is_dir():
+            print(f"nothing to delete: {target} is not a directory")
+            return 1
+        removed = [str(path) for path in sorted(target.rglob("*.wav"))]
+        for path in target.rglob("*.wav"):
+            path.unlink()
+        print(json.dumps({"deleted": removed, "directory": str(target)}, indent=2))
+        return 0
 
     if (args.record or args.play) and not args.confirm_devices:
         parser.error("--record and --play touch real hardware; re-run with --confirm-devices")
@@ -182,7 +210,11 @@ def main(argv: list[str] | None = None) -> int:
         entry: dict = {"turn": turn + 1}
         try:
             if args.record:
-                entry["capture"] = record(args.record, args.rate, stall_s=max(1.5, args.record))
+                destination = None
+                if args.retention == "keep":
+                    destination = Path(args.recordings_dir) if args.recordings_dir else Path(__import__("ultron_voice.config", fromlist=["data_root"]).data_root()) / "hosts" / "selftest" / "recordings"
+                entry["capture"] = record(args.record, args.rate, stall_s=max(1.5, args.record), save_to=destination)
+                entry["retention"] = args.retention
             if args.play:
                 entry["playback"] = play(args.play_seconds, 24000, args.cancel_after or None)
         except DeviceError as error:
