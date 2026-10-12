@@ -12,7 +12,7 @@
       "metric": {
         "name": "roundtrip_wer",
         "value": 0.0,
-        "measured_on": "2026-10-12"
+        "measured_on": "2026-10-13"
       },
       "evidence": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\platform-run.json",
       "limitations": [
@@ -54,7 +54,7 @@
   "install": {
     "state": "installed",
     "version": "1",
-    "installed_on": "2026-10-12T23:49:08",
+    "installed_on": "2026-10-13T00:14:32",
     "source": "C:\\Users\\shres\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
     "digests": {
       "date-zh.fst": "eb8aa079ae3cb81d8f4404992f39d61a0cb990947512b5b8d1e54d1f6980e718",
