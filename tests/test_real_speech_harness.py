@@ -188,6 +188,38 @@ class TestOpeningLog:
         assert report["openings"][0]["truncated"] is True
 
 
+class TestCountdownCue:
+    """The countdown is the start signal for a person in the room, so it has to survive the console."""
+
+    def test_every_tick_is_its_own_line_and_the_go_marker_is_loud(self, capsys, monkeypatch):
+        import tools.real_speech_check as harness
+
+        monkeypatch.setattr(harness.time, "sleep", lambda _seconds: None)
+        harness.countdown(3)
+        lines = [line.strip() for line in capsys.readouterr().out.splitlines()]
+        assert any(line.startswith("window opens in 3 seconds") for line in lines)
+        assert [line for line in lines if line.startswith("...")] == ["... 3", "... 2", "... 1"]
+        assert any(line.startswith("GO - START READING NOW") for line in lines)
+
+    def test_the_cue_never_depends_on_overwriting_one_line(self, capsys, monkeypatch):
+        import tools.real_speech_check as harness
+
+        monkeypatch.setattr(harness.time, "sleep", lambda _seconds: None)
+        harness.countdown(2)
+        raw = capsys.readouterr().out
+        assert "\r" not in raw, "a carriage-return tick arrives as one mashed line, after the window opened"
+        assert raw.count("\n") >= 6
+
+    def test_go_marker_is_the_last_thing_printed_before_capture(self, capsys, monkeypatch):
+        import tools.real_speech_check as harness
+
+        monkeypatch.setattr(harness.time, "sleep", lambda _seconds: None)
+        harness.countdown(1)
+        lines = [line.strip() for line in capsys.readouterr().out.splitlines() if line.strip()]
+        assert lines[-1] == "=" * 58
+        assert lines[-2].startswith("GO - START READING NOW")
+
+
 class TestAbPlaybackOrder:
     """A33 and A34: the switch that was never implemented, and an order that came from sorting."""
 

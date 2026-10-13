@@ -89,10 +89,21 @@ def listing(root: str) -> set[str]:
 
 
 def countdown(seconds: int) -> None:
+    """Count down with one line per second and an unmistakable GO marker.
+
+    Carriage-return ticks disappear in a scrollback-fed console: the whole sequence arrives as one mashed
+    line *after* the window has already opened, which is how a speaker in the room missed the start. There
+    is deliberately no audible cue either - the input stream is already open here, so a beep would land in
+    the captured audio and manufacture a turn opening inside the quiet baseline.
+    """
+    print(f"  window opens in {seconds} seconds - get ready, arm's length, natural pace", flush=True)
     for remaining in range(seconds, 0, -1):
-        print(f"\r  starting in {remaining:>2}s - be ready to speak", end="", flush=True)
+        print(f"  ... {remaining}", flush=True)
         time.sleep(1)
-    print("\r  listening now. Read each sentence once, pausing between them.   ")
+    print("", flush=True)
+    print("  " + "=" * 58, flush=True)
+    print("  GO - START READING NOW, one sentence at a time", flush=True)
+    print("  " + "=" * 58, flush=True)
 
 
 def word_error(reference: str, hypothesis: str) -> float:
