@@ -870,3 +870,70 @@ trained or integrated.
 
 The closure plan for each open validation criterion is delivered as a report-only summary alongside this
 entry; nothing in it has been started.
+
+
+---
+
+# Progress ledger — entry 13 (2026-10-13, A43 and A44 closed; first A41 measurement)
+
+A preparation pass before the next microphone session, with no microphone used. Three things were asked
+for and all three were done, plus one bookkeeping correction found on the way.
+
+## A43 closed
+
+Every segment the run mentions now carries the language the engine asserted and its confidence: extra
+segments get `detected_language` and `confidence`, and each missing target gets its closest candidate's
+text, language and confidence. Values are copied from what came back - an empty code stays empty and a
+missing confidence stays `None`, never filled in. Without this, the 17:19 run's Indonesian sentence was
+unattributable after the fact; with it, the next run can say what the engine believed.
+
+## A44 closed the way it was ruled
+
+`false_turn_openings` is the same calculation as before, unchanged, still scoped to the quiet window
+because that bar was agreed before any audio existed. A second, separately named measure now reports
+`empty_transcript_openings_outside_quiet_window` with its onsets, informational and with no pass bar set;
+when no transcripts exist it is `null`, not zero. A test asserts the quiet-window numbers are identical
+with and without the new data, so the old criterion provably did not move.
+
+## A41 phase 1, and the answer is not the one expected
+
+The 8 kept synthetic clips were transcribed twice: auto-detect and pinned English. **8 of 8 returned `en`**
+(confidence 0.9756-0.9919), mean WER **0.0000 both ways**, identical transcripts on all 8. So the
+instability seen on live audio does **not** exist in this call path on synthetic audio - it is specific to
+human voice through the microphone chain. The corollary matters more: the synthetic corpus is structurally
+blind to this whole class of defect, because its audio was made by our TTS engine and verified by the same
+ASR engine, so agreement is built in. The manifest already disclaimed human-speech claims; this is the
+first measurement showing why that disclaimer was necessary. A41 stays open, and advancing it now needs a
+`--language` pin on the harness plus one supervised run, or a retention decision that is the approver's.
+
+The probe was read-only and provable: it ran inside the offline guard with zero connection attempts, and
+afterwards all 8 kept clips were re-hashed and **match the digests recorded in their own manifest**.
+Nothing new was persisted.
+
+## Register correction
+
+**A41 had no register row.** It was raised in prose during Addendum 6 and referenced ever since, which is
+exactly how a defect becomes invisible to the one list that is supposed to hold them all. It now has its
+own row, marked as added late and honestly, with a severity caveat: it is rated S2 until someone measures
+whether routing refuses an unmeasured language code - if it does not, it is S1, because the objective says
+a language error must never produce unrelated speech.
+
+Register: **44 findings, 36 fixed, 8 open** (A7, A8, A19, A20, A21, A31, A39, A41). The original dated rows
+for A43 and A44 stay as ruled; their closure is recorded as dated closure rows beside them.
+
+## Verification of this pass
+
+`python -m pytest tests/test_real_speech_harness.py` → **49 passed in 0.72 s** (9 new, all harness-only, no
+device and no model); full suite → **718 passed, 7 skipped in 15.18 s**; `--run-approved-assets` → **725
+passed in 56.76 s**; `tools/audit.py` → **11 passed, 0 failed, 0 not run**; `tools/offline_proof.py` →
+**PASS** with `"attempts": []`; `tools/platform_demo.py` → exit **0**, verdict **PASS**, 84,768 and 121,438
+frames played.
+
+## History note, and boundaries
+
+The subject of commit `feecf75` duplicated `bc21b23` - my error when recording the ruling. Shared history
+is not rewritten for a cosmetic fix, so the correction is recorded forward in the documentation-only commit
+that follows the code change.
+
+No microphone capture was started. No model was downloaded, trained, promoted or integrated; no default
+changed; no voice retention; `src/` untouched; A39 and every unrelated finding left exactly as found.
