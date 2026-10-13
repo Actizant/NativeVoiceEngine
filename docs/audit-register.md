@@ -293,3 +293,38 @@ recognition demonstrated but not universally validated, deliberate 1.5-second en
 and A41, A43, A44 and A39 untouched. A43's new console rendering was not exercised by this run either -
 with no segments there was nothing to attribute - so it remains unit-tested only until a run produces an
 unmatched segment.
+
+
+### Addendum 11 — Test B produced two captures, and neither met the 1.5-second condition
+
+**The anomaly first, because it changes how the evidence should be read.** Two artefacts carry Test B's
+exact parameters: one generated **18:09:08**, which this agent did not launch, and one generated
+**18:13:12**, which it did. The 18:09:08 capture falls between the previous turn's commit and this agent's
+launch, so the likeliest explanation is that the reader ran Test B himself. That is a hypothesis, not a
+finding: the runs are reported separately and neither is attributed beyond its own metadata. Nothing was
+lost - both were preserved automatically, and the 17:19 run still hashes to
+`add7a3969bc545edf09d4e789cb821668dfaae8ac096b8318a27bda7dc4c8170`.
+
+| | Run X, 18:09:08 | Run Y, 18:13:12 |
+|---|---|---|
+| Ended by | reached the 90 s limit | **reached 6 turn openings**, truncated at 65.9 s |
+| Openings | 4 | 6, of which **3 had empty transcripts** |
+| Matched | pangram 0.1111, lights **0.0000 exact** | coffee tail only, 0.5833 (7 deletions) |
+| Unmatched asserted as | `en` 0.4173 ("Oh"), **`ms` 0.9871** | **`bn` 0.7196**, **`bn` 0.8210**, empty at 0.4892 / 0.5200 / 0.2760 |
+| Inter-sentence silence | ~0.28 s, **derived** (0.15 s padding at each boundary means a reported gap of -0.02 s is ~0.28 s true silence) | not interpretable |
+| Quiet window | median 0.000554, peak 0.004, 0 openings - a clean room | median 0.00093, peak 0.02, 1 opening which was speech |
+| Retention / network / files | none / `[]` / 381 to 381 | none / `[]` / 381 to 381 |
+
+**The criterion was not met.** Step 3 asks for deliberate 1.5 s pauses; Run X's pauses were about 0.28 s and
+Run Y never reached the question. `endpointing_on_long_pause` stays **NOT RUN** after four attempts.
+
+**What Test B did establish:** A43 verified end-to-end for the first time - unmatched segments carried their
+asserted language and confidence into both artefact and console - and A44 measured on live audio
+(`empty_transcript_openings_outside_quiet_window: 3`, onsets `[15.28, 17.28, 65.14]`) while the window-scoped
+bar stayed at 0, visibly independent as ruled. A41 widened: five captures have now produced `nn`, `ja`, `id`,
+`ms` and `bn` assertions against English, several above 0.7 confidence.
+
+| # | Severity | Component | Observation | Evidence | Status |
+|---|---|---|---|---|---|
+| A45 | S3 | `tools/real_speech_check.py` | `language_detection_top1` counts matched sentences only, so a run can report perfect detection while asserting foreign languages for the sentences that failed | Run X: top-1 1.000 alongside an unmatched segment asserted `ms` at 0.9871 | **OPEN** - the metric is what was predeclared; changing its meaning is a ruling, not an edit |
+| A46 | S3 | `tools/real_speech_check.py` | The stop rule counts raw turn openings, so empty or noisy openings can truncate a supervised run before the reader finishes | Run Y stopped at 6 openings with 65.9 s of a 90 s window used; 3 of the 6 produced no transcript | **OPEN** - named, not changed |

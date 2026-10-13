@@ -975,3 +975,43 @@ Nothing else moved: the read-aloud artefact still hashes to `add7a3969bc545edf09
 unchanged, the synthetic corpus manifest is untouched, retention was `none` with no recordings written and
 381 files before and after, and the offline guard recorded zero attempts. A separate `--out` path was used
 precisely so that no existing evidence would be overwritten.
+
+
+---
+
+# Progress ledger — entry 15 (2026-10-13, Test B: two captures, criterion still unmet)
+
+Two artefacts carry Test B's parameters: one generated **18:09:08** that this agent did not launch, and one
+generated **18:13:12** that it did. The likeliest explanation is that the reader ran it himself first - stated
+as a hypothesis, and both runs are reported separately rather than merged. Nothing was overwritten: each was
+preserved automatically, and the 17:19 evidence still hashes to
+`add7a3969bc545edf09d4e789cb821668dfaae8ac096b8318a27bda7dc4c8170`.
+
+**The predeclared condition was not met by either run.** Run X's two matched sentences are separated by about
+0.28 s of silence - derived, not read off the artefact, because the segmenter's 0.15 s padding at each
+boundary turns a reported gap of -0.02 s into roughly 0.28 s of real silence - and Run Y never got that far.
+So endpointing on deliberate 1.5-second pauses stays **NOT RUN** after four supervised attempts, and a run
+that did not contain the pauses is not evidence about them.
+
+Run X is the better measurement on its own terms: lights **WER 0.0000 exact**, pangram 0.1111, mean 0.0556,
+a clean quiet window (median 0.000554, peak 0.004, zero openings), no audio persisted, zero network
+attempts. Its cost was a Malay hallucination asserted at 0.9871 confidence.
+
+Run Y was truncated by the harness's own stop rule at six openings with 65.9 of 90 seconds used, three of
+them producing no transcript and two producing Bengali hallucinations. It did, however, close the loop the
+preparation pass was for: **A43 verified end-to-end** (unmatched segments carried `bn` 0.7196, `bn` 0.8210,
+`ms` 0.9871 and empties at 0.4892, 0.5200, 0.2760 into both artefact and console) and **A44 measured on live
+audio** (3 empty openings outside the quiet window, onsets `[15.28, 17.28, 65.14]`) while the window-scoped
+false-opening bar stayed at 0 - the two measures visibly independent, as ruled.
+
+Two new observations are logged and deliberately unfixed: **A45**, `language_detection_top1` counts only
+matched sentences, so Run X reported perfect detection while asserting Malay for a failed one; **A46**, the
+stop rule counts raw openings, so noise and breaths can end a supervised run early. Both would change what
+a criterion means, which makes them rulings for the approver, not edits for me.
+
+A41 gets harder rather than clearer: five captures, and the vendor has now asserted `nn`, `ja`, `id`, `ms`
+and `bn` for English speech. Open and untouched, as instructed.
+
+No capture was launched after Test B. Retention `none` throughout, no recordings written, 381 files before
+and after in both runs, zero network attempts, and `src/`, the synthetic corpus, the models, the defaults and
+A39 untouched.
