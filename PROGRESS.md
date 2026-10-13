@@ -931,9 +931,19 @@ frames played.
 
 ## History note, and boundaries
 
-The subject of commit `feecf75` duplicated `bc21b23` - my error when recording the ruling. Shared history
-is not rewritten for a cosmetic fix, so the correction is recorded forward in the documentation-only commit
-that follows the code change.
+Two commit subjects were duplicated by my own copy-and-paste while committing, and the second happened
+*while correcting the first*. Shared history is not rewritten for this, so the map is recorded here for
+anyone reading `git log`:
+
+| Commit | Subject it shares | What it actually contains |
+|---|---|---|
+| `bc21b23` | shared with `feecf75` | the 17:19 run artefact, ledger entry 11, register A43/A44 rows |
+| `feecf75` | shared with `bc21b23` | ledger entry 12 and register Addendum 8 - the approver's seven ruled statuses |
+| `150b20a` | shared with `9e9ef3d` | the A35-A38 harness corrections and the first 28 regression tests |
+| `9e9ef3d` | shared with `150b20a` | ledger entry 13, register Addendum 9, and the late A41 register row - documentation only |
+
+Recording the collision is the fix that was authorised. Amending would rewrite commits the second workspace
+has already fetched, which was ruled out, so the subjects stay and the disambiguation lives here.
 
 No microphone capture was started. No model was downloaded, trained, promoted or integrated; no default
 changed; no voice retention; `src/` untouched; A39 and every unrelated finding left exactly as found.
