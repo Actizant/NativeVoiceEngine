@@ -54,7 +54,7 @@
   "install": {
     "state": "installed",
     "version": "1",
-    "installed_on": "2026-10-13T15:12:41",
+    "installed_on": "2026-10-13T17:07:15",
     "source": "C:\\Users\\shres\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
     "digests": {
       "date-zh.fst": "eb8aa079ae3cb81d8f4404992f39d61a0cb990947512b5b8d1e54d1f6980e718",

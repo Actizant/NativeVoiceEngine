@@ -78,6 +78,43 @@ ALIGN_WER_CAP = 0.60
 QUIET_WINDOW_SECONDS = 2.0
 
 
+def configure_console() -> None:
+    """Give the console a chance to carry whatever the recogniser heard.
+
+    A Windows console defaults to cp1252, and a transcription that drifts into another script would
+    otherwise raise on the way to the screen.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+        except (AttributeError, ValueError):
+            continue  # a captured or non-text stream - `emit` is the fallback for those
+
+
+def emit(line: str = "") -> None:
+    """Print, and never let an undisplayable character abort a run.
+
+    The artefact is the record; the console is a courtesy. If even the UTF-8 attempt fails - a stream that
+    cannot be reconfigured, or one closed mid-report - the line is reproduced as ASCII escapes, and a
+    hostile console still cannot raise past here.
+    """
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        try:
+            print(line.encode("ascii", "backslashreplace").decode("ascii"), flush=True)
+        except (UnicodeEncodeError, ValueError, OSError):
+            pass
+    except (ValueError, OSError):
+        pass
+
+
+def emit_block(text: str) -> None:
+    """Print a multi-line passage line by line, so one bad glyph cannot swallow the rest of it."""
+    for line in text.splitlines() or [""]:
+        emit(line)
+
+
 def listing(root: str) -> set[str]:
     if not os.path.isdir(root):
         return set()
@@ -96,14 +133,14 @@ def countdown(seconds: int) -> None:
     is deliberately no audible cue either - the input stream is already open here, so a beep would land in
     the captured audio and manufacture a turn opening inside the quiet baseline.
     """
-    print(f"  window opens in {seconds} seconds - get ready, arm's length, natural pace", flush=True)
+    emit(f"  window opens in {seconds} seconds - get ready, arm's length, natural pace")
     for remaining in range(seconds, 0, -1):
-        print(f"  ... {remaining}", flush=True)
+        emit(f"  ... {remaining}")
         time.sleep(1)
-    print("", flush=True)
-    print("  " + "=" * 58, flush=True)
-    print("  GO - START READING NOW, one sentence at a time", flush=True)
-    print("  " + "=" * 58, flush=True)
+    emit("")
+    emit("  " + "=" * 58)
+    emit("  GO - START READING NOW, one sentence at a time")
+    emit("  " + "=" * 58)
 
 
 def word_error(reference: str, hypothesis: str) -> float:
@@ -269,6 +306,57 @@ def collect_segments(
     }
 
 
+def write_artefact(report: dict, path: Path) -> str:
+    """Save the record, and return where the run it replaced was kept.
+
+    Always called before anything is printed: the console is presentation, this file is the evidence, and
+    a terminal that cannot display a Japanese hallucination must not be able to cost us either.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    kept = preserve_previous(path)
+    if kept:
+        report["previous_artefact_preserved"] = kept
+    path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    return kept
+
+
+def open_and_capture(
+    *,
+    source,
+    pre,
+    segmenter,
+    ring,
+    quiet_window_s: float,
+    limit_s: float,
+    stop_at_segments: int,
+    on_ready,
+) -> dict:
+    """Give the start cue, then open the microphone, so nothing from before GO reaches the analysis.
+
+    The input callback queues audio from the instant the stream opens. Opening it *before* the countdown
+    therefore poured up to a minute of pre-GO silence into the analysis at CPU speed: it ate the capture
+    limit, moved the quiet baseline onto the room as it was during the countdown rather than as it was
+    when the speaker began, and left the speaker a much shorter window than promised.
+    """
+    on_ready()
+    started = time.perf_counter()
+    source.open()
+    try:
+        stats = collect_segments(
+            chunks=source.frames(),
+            pre=pre,
+            segmenter=segmenter,
+            ring=ring,
+            quiet_window_s=quiet_window_s,
+            limit_s=limit_s,
+            stop_at_segments=stop_at_segments,
+        )
+    finally:
+        source.close()
+    stats["wall_seconds"] = time.perf_counter() - started
+    return stats
+
+
 def preserve_previous(path: Path) -> str:
     """Copy the artefact a run is about to replace, named by the run it holds.
 
@@ -298,19 +386,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--device", type=int, default=None)
     parser.add_argument("--out", default=str(ROOT / "artifacts" / "device" / "real-speech-read-aloud.json"))
     args = parser.parse_args(argv)
+    configure_console()
 
     root = str(data_root())
     before = listing(root)
 
-    print("Read these three sentences aloud, one at a time, at a natural pace:")
+    emit("Read these three sentences aloud, one at a time, at a natural pace:")
     for index, sentence in enumerate(SENTENCES, 1):
-        print(f"  {index}. {sentence}")
+        emit(f"  {index}. {sentence}")
 
     registry = ModelRegistry(models_dir())
     manifest = next(item for item in registry.all() if "whisper-base" in item.model_id)
     status = registry.status(manifest.model_id)
     if not status.usable:
-        print(f"refusing to score with an unverifiable model: {status.explain()}")
+        emit(f"refusing to score with an unverifiable model: {status.explain()}")
         return 1
 
     from nativevoice.stt.adapters.faster_whisper_engine import FasterWhisperEngine
@@ -331,28 +420,23 @@ def main(argv: list[str] | None = None) -> int:
 
         fmt = AudioFormat(args.rate, 1)
         source = SounddeviceInput(device=args.device, target_rate=args.rate, frame_size=args.rate // 50)
-        source.open()
         segmenter = UtteranceSegmenter(
             EnergySpeechDetector(format=fmt),
             SegmenterConfig(minimum_silence_s=0.6, minimum_speech_s=0.15, maximum_speech_s=12.0, padding_s=0.15),
         )
         pre = Preprocessor(target_format=fmt)
         ring = RingBuffer(fmt, max_frames=args.rate * 120)
-        started = time.perf_counter()
-        try:
-            countdown(args.countdown)
-            stats = collect_segments(
-                chunks=source.frames(),
-                pre=pre,
-                segmenter=segmenter,
-                ring=ring,
-                quiet_window_s=args.quiet_window,
-                limit_s=args.limit,
-                stop_at_segments=2 * len(SENTENCES),
-            )
-        finally:
-            source.close()
-        capture_wall = time.perf_counter() - started
+        stats = open_and_capture(
+            source=source,
+            pre=pre,
+            segmenter=segmenter,
+            ring=ring,
+            quiet_window_s=args.quiet_window,
+            limit_s=args.limit,
+            stop_at_segments=2 * len(SENTENCES),
+            on_ready=lambda: countdown(args.countdown),
+        )
+        capture_wall = stats["wall_seconds"]
         captured = ring.drain_all()
         segments = stats["segments"]
         levels = stats["levels"]
@@ -430,6 +514,8 @@ def main(argv: list[str] | None = None) -> int:
         {
             "device_index": args.device,
             "capture": {
+                "countdown_seconds": args.countdown,
+                "stream_opened_at": "GO",
                 "wall_seconds": round(capture_wall, 3),
                 "audio_seconds": round(captured.duration_s, 3),
                 "frames": captured.frame_count,
@@ -501,13 +587,9 @@ def main(argv: list[str] | None = None) -> int:
     }
     report["acceptance"] = verdicts
     destination = Path(args.out)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    kept = preserve_previous(destination)
-    if kept:
-        report["previous_artefact_preserved"] = kept
-    destination.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    kept = write_artefact(report, destination)
 
-    print(
+    emit_block(
         json.dumps(
             {
                 key: report[key]
@@ -518,15 +600,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     for item in results:
         if item.get("status") == "ok":
-            print(
+            emit_block(
                 f"  target: {item['target']}\n  heard : {item['heard']}"
                 f"  (WER {item['wer']}, CER {item['cer']}, lang {item['detected_language']})"
             )
         else:
-            print(f"  target: {item['target']}\n  heard : none ({item['why']})")
+            emit_block(f"  target: {item['target']}\n  heard : none ({item['why']})")
     for item in alignment["extra_segments"]:
-        print(f"  extra : {item['text']}  ({item['reason']}, closest WER {item['closest_wer']})")
-    print(f"artefact -> {args.out}" + (f"  (previous kept at {kept})" if kept else ""))
+        emit(f"  extra : {item['text']}  ({item['reason']}, closest WER {item['closest_wer']})")
+    emit(f"artefact -> {args.out}" + (f"  (previous kept at {kept})" if kept else ""))
     return 0
 
 

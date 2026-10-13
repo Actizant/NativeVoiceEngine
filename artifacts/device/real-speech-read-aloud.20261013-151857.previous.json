@@ -1,0 +1,210 @@
+{
+  "generated": "2026-10-13T15:18:57",
+  "kind": "human read-aloud speech",
+  "criteria_predeclared": {
+    "false_turn_openings_max": 0,
+    "detected_segments_expected": "3 to 6",
+    "read_aloud_wer_reported": true,
+    "language_detection_top1_reported": true
+  },
+  "retention": "none",
+  "recordings_written": [],
+  "targets": [
+    "The quick brown fox jumps over the lazy dog.",
+    "Please turn off the lights before you leave the room.",
+    "I would like a cup of coffee and a slice of bread."
+  ],
+  "device_index": null,
+  "capture": {
+    "wall_seconds": 73.059,
+    "audio_seconds": 72.96,
+    "frames": 1167360,
+    "median_input_level": 0.00036073403878501365,
+    "peak_input_level": 0.0865,
+    "quiet_window_seconds": 2.0,
+    "stopped_because": "reached 6 turn openings",
+    "quiet_window_median_level": 0.000506,
+    "quiet_window_peak_level": 0.0029,
+    "segments_detected": 6,
+    "openings": [
+      {
+        "segment_index": 0,
+        "onset_seconds": 36.18,
+        "duration_seconds": 3.48,
+        "within_quiet_window": false,
+        "matched_a_sentence": true,
+        "truncated": false
+      },
+      {
+        "segment_index": 1,
+        "onset_seconds": 40.52,
+        "duration_seconds": 3.72,
+        "within_quiet_window": false,
+        "matched_a_sentence": false,
+        "truncated": false
+      },
+      {
+        "segment_index": 2,
+        "onset_seconds": 44.6,
+        "duration_seconds": 3.16,
+        "within_quiet_window": false,
+        "matched_a_sentence": false,
+        "truncated": false
+      },
+      {
+        "segment_index": 3,
+        "onset_seconds": 47.98,
+        "duration_seconds": 1.94,
+        "within_quiet_window": false,
+        "matched_a_sentence": false,
+        "truncated": false
+      },
+      {
+        "segment_index": 4,
+        "onset_seconds": 67.76,
+        "duration_seconds": 1.18,
+        "within_quiet_window": false,
+        "matched_a_sentence": false,
+        "truncated": false
+      },
+      {
+        "segment_index": 5,
+        "onset_seconds": 70.62,
+        "duration_seconds": 2.34,
+        "within_quiet_window": false,
+        "matched_a_sentence": false,
+        "truncated": false
+      }
+    ],
+    "openings_in_quiet_window": 0,
+    "false_turn_openings": 0,
+    "speech_inside_quiet_window": 0
+  },
+  "alignment": {
+    "method": "content alignment (minimum WER, greedy, capped)",
+    "cap": 0.6,
+    "matches": [
+      {
+        "target_index": 0,
+        "segment_index": 0,
+        "wer": 0.4444
+      }
+    ],
+    "missing_targets": [
+      {
+        "target_index": 1,
+        "closest_segment_index": 0,
+        "closest_wer": 0.9,
+        "reason": "no segment within the alignment cap"
+      },
+      {
+        "target_index": 2,
+        "closest_segment_index": 3,
+        "closest_wer": 0.6667,
+        "reason": "no segment within the alignment cap"
+      }
+    ],
+    "extra_segments": [
+      {
+        "segment_index": 1,
+        "text": "このように、このように、このように、このように",
+        "closest_target_index": 0,
+        "closest_wer": 1.0,
+        "reason": "recognised speech that matches no target sentence"
+      },
+      {
+        "segment_index": 2,
+        "text": "I will write a call for coffee.",
+        "closest_target_index": 2,
+        "closest_wer": 0.75,
+        "reason": "recognised speech that matches no target sentence"
+      },
+      {
+        "segment_index": 3,
+        "text": "add a slice of bread",
+        "closest_target_index": 2,
+        "closest_wer": 0.6667,
+        "reason": "recognised speech that matches no target sentence"
+      },
+      {
+        "segment_index": 4,
+        "text": "Follow",
+        "closest_target_index": 0,
+        "closest_wer": 1.0,
+        "reason": "recognised speech that matches no target sentence"
+      },
+      {
+        "segment_index": 5,
+        "text": "и ты думаешь, подападинись?",
+        "closest_target_index": 0,
+        "closest_wer": 1.0,
+        "reason": "recognised speech that matches no target sentence"
+      }
+    ]
+  },
+  "results": [
+    {
+      "target": "The quick brown fox jumps over the lazy dog.",
+      "heard": "The weak brown box jumps over the lizard.",
+      "wer": 0.4444,
+      "cer": 0.2857,
+      "word_errors": {
+        "substitutions": 3,
+        "insertions": 0,
+        "deletions": 1,
+        "correct": 5
+      },
+      "sentence_error": true,
+      "detected_language": "nn",
+      "confidence": 0.9467,
+      "segment_index": 0,
+      "segment_seconds": 3.48,
+      "segment_rms": 0.0228,
+      "truncated": false,
+      "status": "ok"
+    },
+    {
+      "target": "Please turn off the lights before you leave the room.",
+      "heard": null,
+      "status": "MISSING_SEGMENT",
+      "why": "no segment within the alignment cap",
+      "closest_wer": 0.9
+    },
+    {
+      "target": "I would like a cup of coffee and a slice of bread.",
+      "heard": null,
+      "status": "MISSING_SEGMENT",
+      "why": "no segment within the alignment cap",
+      "closest_wer": 0.6667
+    }
+  ],
+  "summary": {
+    "sentences_expected": 3,
+    "sentences_scored": 1,
+    "read_aloud_wer_mean": 0.4444,
+    "read_aloud_cer_mean": 0.2857,
+    "exact_matches": 0,
+    "language_detection_top1": 0.0,
+    "unmatched_segments": 5
+  },
+  "network_attempts": [],
+  "persistence": {
+    "data_root": "C:\\Users\\shres\\AppData\\Local\\ultron-voice",
+    "files_before": 381,
+    "files_after": 381,
+    "created_during_run": [],
+    "no_audio_written": true
+  },
+  "acceptance": {
+    "no_audio_persisted": "PASS",
+    "offline_no_attempts": "PASS",
+    "false_turn_openings": "PASS",
+    "all_sentences_detected": "FAIL",
+    "read_aloud_wer": "MEASURED (no pass bar set, by design)",
+    "language_detection": "MEASURED",
+    "vad_onset_error_ms": "NOT RUN - a manual read-aloud run has no ground-truth onset timestamp to measure against",
+    "endpointing_on_long_pause": "NOT RUN - step 3 of the protocol covers it",
+    "noise_and_barge_in": "NOT RUN - steps 4 and 6"
+  },
+  "previous_artefact_preserved": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\device\\real-speech-read-aloud.20261013-145157.previous.json"
+}

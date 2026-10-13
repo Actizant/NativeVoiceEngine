@@ -176,3 +176,66 @@ the quiet window measures levels on the same stream that produces segments, so n
 and every turn opening is logged with its onset in audio seconds, marked for whether it fell inside the
 quiet window and whether it claimed a sentence — a *false* opening is one inside the window that claimed
 nothing.
+
+
+## Results — step 2, supervised rerun with the corrected harness (2026-10-13 15:31:33)
+
+```
+python tools/real_speech_check.py --countdown 60 --limit 100
+```
+
+Artefact `artifacts/device/real-speech-read-aloud.json`, 5,900 bytes. The 15:18 run is preserved at
+`real-speech-read-aloud.20261013-151857.previous.json` and the 14:51 run at
+`real-speech-read-aloud.20261013-145157.human-run.original.json` - three generations of a measurement that
+has been corrected twice, all kept.
+
+| Criterion | Result |
+|---|---|
+| Nothing persisted | **PASS** - retention `none`, 381 files before and after, no recordings written |
+| Offline | **PASS** - `network_attempts` empty |
+| False turn-opens | **PASS** - 0 openings in the quiet window, measured 2.0 s, room median 0.000632, peak 0.0019 |
+| Sentences matched | **FAIL** - 2 of 3 |
+| Read-aloud WER / CER | **MEASURED** - mean **0.3084 / 0.2408**, 0 exact matches |
+| Language detection | **MEASURED** - 1.000 on this run (`en` at 0.9782 and 0.9557) |
+| Onset error, endpointing, noise, barge-in | **NOT RUN** |
+
+What came back, word for word:
+
+- "Please turn off the lights **before you have the**" - WER 0.2000, 8 correct, 1 substitution, 1 deletion
+- "**Cut off** of coffee and a slice of bread." - WER 0.4167, 7 correct, 2 substitutions, 3 deletions
+- The pangram arrived as **two fragments 0.2 s apart** - "The quick brown walks." and "Johns water leasing." -
+  scoring 0.6667 and 1.000 against it, so the 0.60 alignment cap refused both and reported them as extras.
+  The content matcher did its job: an honest `FAIL` replaced the fake number the positional code would
+  have produced.
+- One fragment between sentences hallucinated "アイルーブ ライカー" - the classic Whisper response to audio it
+  cannot parse.
+
+### The finding this run produced about itself: A42
+
+`wall_seconds` came back **100.136** for a run of 60 s countdown plus up to 100 s of capture. That only
+adds up if the countdown's audio was replayed instantly - and it was. `SounddeviceInput.open()` starts a
+callback that queues everything it receives, and the previous code opened the stream **before** counting
+down, so about a minute of pre-GO silence entered the analysis at CPU speed. Consequences, all real:
+
+1. the speaker's usable window after the GO cue was roughly **40 s, not the 100 s promised**;
+2. the quiet baseline measured the room **during the countdown**, so "0 false openings" was judged against
+   the wrong interval;
+3. onset timestamps carried the backlog - the first opening at 77.06 s was actually ~17 s after GO.
+
+Fixed by opening the stream only after the cue, and now tested against a device double that refuses to
+yield frames while it is closed. `wall_seconds` measures the capture alone; the artefact records
+`countdown_seconds` and `stream_opened_at`.
+
+A40 was reproduced exactly as predicted: the run crashed on the **final console print** of the Japanese
+fragment, after the artefact was safely written. Also fixed - UTF-8 reconfiguration plus an `emit()` that
+degrades to ASCII escapes and can never abort a report, with `write_artefact()` ordered before any printing.
+
+### Standing position on step 2
+
+VAD opening on a human voice: **proven**. Recognition of human speech: **proven but variable** - one
+sentence word-exact (14:51), two sentences at 0.20 and 0.42 WER (15:31), and the synthetic round-trip
+figure of 0.0494 remains a synthetic result only. Language detection through the vendor's auto-detect:
+**unstable** (0.9467 confidence on `nn` for English in one run, correct `en` twice in the next) - logged as
+A41, open, not investigated. Endpointing on real pauses: **still NOT RUN**, because the one run that would
+have answered it was confounded by A36 and the run after that by A42. A rerun with both fixed is the next
+measurement, and it is the reader's to trigger.

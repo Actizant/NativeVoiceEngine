@@ -720,3 +720,61 @@ training, no integration into ULTRON or FieldMind.
 **Step 2 remains open.** It needs one rerun with the corrected harness while he is present, and until that
 happens endpointing on human pauses and the false-opening criterion are `NOT RUN`. Nothing was captured
 after the corrections; the next capture is his to trigger.
+
+
+---
+
+# Progress ledger — entry 10 (2026-10-13, supervised rerun, then A40 and A42 fixed)
+
+The speaker was present for both runs recorded here. The first produced the first honest human-speech
+numbers; the second was the run that exposed a timing defect in my own harness before it could be trusted
+for anything else. Neither run is interpreted as a verdict on endpointing, and no capture was started
+after the fixes without the reader.
+
+## The 15:31 run, in one paragraph
+
+Retention `none`, nothing persisted (381 files before and after), offline clean. Five turn openings; two
+sentences matched - the lights sentence at **WER 0.2000** and the coffee sentence at **WER 0.4167**, both
+detected as `en` at 0.978 and 0.956; mean WER **0.3084**, CER 0.2408, no exact matches. The pangram was
+split into two fragments 0.2 s apart ("The quick brown walks." / "Johns water leasing."), each beyond the
+0.60 alignment cap, so it was reported as `MISSING` with its closest distance rather than forced into a
+match. One fragment hallucinated Japanese. Full table in `docs/real-speech-protocol.md`.
+
+## A42 — the harness was measuring the wrong minute
+
+`--countdown 60 --limit 100` reported `wall_seconds 100.136`. With an unbounded callback queue that starts
+filling at `open()`, that adds up only if the countdown's audio was replayed instantly into the analysis.
+It was. So the speaker got roughly **40 s of usable window instead of 100 s**, the quiet baseline measured
+the room *during* the countdown rather than after the cue, "0 false openings" was judged against the wrong
+interval, and onset times carried a 60 s offset. Fixed by moving `source.open()` behind the start cue in
+`open_and_capture()`; `wall_seconds` now covers the capture alone and the artefact records
+`countdown_seconds` and `stream_opened_at`.
+
+## A40 — the console lost a report twice, and now cannot
+
+Both runs printed a Japanese hallucination into a cp1252 console and raised `UnicodeEncodeError` on the
+final report, after the artefact was written. `configure_console()` now reconfigures stdout and stderr to
+UTF-8 with `backslashreplace`, `emit()` reprints anything the stream still cannot encode as ASCII escapes
+and swallows a dead stream, `emit_block()` prints line by line so one bad glyph cannot swallow the rest,
+and `write_artefact()` is called before any printing. The exit code of a run no longer depends on the
+terminal.
+
+## Verification of this pass
+
+`python -m pytest tests/test_real_speech_harness.py` → **40 passed in ~1 s**, no device and no model: a
+fake console that refuses non-ASCII proves A40, and a device double that refuses to yield frames while
+closed proves the GO → open → frames → close order for A42. Full suite → **709 passed, 7 skipped in
+15.02 s**; with `--run-approved-assets` → **716 passed in 79.18 s**; `tools/audit.py` → **11 passed, 0
+failed, 0 not run**; `tools/offline_proof.py` → **PASS**, `attempts: []`; `tools/platform_demo.py` → exit
+0, **PASS**, 84,706 and 121,458 frames played.
+
+## Findings and boundaries
+
+A40 and A42 fixed and tested; the register stands at **41 findings, 34 fixed, 7 open**. A39 (sherpa-onnx
+skipping `ə`) and A41 (vendor auto-detection unstable on human speech) remain **open and untouched** by
+instruction - A41 is now characterised as instability rather than consistent error, which is harder to
+design around. No capture has been run since the fixes. Retention stays `none`, the offline guard stays
+enabled, all three artefact generations are on disk, Kokoro is still the platform default, Kitten is still
+isolated under `.trials/kitten/`, no identity or engine changed, nothing was downloaded, nothing was
+trained, nothing was integrated into ULTRON or FieldMind, and no production behaviour was modified: every
+line of code changed in this entry lives under `tools/` or `tests/`.

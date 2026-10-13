@@ -10,7 +10,10 @@ chunks and a duck-typed segmenter, so it is testable on synthetic audio.
 
 from __future__ import annotations
 
+import io
+import json
 import sys
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -32,6 +35,11 @@ from tools.real_speech_check import (  # noqa: E402
     align_targets,
     classify_openings,
     collect_segments,
+    configure_console,
+    emit,
+    emit_block,
+    open_and_capture,
+    write_artefact,
 )
 
 RATE = 16000
@@ -287,3 +295,173 @@ def test_a_previous_artefact_is_copied_before_a_run_replaces_it(tmp_path):
     assert second != kept and Path(kept).exists() and Path(second).exists()
 
     assert preserve_previous(tmp_path / "nothing-here.json") == ""
+
+
+class FakeStream:
+    """A console that cannot encode what the recogniser heard, mirroring a cp1252 Windows terminal."""
+
+    def __init__(self, encoding: str = "ascii"):
+        self.buffer = io.BytesIO()
+        self.stream = io.TextIOWrapper(self.buffer, encoding=encoding, errors="strict")
+
+    def replace(self, monkeypatch):
+        monkeypatch.setattr(sys, "stdout", self.stream)
+        return self
+
+    def written(self) -> str:
+        self.stream.flush()
+        return self.buffer.getvalue().decode("ascii", "replace")
+
+
+class TestConsoleGuard:
+    """A40: a Japanese or Cyrillic hallucination crashed the report *after* the evidence was saved."""
+
+    def test_emit_reprints_as_ascii_when_the_console_cannot_encode_it(self, monkeypatch):
+        console = FakeStream().replace(monkeypatch)
+        emit("  extra : \u30a2\u30a4\u30eb\u30fc\u30d6 \u30e9\u30a4\u30ab\u30fc")
+        text = console.written()
+        assert "extra :" in text
+        assert text.isascii(), "the fallback must reprint in ASCII rather than lose the line"
+        assert chr(92) + "u30a2" in text, "escape the undisplayable characters, never drop them"
+
+    def test_emit_survives_a_stream_that_raises_on_write(self, monkeypatch):
+        class Dead:
+            def write(self, *_args):
+                raise OSError("stream closed")
+
+            def flush(self):
+                raise OSError("stream closed")
+
+        monkeypatch.setattr(sys, "stdout", Dead())
+        emit("anything at all")  # must not raise: the artefact, not the console, is the record
+
+    def test_configure_console_tolerates_a_stream_it_cannot_reconfigure(self, monkeypatch):
+        monkeypatch.setattr(sys, "stdout", object())
+        configure_console()  # a captured or foreign stream simply keeps the emit() fallback
+
+    def test_emit_block_prints_every_line_even_when_one_cannot_be_encoded(self, monkeypatch):
+        console = FakeStream().replace(monkeypatch)
+        emit_block("line one\n\u30a2 line two\nline three")
+        text = console.written()
+        assert "line one" in text and "line three" in text
+        assert text.isascii() and chr(92) + "u30a2" in text
+
+
+class TestArtefactOutlivesTheConsole:
+    """The JSON is the evidence; printing it is a courtesy that must never be able to undo it."""
+
+    def test_the_artefact_is_complete_before_anything_is_printed(self, tmp_path, monkeypatch):
+        path = tmp_path / "run.json"
+        report = {"generated": "2026-10-13T15:31:33", "extra": "\u30a2\u30a4\u30eb\u30fc\u30d6 \u30e9\u30a4\u30ab\u30fc"}
+        assert write_artefact(report, path) == ""
+        assert json.loads(path.read_text(encoding="utf-8")) == report
+
+        console = FakeStream().replace(monkeypatch)
+        emit_block(json.dumps(report, ensure_ascii=False, indent=2))
+        assert json.loads(path.read_text(encoding="utf-8")) == report
+        assert console.written().isascii() and chr(92) + "u30a2" in console.written()
+
+    def test_a_replaced_artefact_is_kept_under_its_own_timestamp(self, tmp_path):
+        path = tmp_path / "run.json"
+        write_artefact({"generated": "2026-10-13T15:18:57"}, path)
+        kept = write_artefact({"generated": "2026-10-13T15:31:33"}, path)
+        assert Path(kept).name == "run.20261013-151857.previous.json"
+        assert json.loads(Path(kept).read_text(encoding="utf-8"))["generated"] == "2026-10-13T15:18:57"
+
+
+class OrderedSource:
+    """A device that produces audio only while it is open, the way PortAudio's callback really behaves."""
+
+    def __init__(self, events: list[str], chunks):
+        self._events = events
+        self._chunks = list(chunks)
+        self._open = False
+
+    def open(self) -> None:
+        self._events.append("open")
+        self._open = True
+
+    def frames(self):
+        self._events.append("frames")
+        if not self._open:
+            raise AssertionError("frames were asked for while the stream was closed")
+        return iter(self._chunks)
+
+    def close(self) -> None:
+        self._events.append("close")
+        self._open = False
+
+
+def pipeline():
+    fmt = AudioFormat(RATE, 1)
+    return (
+        Preprocessor(target_format=fmt),
+        UtteranceSegmenter(
+            EnergySpeechDetector(format=fmt),
+            SegmenterConfig(minimum_silence_s=0.05, minimum_speech_s=0.05, padding_s=0.02),
+        ),
+        RingBuffer(fmt, max_frames=RATE * 60),
+    )
+
+
+class TestStartTiming:
+    """A42: opening the stream before the countdown queued minutes of pre-GO silence into the analysis."""
+
+    def test_the_stream_opens_only_after_the_go_cue(self):
+        events: list[str] = []
+        pre, segmenter, ring = pipeline()
+        source = OrderedSource(events, silence(rate=RATE, seconds=0.6).frames(320))
+        stats = open_and_capture(
+            source=source,
+            pre=pre,
+            segmenter=segmenter,
+            ring=ring,
+            quiet_window_s=0.2,
+            limit_s=5.0,
+            stop_at_segments=99,
+            on_ready=lambda: events.append("GO"),
+        )
+        assert events == ["GO", "open", "frames", "close"]
+        assert stats["audio_seconds"] <= 0.62, "only post-GO audio may enter the analysis"
+
+    def test_the_quiet_baseline_begins_at_go_not_at_device_open(self):
+        events: list[str] = []
+        pre, segmenter, ring = pipeline()
+        source = OrderedSource(events, speech_like(rate=RATE, bursts=((0.9, 1.1),)).frames(320))
+        stats = open_and_capture(
+            source=source,
+            pre=pre,
+            segmenter=segmenter,
+            ring=ring,
+            quiet_window_s=0.4,
+            limit_s=5.0,
+            stop_at_segments=99,
+            on_ready=lambda: events.append("GO"),
+        )
+        assert pytest.approx(stats["quiet_seconds"], abs=0.03) == 0.4
+        report = classify_openings(stats["segments"], RATE, stats["quiet_seconds"], set())
+        assert report["openings"][0]["onset_seconds"] > 0.4
+        assert report["openings"][0]["within_quiet_window"] is False
+
+    def test_wall_seconds_measures_the_capture_and_not_the_countdown(self):
+        events: list[str] = []
+        pre, segmenter, ring = pipeline()
+        source = OrderedSource(events, silence(rate=RATE, seconds=0.4).frames(320))
+
+        def cue():
+            events.append("GO")
+            time.sleep(0.25)
+
+        started = time.perf_counter()
+        stats = open_and_capture(
+            source=source,
+            pre=pre,
+            segmenter=segmenter,
+            ring=ring,
+            quiet_window_s=0.1,
+            limit_s=5.0,
+            stop_at_segments=99,
+            on_ready=cue,
+        )
+        elapsed = time.perf_counter() - started
+        assert stats["wall_seconds"] < elapsed - 0.15, "the countdown must not be billed to the capture"
