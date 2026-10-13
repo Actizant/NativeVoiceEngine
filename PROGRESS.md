@@ -1101,3 +1101,96 @@ One alternative needs no change at all: run the test as it stands and treat the 
 of the difficulty - stay very still between sentences so the budget survives. It makes the measurement
 depend on the reader's discipline rather than the harness's, which is a worse instrument, but it is honest
 and zero-risk.
+
+
+---
+
+# Progress ledger — entry 17 (2026-10-13, multilingual sample evaluation: 13 clips, three ASR passes)
+
+Priority moved from the microphone protocol to the uploaded samples, and A45/A46/A47 were left exactly as
+found - unimplemented. Nothing was captured, downloaded, registered, promoted or integrated.
+
+## Accessibility came first, and it passed
+
+All 13 attachments were found in `C:\Users\shres\Downloads`, opened read-only, hashed before and after, and
+**verified unchanged**. Isolated 16 kHz mono copies went to `../_multilingual_eval/`, outside the repository -
+the same rule already applied to the reference archives. No audio, and no third-party bytes of any kind,
+entered the repo. Total audio 209.7 s; every file decoded cleanly, so nothing below is a decoding artefact.
+
+`large-v3` turned out to be **already cached locally** (3.09 GB, complete, zero `.incomplete` blobs, dated
+2026-10-04 - before this project existed), so the alternative-model leg ran without a download. My stored
+notes said only base and small were resident; that was wrong and has been corrected. `medium` is cached too.
+None of the three unregistered models has a manifest, a provenance review or an approval.
+
+## The result that matters is about my instrument, not the models
+
+Three defects in the tooling I wrote for this evaluation, all found before any number was reported:
+
+1. the cue extractor read the **speaker prefix** instead of the quoted sentence, so **every** cue score was 0.0;
+2. the function named "longest common subsequence" was a greedy first-match scan - it scored a **verbatim**
+   Chinese transcript at **0.04** where a real LCS gives **0.90**;
+3. neither tool guarded the console, so CJK and Bengali output crashed both printers on a cp1252 terminal (the
+   same defect class as A40, reproduced twice by me within one session), in both cases *after* the JSON had
+   been written, so no evidence was lost.
+
+All three are fixed and pinned by `tests/test_multilingual_eval.py` - 18 tests, no device, no model, no
+network. Had I not checked my own numbers, the evaluation would have concluded that both models fail on every
+unspaced script, which is an artefact of my code and not a property of anyone's audio. That is A48. A fourth
+gap (A49: intra-clause repetition is invisible to the current detector) is recorded rather than quietly
+patched.
+
+## The finding that outranks the model comparison
+
+**The baseline asserts the right language and writes the wrong script, and every existing gate passes it.** On
+the Hindi clip it produced Perso-Arabic text while reporting `hi` at 0.8164 (cue recall **0.00** against the
+Devanagari quote in the same filename); `large-v3` produced Devanagari at 0.90. The Bengali clip behaved the
+same way - `bn` asserted, Arabic script written, 13 segments; `large-v3` returned coherent Bengali at 0.405.
+A capability model keyed on **language alone** cannot express the difference between those two outputs, so
+"Hindi supported" can be satisfied by text a Hindi reader cannot read. That is **A51**, and it is a question
+about what a capability claim contains, not a bug to patch mid-evaluation.
+
+## Side-by-side, in one line each
+
+| Pass | Mean cue recall (12 cued) | Mean RTF | Load | Peak RSS | Script mismatches |
+|---|---|---|---|---|---|
+| `base-default` (production) | 0.8480 | 0.231 | 0.61 s | 607.9 MiB | 2 |
+| `base-int8` | 0.8688 | **0.151** | 0.50 s | 306.0 MiB | 2 |
+| `large-v3-int8` | **0.9562** | 2.363 | 10.16 s | 3246.4 MiB | **0** |
+
+`large-v3` is better on every cued sample it beats (zh, ko, ar, ru, hi) and correct in both Indic scripts, at
+roughly **15x latency** and **5x memory**, loaded while the machine had 1.9-2.4 GiB free - so its numbers are
+*this machine under memory pressure*, and it ran partly from the pagefile. Quantisation alone changed 8 of 13
+transcripts and moved the Chinese segment count from 4 to 10 on the **same weights**, which is why segment count
+is not a stable observable and why the passes were run one at a time, never overlapping.
+
+## What the samples turned out to be
+
+The clip names carry only speaker labels; it is the **transcripts** that give the game away - the English one
+reads "After months of intensive development, **Fish Audio 1.5** has just launched with major improvements to
+expressiveness, stability, and cross-language capabilities". So this is **machine speech from a synthesis
+vendor's preview set**, not a human corpus and not a licensed one: no licence terms, no consent basis, no
+provenance (A50, pre-distribution). Two consequences:
+
+- nothing here can be read as evidence about human speech, and this project's own microphone runs already score
+  far worse than these clips;
+- the unidentified extra file is **Bengali**, and it is the same ULTRON sentence as the Hindi clip. It matches
+  `voice_preview_ultron (2).mp3` exactly in duration and frame count, with a 0.1 LSB mean delta - a re-export,
+  not a distinct recording - and `large-v3` rendered it as "আমি প্রায় আকাশ থেকে উলকাপতের কথা ভাবি…",
+  which is the Devanagari filename sentence in Bengali. Labelled as an inference: script, asserted code,
+  matching content, same-stem sibling. Bengali is therefore present as **one** clip, not absent.
+
+## Claims withheld deliberately
+
+No WER and no CER anywhere, because no sample has a verified reference transcript - a filename quote is
+marketing text cut mid-sentence. Hindi and Bengali are **not** declared supported. The **capability registry is
+unchanged**, so routing still refuses to act on them; only `docs/capability-matrix.md` gained a dated pointer
+saying exactly that. The remaining ~48 target languages have no sample at all here, and the evaluation says so.
+
+## Verification
+
+`python -m pytest tests/test_multilingual_eval.py` → **18 passed in 0.08 s**; `python -m pytest` → **736
+passed, 7 skipped in 14.16 s**; `--run-approved-assets` → **743 passed in 50.94 s**; `tools/audit.py` → **11
+passed, 0 failed, 0 not run**; `tools/offline_proof.py` → **PASS**, `"attempts": []`, `"static_findings": []`
+(the new tools introduce no network path); `tools/platform_demo.py` → exit **0**, verdict **PASS**, zero
+network attempts. `src/` is untouched: everything added is a new evaluation tool, a new test file, and
+documentation.

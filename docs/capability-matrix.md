@@ -35,3 +35,15 @@ stops being actionable. Routing treats both as unusable; reporting keeps them ap
    unbenchmarked, so all three profiles still report `provisional: True`.
 5. **Recognition for Hindi and Bengali is unmeasured**, so no routing decision may claim it and no report
    here should be read as saying those languages work.
+
+
+---
+
+## Dated pointer — multilingual sample evaluation, 2026-10-13
+
+`docs/multilingual-eval-2026-10-13.md` now holds 13 user-supplied clips run through three ASR passes. It
+**changes no status in this table**, deliberately: no sample has a verified reference transcript, so nothing
+there meets the bar for `MEASURED`, and routing must keep refusing to act on Hindi or Bengali recognition.
+What it does establish is a limitation of the table itself - capability here is keyed on language alone, so a
+model that asserts `hi` and writes Perso-Arabic script satisfies a language-only claim (finding A51). Whether
+writing system becomes part of a capability status is an open ruling, not an edit.

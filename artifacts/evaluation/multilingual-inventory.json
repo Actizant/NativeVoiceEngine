@@ -1,0 +1,505 @@
+{
+  "generated": "2026-10-13T19:16:07",
+  "downloads": "C:\\Users\\shres\\Downloads",
+  "workspace": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval",
+  "samples": [
+    {
+      "prefix": "Energetic-Male",
+      "expected_language": "en",
+      "voice_category": "English male voice",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Energetic-Male-2026-10-13-18-25-Hey-there!-After-months-of-intensive-development.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "bf96b169d6a8f73487b4bfdf24d3aafd36538ad5a2e675b850b0cedfd25196ff"
+      ],
+      "bytes": [
+        161400
+      ],
+      "filename_words": [
+        "Energetic",
+        "Male"
+      ]
+    },
+    {
+      "prefix": "Paula",
+      "expected_language": "en",
+      "voice_category": "English female voice",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Paula-2026-10-13-18-26-Hi-everyone,-I'm-excited-to-share-some-insights.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "aa010e4d8b8aabaec3065a9b963697a4084ccaaa31ad05387bcb554cec0d0f22"
+      ],
+      "bytes": [
+        242484
+      ],
+      "filename_words": [
+        "Paula"
+      ]
+    },
+    {
+      "prefix": "黄丽萍长自述1",
+      "expected_language": "zh",
+      "voice_category": "Chinese",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\黄丽萍长自述1-2026-10-13-18-31-你们知道吗？每次照镜子的时候，我都会数一数又长出多少根白发。我现在才明白，这些白发就像是我们家族.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "d813f49aecda61dc06dddff11e462d84f111ad59c1dbce34adc005d2de5cd24a"
+      ],
+      "bytes": [
+        260456
+      ],
+      "filename_words": [
+        "黄丽萍长自述1"
+      ]
+    },
+    {
+      "prefix": "5.28达人",
+      "expected_language": "de",
+      "voice_category": "German",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\5.28达人-2026-10-13-18-34-Also,-heute-war-wieder-so-eine-lustige-Situation.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "258562c943027b0a8d0d917f8b95504420cb5b0427106d4694b26f835dee3d64"
+      ],
+      "bytes": [
+        207793
+      ],
+      "filename_words": [
+        "5.28达人"
+      ]
+    },
+    {
+      "prefix": "Voz-Femenina-Español",
+      "expected_language": "es",
+      "voice_category": "Spanish",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Voz-Femenina-Español-2026-10-13-18-35-Después-de-treinta-años-trabajando-en-la-misma-e.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "078e93653d9ee938fa3168c3be217afae338dda026994aaa08f7881301025156"
+      ],
+      "bytes": [
+        212809
+      ],
+      "filename_words": [
+        "Voz",
+        "Femenina",
+        "Español"
+      ]
+    },
+    {
+      "prefix": "元気な女性",
+      "expected_language": "ja",
+      "voice_category": "Japanese",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\元気な女性-2026-10-13-18-37-みなさん、こんにちは！最近、新しいドラマの撮影が始まったんですけど、とても楽しく頑張っています。.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "f3d68f29fdeea89a58a700f780dadd38e286b9946af443f289fc8e1d806a14d1"
+      ],
+      "bytes": [
+        293057
+      ],
+      "filename_words": [
+        "元気な女性"
+      ]
+    },
+    {
+      "prefix": "Foot",
+      "expected_language": "fr",
+      "voice_category": "French",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Foot-2026-10-13-18-42-Lors-du-match-décisif-entre-le-PSG-et-Manchester.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "d3782a95da13862f9595797c5a5d6c2ca4e9820743f9dfa518e4f483393b8b1b"
+      ],
+      "bytes": [
+        259202
+      ],
+      "filename_words": [
+        "Foot"
+      ]
+    },
+    {
+      "prefix": "보이스1",
+      "expected_language": "ko",
+      "voice_category": "Korean",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\보이스1-2026-10-13-18-44-고양이가-창문-밖을-보다가-갑자기-특이한-빛을-발견했는데요.-호기심에-창문을-열고-나가.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "6953e81cdf08a1e211ce36865fe6bf87592188eff058317ae06140618dff3da9"
+      ],
+      "bytes": [
+        216988
+      ],
+      "filename_words": [
+        "보이스1"
+      ]
+    },
+    {
+      "prefix": "بنت-سورية-77-الف",
+      "expected_language": "ar",
+      "voice_category": "Arabic",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\بنت-سورية-77-الف-2026-10-13-18-46-يسعد-أوقاتك-يا-رب،-والله-اليوم-كان-عندي-شغل-كتير.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "df43ffb11732e7e9808a6a7bb92c895c99533be9f4c092373cb190cb2b30055d"
+      ],
+      "bytes": [
+        241648
+      ],
+      "filename_words": [
+        "بنت",
+        "سورية",
+        "الف"
+      ]
+    },
+    {
+      "prefix": "Рената-Литвинова",
+      "expected_language": "ru",
+      "voice_category": "Russian",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Рената-Литвинова-2026-10-13-18-48-Я-не-прошу-любви,-я-прошу-только-слова.-Сердце-с.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "951a6923cd8be0a7792f274c00d1e92281bea6302fed8c01878cecabc659197f"
+      ],
+      "bytes": [
+        216570
+      ],
+      "filename_words": [
+        "Рената",
+        "Литвинова"
+      ]
+    },
+    {
+      "prefix": "Matilde",
+      "expected_language": "pt",
+      "voice_category": "Portuguese",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Matilde-2026-10-13-18-49-Estou-a-verificar-as-informações-que-solicitou-e.mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "9eb4da0285364984a6c695fe4e8859bfa766d2e38d8717a034bc40452aecea8d"
+      ],
+      "bytes": [
+        249171
+      ],
+      "filename_words": [
+        "Matilde"
+      ]
+    },
+    {
+      "prefix": "Ultron-2026-10-04-10-20",
+      "expected_language": "hi",
+      "voice_category": "Hindi",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\Ultron-2026-10-04-10-20-मैं-अक्सर-आसमान-से-गिरती-हुई-उल्काओं-के-बारे-में (1).mp3"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "d1653946c516d2aff3c7ea7a23c81292555cec9e3159fab63a809014eaccad75"
+      ],
+      "bytes": [
+        238722
+      ],
+      "filename_words": [
+        "Ultron"
+      ]
+    },
+    {
+      "prefix": "voice_preview_ultron (2).wav",
+      "expected_language": "unknown",
+      "voice_category": "identity to be determined",
+      "paths": [
+        "C:\\Users\\shres\\Downloads\\voice_preview_ultron (2).wav"
+      ],
+      "accessible": true,
+      "sha256_before": [
+        "54b32fdc6297b76b3cfb80aaa689b1d84bae88bd75c00d7e3dd1abda53a638ea"
+      ],
+      "bytes": [
+        3066702
+      ],
+      "filename_words": [
+        "voice_preview_ultron",
+        "(2).wav"
+      ]
+    }
+  ],
+  "working_copies": [
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Energetic-Male-2026-10-13-18-25-Hey-there!-After-months-of-intensive-development.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 10.083,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Energetic-Male-2026-10-13-18-25-Hey-there!-After-months-of-i.16k.wav",
+      "working_frames": 161332,
+      "audio_seconds": 10.083,
+      "working_sha256": "03c731be5ade23474a5be3ced866ec455c2aaee628cc363c0e3f77c2d4093a2e",
+      "source_sha256": "bf96b169d6a8f73487b4bfdf24d3aafd36538ad5a2e675b850b0cedfd25196ff",
+      "expected_language": "en",
+      "voice_category": "English male voice",
+      "filename_words": [
+        "Energetic",
+        "Male"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Paula-2026-10-13-18-26-Hi-everyone,-I'm-excited-to-share-some-insights.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 15.151,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Paula-2026-10-13-18-26-Hi-everyone,-I'm-excited-to-share-som.16k.wav",
+      "working_frames": 242416,
+      "audio_seconds": 15.151,
+      "working_sha256": "7bb565e3722c899ac6643d9a4097a9edd4a9128c15c06c1688bfd69aa089a2b3",
+      "source_sha256": "aa010e4d8b8aabaec3065a9b963697a4084ccaaa31ad05387bcb554cec0d0f22",
+      "expected_language": "en",
+      "voice_category": "English female voice",
+      "filename_words": [
+        "Paula"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\黄丽萍长自述1-2026-10-13-18-31-你们知道吗？每次照镜子的时候，我都会数一数又长出多少根白发。我现在才明白，这些白发就像是我们家族.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 16.274,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\黄丽萍长自述1-2026-10-13-18-31-你们知道吗？每次照镜子的时候，我都会数一数又长出多少根白发。我现在才明.16k.wav",
+      "working_frames": 260389,
+      "audio_seconds": 16.274,
+      "working_sha256": "e765bb7e7905741bc6c4b81bfa06acd2a2dcaa91148d31fff8dd8a22e2c10bba",
+      "source_sha256": "d813f49aecda61dc06dddff11e462d84f111ad59c1dbce34adc005d2de5cd24a",
+      "expected_language": "zh",
+      "voice_category": "Chinese",
+      "filename_words": [
+        "黄丽萍长自述1"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\5.28达人-2026-10-13-18-34-Also,-heute-war-wieder-so-eine-lustige-Situation.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 12.983,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\5.28达人-2026-10-13-18-34-Also,-heute-war-wieder-so-eine-lusti.16k.wav",
+      "working_frames": 207726,
+      "audio_seconds": 12.983,
+      "working_sha256": "d413d3cc9c9b341771902e8e6c3386e07e645a07508e8a3641f27ec396f9f3dc",
+      "source_sha256": "258562c943027b0a8d0d917f8b95504420cb5b0427106d4694b26f835dee3d64",
+      "expected_language": "de",
+      "voice_category": "German",
+      "filename_words": [
+        "5.28达人"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Voz-Femenina-Español-2026-10-13-18-35-Después-de-treinta-años-trabajando-en-la-misma-e.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 13.296,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Voz-Femenina-Español-2026-10-13-18-35-Después-de-treinta-año.16k.wav",
+      "working_frames": 212741,
+      "audio_seconds": 13.296,
+      "working_sha256": "fd3e9a825ee97455495795e5839eb89048209d37e773b45dae70739ca2fb800c",
+      "source_sha256": "078e93653d9ee938fa3168c3be217afae338dda026994aaa08f7881301025156",
+      "expected_language": "es",
+      "voice_category": "Spanish",
+      "filename_words": [
+        "Voz",
+        "Femenina",
+        "Español"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\元気な女性-2026-10-13-18-37-みなさん、こんにちは！最近、新しいドラマの撮影が始まったんですけど、とても楽しく頑張っています。.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 18.312,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\元気な女性-2026-10-13-18-37-みなさん、こんにちは！最近、新しいドラマの撮影が始まったんですけど、とても.16k.wav",
+      "working_frames": 292990,
+      "audio_seconds": 18.312,
+      "working_sha256": "d216d1ba7912da9a0c7dad345f472a79eb4b9178bfecc8a9a44e4a3013c59f7e",
+      "source_sha256": "f3d68f29fdeea89a58a700f780dadd38e286b9946af443f289fc8e1d806a14d1",
+      "expected_language": "ja",
+      "voice_category": "Japanese",
+      "filename_words": [
+        "元気な女性"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Foot-2026-10-13-18-42-Lors-du-match-décisif-entre-le-PSG-et-Manchester.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 16.196,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Foot-2026-10-13-18-42-Lors-du-match-décisif-entre-le-PSG-et-.16k.wav",
+      "working_frames": 259135,
+      "audio_seconds": 16.196,
+      "working_sha256": "b666c5aa39f83a1085fe943f55cca669e37bb9ec49817afe6776b95b95a57dd2",
+      "source_sha256": "d3782a95da13862f9595797c5a5d6c2ca4e9820743f9dfa518e4f483393b8b1b",
+      "expected_language": "fr",
+      "voice_category": "French",
+      "filename_words": [
+        "Foot"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\보이스1-2026-10-13-18-44-고양이가-창문-밖을-보다가-갑자기-특이한-빛을-발견했는데요.-호기심에-창문을-열고-나가.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 13.557,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\보이스1-2026-10-13-18-44-고양이가-창문-밖을-보다가-갑자기-특이한-빛을-발견했는데요.-호기심에.16k.wav",
+      "working_frames": 216921,
+      "audio_seconds": 13.558,
+      "working_sha256": "60644269be83dcfd4ac9cb9f99409abf55ddece4be582cc2418eb75929726cdd",
+      "source_sha256": "6953e81cdf08a1e211ce36865fe6bf87592188eff058317ae06140618dff3da9",
+      "expected_language": "ko",
+      "voice_category": "Korean",
+      "filename_words": [
+        "보이스1"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\بنت-سورية-77-الف-2026-10-13-18-46-يسعد-أوقاتك-يا-رب،-والله-اليوم-كان-عندي-شغل-كتير.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 15.099,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\بنت-سورية-77-الف-2026-10-13-18-46-يسعد-أوقاتك-يا-رب،-والله-ا.16k.wav",
+      "working_frames": 241581,
+      "audio_seconds": 15.099,
+      "working_sha256": "84f31fb4a490439857d1c5a35ce8cea9dec0dccc4bd9f704e15fcd868d20acaa",
+      "source_sha256": "df43ffb11732e7e9808a6a7bb92c895c99533be9f4c092373cb190cb2b30055d",
+      "expected_language": "ar",
+      "voice_category": "Arabic",
+      "filename_words": [
+        "بنت",
+        "سورية",
+        "الف"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Рената-Литвинова-2026-10-13-18-48-Я-не-прошу-любви,-я-прошу-только-слова.-Сердце-с.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 13.531,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Рената-Литвинова-2026-10-13-18-48-Я-не-прошу-любви,-я-прошу-.16k.wav",
+      "working_frames": 216503,
+      "audio_seconds": 13.531,
+      "working_sha256": "2edda66013796d622150ce81a72dff6e7371d2b4e4f625b833b515f352371bf9",
+      "source_sha256": "951a6923cd8be0a7792f274c00d1e92281bea6302fed8c01878cecabc659197f",
+      "expected_language": "ru",
+      "voice_category": "Russian",
+      "filename_words": [
+        "Рената",
+        "Литвинова"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Matilde-2026-10-13-18-49-Estou-a-verificar-as-informações-que-solicitou-e.mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 15.569,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Matilde-2026-10-13-18-49-Estou-a-verificar-as-informações-qu.16k.wav",
+      "working_frames": 249104,
+      "audio_seconds": 15.569,
+      "working_sha256": "9d932be16f2435afd345ee4e9e7c6b85bfef70cd0ad7c02eef93814bf19cbab4",
+      "source_sha256": "9eb4da0285364984a6c695fe4e8859bfa766d2e38d8717a034bc40452aecea8d",
+      "expected_language": "pt",
+      "voice_category": "Portuguese",
+      "filename_words": [
+        "Matilde"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\Ultron-2026-10-04-10-20-मैं-अक्सर-आसमान-से-गिरती-हुई-उल्काओं-के-बारे-में (1).mp3",
+      "decoded": true,
+      "source_codec": "mp3float",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "mono",
+      "declared_duration_s": 14.916,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\Ultron-2026-10-04-10-20-मैं-अक्सर-आसमान-से-गिरती-हुई-उल्काओं.16k.wav",
+      "working_frames": 238655,
+      "audio_seconds": 14.916,
+      "working_sha256": "6b71ad436d8264dc8863b5faae379a3461496e147406583603caecba7c8a96cd",
+      "source_sha256": "d1653946c516d2aff3c7ea7a23c81292555cec9e3159fab63a809014eaccad75",
+      "expected_language": "hi",
+      "voice_category": "Hindi",
+      "filename_words": [
+        "Ultron"
+      ]
+    },
+    {
+      "source": "C:\\Users\\shres\\Downloads\\voice_preview_ultron (2).wav",
+      "decoded": true,
+      "source_codec": "pcm_s16le",
+      "source_rate": 44100,
+      "source_channels": 1,
+      "source_layout": "1 channels",
+      "declared_duration_s": 34.769,
+      "working_copy": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\_multilingual_eval\\voice_preview_ultron_(2).16k.wav",
+      "working_frames": 556304,
+      "audio_seconds": 34.769,
+      "working_sha256": "03774464c6571bc2f363261c5e9b6c9b7ebe8f929d95ce52fb511644a35dee43",
+      "source_sha256": "54b32fdc6297b76b3cfb80aaa689b1d84bae88bd75c00d7e3dd1abda53a638ea",
+      "expected_language": "unknown",
+      "voice_category": "identity to be determined",
+      "filename_words": [
+        "voice_preview_ultron",
+        "(2).wav"
+      ]
+    }
+  ],
+  "total_audio_seconds": 209.74
+}
