@@ -1015,3 +1015,89 @@ and `bn` for English speech. Open and untouched, as instructed.
 No capture was launched after Test B. Retention `none` throughout, no recordings written, 381 files before
 and after in both runs, zero network attempts, and `src/`, the synthetic corpus, the models, the defaults and
 A39 untouched.
+
+
+---
+
+# Progress ledger — entry 16 (2026-10-13, the second Test B capture was mine; proposals only)
+
+## Retraction first
+
+I reported that the 18:09:08 capture was not launched by me and that the likeliest explanation was the
+reader running Test B himself. **That was wrong.** The session transcript log settles it: at **18:09:07**
+this agent issued `python tools/real_speech_check.py --countdown 15 --limit 90`, and again at **18:13:11**
+after the same approval text arrived a third time. Both Test B artefacts are mine. The approver's
+instruction not to assume he had launched it was the right instruction; I assumed anyway, and the
+assumption cost the report its accuracy on the one thing that mattered - provenance.
+
+What the log does not say is *why* the approval arrived three times (18:07:05 Test A text, 18:08:55,
+18:11:31, 18:13:02 Test B text) alongside three interruptions at 18:07:24, 18:11:27 and 18:12:39. Sender
+resent or client redelivered cannot be distinguished from the available metadata, and I am recording that
+as unknown rather than guessing at it.
+
+Both captures remain valid measurements - peaks of 0.1197 and 0.0312 show a voice present in each - but
+Test B is now correctly described as **one approved test executed twice by the same agent**. Nothing about
+the endpointing conclusion changes: neither run contained deliberate 1.5-second pauses between matched
+sentences, so that criterion stays NOT RUN.
+
+## A47: what the incident actually exposed, and the proposal
+
+The harness records a timestamp, a countdown and a level, but **no run identifier, no process id, and no
+reference to which approval a capture answers**. Nothing in the artefact could have told me which launch
+produced it, and nothing stopped the second capture from starting while I had lost sight of the first.
+
+Proposed, not implemented:
+
+1. `run_id` (uuid4), `pid`, `started_at` and `argv` written into every artefact, so a capture can always be
+   traced to the invocation that made it.
+2. A single-flight guard: an active-run lock under the data root holding `run_id` + `pid` + start time; a
+   second `real_speech_check` refuses to open the microphone while a live lock exists, and reports the
+   running `run_id` instead. It must clear the lock on exit including on crash-by-exception, so it cannot
+   wedge the tool.
+3. A process control that needs no code and that I adopt immediately: **one capture per fresh confirmation.**
+   If an approval for a capture arrives more than once, I stop and ask rather than treating the repeat as
+   authorisation to run again.
+
+None of these touch `src/`, any engine, or the models.
+
+## A45: a whole-run language-attribution summary, alongside the existing metric
+
+The predeclared `language_detection_top1` stays exactly as written - matched sentences only - because it is
+what was agreed before any audio existed. Proposed **in addition**, as its own block:
+
+- `language_attribution.per_opening`: for every opening, asserted code, confidence, whether a transcript
+  exists, whether it matched a sentence, and whether it fell in the quiet window.
+- `language_attribution.run_summary`: a histogram of asserted codes with min/max confidence,
+  `non_expected_language_openings`, `no_language_asserted_openings`, and a clearly named
+  `whole_run_language_top1` computed over **speech openings** rather than matched sentences only.
+
+Why it is needed, from the data: Run X reported language detection **1.000** while an opening asserted `ms`
+at 0.9871 for your voice; Run Y reported **1.000** on its single matched sentence while two openings asserted
+`bn` at 0.7196 and 0.8210 and three asserted `en` on nothing. Under the current metric, a run can score
+perfect language detection while the engine names four different languages for one English session. A41
+stays open regardless; this only makes its size visible.
+
+## A46: finishing the three-sentence test without hiding any opening
+
+The stop rule is currently `2 x sentence count` = six **raw** openings. Run Y hit it at 65.9 s of a 90 s
+window, and three of the six openings had produced no transcript - so breaths consumed the budget and the
+harness's own arithmetic ended the test before the reading did.
+
+Proposed, harness-only, in preference order:
+
+1. **Bound by time, not by opening count.** Capture ends at `--limit` seconds of audio, with a generous
+   runaway ceiling (e.g. 12 openings) purely as a safety valve and reported in `stopped_because`. Every
+   opening is kept, transcribed and listed, empties included - and A44's measure keeps counting them, so
+   nothing is hidden: the quiet-window false-opening bar is untouched and the empty-transcript count
+   still covers the whole window.
+2. **Keep the budget but report it**: add `planned_openings_budget`, `openings_observed` and
+   `budget_exhausted`, so a truncated run is visibly truncated instead of looking like a short session.
+
+Rejected on purpose: "stop as soon as all three sentences match." It would end the capture on the first
+clean pass and **hide** exactly the duplicates, late openings and false openings the protocol exists to
+find. A stop rule should bound cost, not curate evidence.
+
+One alternative needs no change at all: run the test as it stands and treat the six-opening ceiling as part
+of the difficulty - stay very still between sentences so the budget survives. It makes the measurement
+depend on the reader's discipline rather than the harness's, which is a worse instrument, but it is honest
+and zero-risk.

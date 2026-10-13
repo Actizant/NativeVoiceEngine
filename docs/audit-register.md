@@ -328,3 +328,48 @@ bar stayed at 0, visibly independent as ruled. A41 widened: five captures have n
 |---|---|---|---|---|---|
 | A45 | S3 | `tools/real_speech_check.py` | `language_detection_top1` counts matched sentences only, so a run can report perfect detection while asserting foreign languages for the sentences that failed | Run X: top-1 1.000 alongside an unmatched segment asserted `ms` at 0.9871 | **OPEN** - the metric is what was predeclared; changing its meaning is a ruling, not an edit |
 | A46 | S3 | `tools/real_speech_check.py` | The stop rule counts raw turn openings, so empty or noisy openings can truncate a supervised run before the reader finishes | Run Y stopped at 6 openings with 65.9 s of a 90 s window used; 3 of the 6 produced no transcript | **OPEN** - named, not changed |
+
+
+### Addendum 12 - retraction: the 18:09:08 capture WAS launched by this agent
+
+Addendum 11 said the likeliest explanation for the unexplained 18:09:08 capture was that the reader ran
+Test B himself. **That was wrong, and it is withdrawn.** The approver's instruction not to assume he had
+launched it was correct; I assumed it anyway, and the assumption was false.
+
+The origin is now established from this session's own transcript log
+(`~/.qoder/projects/C--Users-shres-Documents-Qoder-2026-10-12-76969c5c/76969c5c-....jsonl`), which records
+every tool call with a timestamp. Local times, +05:30:
+
+| Time | Log line | Event |
+|---|---|---|
+| 18:03:51 | 4235 | agent launches **Test A** (`--countdown 15 --limit 12 --out mic-baseline-post-go.json`) |
+| 18:07:05 | 4260 | a user turn carrying the **Test A approval text again** |
+| 18:07:24 | 4263 | `[Request interrupted by user]` |
+| 18:08:55 | 4267 | a user turn carrying the **Test B approval** |
+| **18:09:07** | **4272** | **agent launches Test B** - `python tools/real_speech_check.py --countdown 15 --limit 90` - this is the 18:09:08 artefact |
+| 18:11:05 | 4274 | its result returns |
+| 18:11:27 | 4281 | `[Request interrupted by user]` |
+| 18:11:31 | 4285 | the **same Test B approval arrives a second time** |
+| 18:11:43 | 4290 | agent runs a hash check instead of a capture |
+| 18:12:39 | 4294 | `[Request interrupted by user for tool use]` |
+| 18:13:02 | 4298 | the **same Test B approval arrives a third time** |
+| **18:13:11** | **4302/4303** | **agent launches Test B again** - the 18:13:12 artefact |
+
+So both Test B captures are agent-launched runs of the same approved command, triggered by repeated
+deliveries of one approval while my context had been compacted and I could no longer see the first launch.
+Both were supervised - peak input levels 0.1197 (18:09) and 0.0312 (18:13) confirm a voice at the
+microphone in each - which is also why the earlier unattended run at 14:51, at peak 0.0866 with the whole
+window silent apart from one utterance, looked so different.
+
+What is **not** established: why the approval text arrived three times. The log shows user-role entries with
+identical content and three interruptions, but it cannot distinguish the approver sending again from a client
+re-delivery, and I will not guess. That is recorded as unknown.
+
+Consequences for the evidence: nothing is invalidated - both artefacts were produced by the approved command
+under supervision and both are reported on their own terms. But Test B is now **one approved test executed
+twice by the same agent**, not two independent sources, and the endpointing conclusion is unchanged: neither
+run contained the deliberate 1.5-second pauses between matched sentences.
+
+| # | Severity | Component | Defect | Evidence | Status |
+|---|---|---|---|---|---|
+| A47 | S2 | `tools/real_speech_check.py` | A capture run has **no run identifier and no duplicate-launch guard**: nothing in the artefact says which process started it, and re-delivery of an approval silently produced a second microphone capture of the same test | the log shows Test B approved once and launched twice (18:09:07 and 18:13:11) from three deliveries of the same message; the artefacts carry a timestamp and a countdown but no run id, pid or approval reference | **OPEN** - proposed mitigation is recorded in the ledger entry beside this row; not implemented, and no capture was run to demonstrate it |
