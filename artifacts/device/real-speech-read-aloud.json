@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-13T00:58:28",
+  "generated": "2026-10-13T14:51:57",
   "kind": "human read-aloud speech",
   "criteria_predeclared": {
     "false_turn_openings_max": 0,
@@ -16,21 +16,41 @@
   ],
   "device_index": null,
   "capture": {
-    "wall_seconds": 75.102,
+    "wall_seconds": 75.096,
     "audio_seconds": 74.98,
     "frames": 1199680,
-    "median_input_level": 0.0003490312500705287,
-    "peak_input_level": 0.0044,
+    "median_input_level": 0.00039752733065032483,
+    "peak_input_level": 0.0866,
     "quiet_window_seconds": 0.02,
-    "false_turn_openings_in_quiet_window": 0,
-    "segments_detected": 0,
-    "segment_onsets": []
+    "false_turn_openings_in_quiet_window": 2,
+    "segments_detected": 1,
+    "segment_onsets": [
+      {
+        "first_sample": 341440,
+        "seconds": 3.8,
+        "truncated": false
+      }
+    ]
   },
   "results": [
     {
       "target": "The quick brown fox jumps over the lazy dog.",
-      "heard": null,
-      "status": "MISSING_SEGMENT"
+      "heard": "I would like a cup of coffee and a slice of bread.",
+      "wer": 1.3333,
+      "cer": 0.9714,
+      "word_errors": {
+        "substitutions": 9,
+        "insertions": 3,
+        "deletions": 0,
+        "correct": 0
+      },
+      "sentence_error": true,
+      "detected_language": "en",
+      "confidence": 0.9812,
+      "segment_seconds": 3.8,
+      "segment_rms": 0.0305,
+      "truncated": false,
+      "status": "ok"
     },
     {
       "target": "Please turn off the lights before you leave the room.",
@@ -45,11 +65,11 @@
   ],
   "summary": {
     "sentences_expected": 3,
-    "sentences_scored": 0,
-    "read_aloud_wer_mean": null,
-    "read_aloud_cer_mean": null,
+    "sentences_scored": 1,
+    "read_aloud_wer_mean": 1.3333,
+    "read_aloud_cer_mean": 0.9714,
     "exact_matches": 0,
-    "language_detection_top1": null
+    "language_detection_top1": 1.0
   },
   "network_attempts": [],
   "persistence": {
@@ -62,10 +82,10 @@
   "acceptance": {
     "no_audio_persisted": "PASS",
     "offline_no_attempts": "PASS",
-    "false_turn_openings": "PASS",
+    "false_turn_openings": "FAIL",
     "all_sentences_detected": "FAIL",
-    "read_aloud_wer": "NOT RUN (no speech segment per sentence)",
-    "language_detection": "NOT RUN",
+    "read_aloud_wer": "MEASURED (no pass bar set, by design)",
+    "language_detection": "MEASURED",
     "vad_onset_error_ms": "NOT RUN - a manual read-aloud run has no ground-truth onset timestamp to measure against",
     "endpointing_on_long_pause": "NOT RUN - step 3 of the protocol covers it",
     "noise_and_barge_in": "NOT RUN - steps 4 and 6"

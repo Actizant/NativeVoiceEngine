@@ -126,3 +126,53 @@ voice.
 
 Numbers from this run are kept out of the synthetic benchmark set entirely, and the synthetic
 round-trip figures (English WER 0.0494 / CER 0.0242) are not evidence about human speech.
+
+## Results — step 2, first run with a speaker present (2026-10-13 14:51:57)
+
+Same command, longer countdown because the reader was in the room:
+
+```
+python tools/real_speech_check.py --countdown 20
+```
+
+Preserved byte-for-byte at `artifacts/device/real-speech-read-aloud.20261013-145157.human-run.original.json`.
+**The section above this one stands as what was observed when it was written; this run supersedes its
+conclusion** that no speech could be captured.
+
+Real speech reached the chain: peak input level **0.0866** against the documented quiet-room 0.0044, about
+twenty times room tone. The detector opened a turn at audio-time **21.34 s** holding **3.8 s** of speech,
+and Whisper transcribed it **word for word**:
+
+| Against the sentence actually spoken | WER | CER |
+|---|---|---|
+| "I would like a cup of coffee and a slice of bread." | **0.0000** | **0.0000** |
+| the pangram (what the harness scored it against) | 1.3333 | 0.9714 |
+| "Please turn off the lights..." | 1.2000 | 0.8837 |
+
+Language detection returned `en` at confidence **1.000** on that human utterance. Nothing was persisted
+(381 files before and after, `created_during_run` empty) and the offline guard recorded no attempts.
+
+Three of the four claims this protocol exists to test are therefore now demonstrated, once each, on human
+audio: VAD opening on a voice, recognition of a spoken sentence, and language identification of it.
+
+What this run did **not** settle is endpointing on real pauses, because the harness itself was broken in
+four ways, all found by reading its output against its source:
+
+| Finding | What the harness did |
+|---|---|
+| A35 | It paired `segments[index]` with `SENTENCES[index]`, so one utterance was scored against the first target whichever sentence it actually was — inventing WER 1.3333 for a perfect transcript |
+| A36 | Speech detected inside the two-second post-countdown "quiet baseline" went to a list that was measured and then discarded; two openings were swallowed and simultaneously counted as *false* turn-opens |
+| A37 | `quiet_window_seconds` reported one 20 ms chunk's duration instead of the window that was measured, so the artefact claimed a 0.02 s baseline |
+| A38 | `segment_onsets[].seconds` carried the segment *duration*, not its onset — which is why an earlier report said the utterance began at 3.8 s when it began at 21.34 s |
+
+So `segments_detected: 1` of 3 is **not** evidence about endpointing on pauses: with two openings discarded
+by A36, the run is consistent with all three sentences having been spoken. After the harness corrections the
+criterion is re-tested from a clean base, and until that rerun happens endpointing on human pauses stays
+`NOT RUN`, not failed and certainly not passed.
+
+Corrected harness behaviour, in words: sentences are matched to recognised content by minimum word error
+with a refusal cap, so missing, extra and duplicate utterances are named rather than forced into a pairing;
+the quiet window measures levels on the same stream that produces segments, so nothing spoken is dropped;
+and every turn opening is logged with its onset in audio seconds, marked for whether it fell inside the
+quiet window and whether it claimed a sentence — a *false* opening is one inside the window that claimed
+nothing.

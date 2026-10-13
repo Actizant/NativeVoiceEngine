@@ -51,6 +51,24 @@ SENTENCES = (
     ("names-and-places", "Anita and Ravi live near the harbour, beside the old bridge in Kochi."),
 )
 
+# Playback order is declared, never derived from filenames: sorting `01_*.wav` alphabetically would put
+# the trial candidate first and bias every pair toward whatever was heard first.
+PLAYBACK_ORDER = ("kokoro", "kitten")
+LABELS = {
+    "kokoro": "A  Kokoro (incumbent default)",
+    "kitten": "B  KittenTTS (isolated trial)",
+}
+
+
+def pair_clips(directory: Path, pair: int) -> list[tuple[str, Path]]:
+    """The clips of one pair, in the order a listener must hear them: incumbent first, candidate second."""
+    ordered: list[tuple[str, Path]] = []
+    for engine in PLAYBACK_ORDER:
+        found = sorted(directory.glob(f"{pair:02d}_{engine}_*.wav"))
+        if found:
+            ordered.append((engine, found[0]))
+    return ordered
+
 
 def render_kokoro(manifest, text: str) -> tuple[object, float]:
     engine = SherpaKokoroEngine(manifest=manifest, num_threads=4)
@@ -131,25 +149,23 @@ def main() -> int:
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"\n{len(rows)} matched pairs -> {OUT}")
-    print("Play a pair back-to-back:")
-    print("  python tools/ab_samples.py --play 01   (01 .. %02d, A then B)" % len(SENTENCES))
+    print("Play one pair back-to-back, incumbent first, then the trial voice:")
+    print("  python tools/ab_samples.py --play 01      (pair numbers 01 .. %02d, one pair per call)" % len(SENTENCES))
     return 0
 
 
 def play(pair: int) -> int:
-    import glob
-
     import sounddevice as sd
 
     from nativevoice.audio import read_wav
 
-    files = sorted(str(path) for path in OUT.glob(f"{pair:02d}_*.wav"))
-    if not files:
-        print(f"no clips for pair {pair}")
+    clips = pair_clips(OUT, pair)
+    if not clips:
+        print(f"no clips for pair {pair:02d}")
         return 1
-    for path in files:
+    for engine, path in clips:
         buffer = read_wav(path)
-        print(f"playing {Path(path).name} ({buffer.duration_s:.2f}s)")
+        print(f"{LABELS[engine]}  [{path.name}, {buffer.duration_s:.2f}s]", flush=True)
         with sd.RawOutputStream(samplerate=buffer.format.sample_rate, channels=buffer.format.channels, dtype="int16") as stream:
             for chunk in buffer.frames(2400):
                 stream.write(chunk.to_bytes())
@@ -157,7 +173,24 @@ def play(pair: int) -> int:
     return 0
 
 
+def play_argument(argv: list[str]) -> int:
+    """The pair number after `--play`, or a refusal. There is no all-pairs switch to advertise."""
+    position = argv.index("--play") + 1
+    if position >= len(argv):
+        raise ValueError("--play needs a pair number, for example: --play 1")
+    try:
+        return int(argv[position])
+    except ValueError:
+        raise ValueError(
+            f"--play takes a pair number 01 .. {len(SENTENCES):02d}, not {argv[position]!r}"
+        ) from None
+
+
 if __name__ == "__main__":
     if "--play" in sys.argv:
-        raise SystemExit(play(int(sys.argv[sys.argv.index("--play") + 1])))
+        try:
+            pair = play_argument(sys.argv)
+        except ValueError as error:
+            raise SystemExit(str(error)) from None
+        raise SystemExit(play(pair))
     raise SystemExit(main())

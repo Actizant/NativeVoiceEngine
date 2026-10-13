@@ -654,3 +654,69 @@ that criterion needs a keyed-stimulus test, and is reported NOT RUN rather than 
 played. All re-run **after** the manifest corrections, so the corrected rights fields are what the suites
 actually exercised. ASR training stays on hold, no asset beyond the approved trial was downloaded, nothing
 was integrated into ULTRON or FieldMind, and both workspaces remain intact and reversible.
+
+
+---
+
+# Progress ledger — entry 9 (2026-10-13, first human speech captured, harness corrected)
+
+Two things happened in one sitting: the six A/B pairs were played for his listening, and microphone step 2
+was run with a speaker present for the first time. The run produced real speech, and reading its output
+against its own source produced four defects in the harness - which is why the run is described here as
+evidence about the system *and* about my tooling, not as a clean pass.
+
+## Correction to entry 8, dated 2026-10-13
+
+Entry 8 told him `python tools/ab_samples.py --play all` exists and that `--play NN` plays "A then B".
+Neither was true: the switch was never implemented, and the playback order came from sorting filenames,
+which put `kitten` before `kokoro` - the candidate first, in a listening test, against a manifest promising
+the incumbent first. Entry 8 is left exactly as written; this entry retires those two claims. Findings
+A33 and A34.
+
+## The first run with a voice in the room
+
+`python tools/real_speech_check.py --countdown 20`, captured 2026-10-13 14:51:57, preserved byte-for-byte at
+`artifacts/device/real-speech-read-aloud.20261013-145157.human-run.original.json`. Peak input level **0.0866**
+against the documented quiet-room 0.0044. One turn opened, at audio-time **21.34 s**, holding 3.8 s, and it
+was transcribed **word for word** - WER 0.0000 and CER 0.0000 against the sentence actually spoken, language
+`en` at confidence 1.000. Nothing persisted (381 files before and after), no network attempt.
+
+So three claims the master prompt said only real speech could prove are now demonstrated on human audio:
+VAD opening on a voice, recognition of a spoken sentence, and language identification of it. The fourth -
+endpointing on real pauses - is **not** settled by this run, because the harness threw away two of the three
+utterances before scoring them.
+
+## Four harness defects, and what replaced each
+
+| # | Defect | Replacement |
+|---|---|---|
+| A35 | segments paired to sentences by **position** | content alignment: minimum WER, greedy, 0.60 refusal cap, deterministic ties; unmatched targets `MISSING`, unmatched segments `extra`, repeats named as duplicates |
+| A36 | the 2 s post-countdown baseline collected audio into a list that was **measured then discarded**, and counted those openings as *false* | one stream: the window samples levels while the segmenter keeps collecting; a false opening is one inside the window that claimed **no** sentence |
+| A37 | `quiet_window_seconds` reported a single 20 ms chunk | the measured window in audio seconds, with its own median and peak |
+| A38 | `segment_onsets[].seconds` was really the duration | every opening logged with `onset_seconds` **and** `duration_seconds` |
+
+A36 is the one that mattered most for interpretation: a report of "1 of 3 sentences detected" was not a
+finding about endpointing, it was my harness eating the first two utterances and then calling them noise.
+A39 is logged as pre-existing and untouched: sherpa-onnx writes `Skip unknown phonemes: ə` during
+synthesis while still returning PASS, so a vowel our front-end produces is dropped silently by the engine's
+phoneme table. That needs its own authorisation, not an opportunistic fix inside a harness pass.
+
+## Verification of this pass
+
+`tests/test_real_speech_harness.py` - **28 passed in 0.31 s**, no microphone, no loudspeaker, no model: the
+capture policy takes an iterable of chunks and the alignment and opening log are pure functions, so the
+speech-inside-the-window and speech-immediately-after-the-countdown cases are actually executed rather
+than described. Full suite **697 passed, 7 skipped**; with `--run-approved-assets` **704 passed in 74.09 s**;
+`tools/audit.py` **11 passed, 0 failed**; `tools/offline_proof.py` **PASS**; `tools/platform_demo.py` exit 0,
+**PASS**. Playback order verified against the twelve real files (all six pairs resolve Kokoro then Kitten)
+and pair 05 played audibly through the corrected code path. Samples were **not** regenerated.
+
+History handling: the human-run artefact is copied under its own timestamp, and the harness now copies any
+existing artefact to `<stamp>.previous.json` before overwriting, so a corrected rerun can never erase the
+run it corrects. Boundaries kept as instructed - retention `none` is still the default, Kokoro is still the
+platform default, Kitten is still isolated under `.trials/kitten/`, no voice identity changed, no ASR
+training, no integration into ULTRON or FieldMind.
+
+**Step 2 remains open.** It needs one rerun with the corrected harness while he is present, and until that
+happens endpointing on human pauses and the false-opening criterion are `NOT RUN`. Nothing was captured
+after the corrections; the next capture is his to trigger.

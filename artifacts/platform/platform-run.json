@@ -1,14 +1,14 @@
 {
-  "generated": "2026-10-13T01:06:45",
+  "generated": "2026-10-13T15:12:31",
   "hosts": {
     "ultron": {
       "default_voice": "voice.platform.default",
-      "heard": "Please tell me what the weth will do this afternoon.",
+      "heard": "Please tell me what the worth will do this afternoon.",
       "answer": "Your summary is ready: three decisions and one follow-up for tomorrow.",
       "spoken": true,
       "silenced": false,
       "language": "en",
-      "frames_played": 84765,
+      "frames_played": 84666,
       "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\ultron-reply.wav",
       "notes": [],
       "voice_refusal": "",
@@ -17,12 +17,12 @@
     },
     "fieldmind": {
       "default_voice": "voice.host.fieldmind.speaker7",
-      "heard": "Please tell me what the weth will do this afternoon.",
+      "heard": "Please tell me what the worth will do this afternoon.",
       "answer": "Field report: soil moisture is adequate and the next irrigation window is at six.",
       "spoken": true,
       "silenced": false,
       "language": "en",
-      "frames_played": 121432,
+      "frames_played": 121487,
       "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\fieldmind-reply.wav",
       "notes": [],
       "voice_refusal": "",
