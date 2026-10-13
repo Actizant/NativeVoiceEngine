@@ -1,0 +1,125 @@
+{
+  "generated": "2026-10-13T18:03:52",
+  "kind": "human read-aloud speech",
+  "criteria_predeclared": {
+    "false_turn_openings_max": 0,
+    "detected_segments_expected": "3 to 6",
+    "read_aloud_wer_reported": true,
+    "language_detection_top1_reported": true
+  },
+  "retention": "none",
+  "recordings_written": [],
+  "targets": [
+    "The quick brown fox jumps over the lazy dog.",
+    "Please turn off the lights before you leave the room.",
+    "I would like a cup of coffee and a slice of bread."
+  ],
+  "device_index": null,
+  "capture": {
+    "countdown_seconds": 15,
+    "stream_opened_at": "GO",
+    "wall_seconds": 12.533,
+    "audio_seconds": 12.02,
+    "frames": 192320,
+    "median_input_level": 0.0004843674205371597,
+    "peak_input_level": 0.0086,
+    "quiet_window_seconds": 2.0,
+    "stopped_because": "reached the 12 s capture limit",
+    "quiet_window_median_level": 0.00148,
+    "quiet_window_peak_level": 0.0086,
+    "segments_detected": 0,
+    "openings": [],
+    "openings_in_quiet_window": 0,
+    "false_turn_openings": 0,
+    "speech_inside_quiet_window": 0,
+    "empty_transcript_openings_outside_quiet_window": 0,
+    "empty_transcript_openings_outside_quiet_window_onsets": []
+  },
+  "alignment": {
+    "method": "content alignment (minimum WER, greedy, capped)",
+    "cap": 0.6,
+    "matches": [],
+    "missing_targets": [
+      {
+        "target_index": 0,
+        "closest_segment_index": null,
+        "closest_wer": null,
+        "reason": "no segment recognised"
+      },
+      {
+        "target_index": 1,
+        "closest_segment_index": null,
+        "closest_wer": null,
+        "reason": "no segment recognised"
+      },
+      {
+        "target_index": 2,
+        "closest_segment_index": null,
+        "closest_wer": null,
+        "reason": "no segment recognised"
+      }
+    ],
+    "extra_segments": []
+  },
+  "results": [
+    {
+      "target": "The quick brown fox jumps over the lazy dog.",
+      "heard": null,
+      "status": "MISSING_SEGMENT",
+      "why": "no segment recognised",
+      "closest_wer": null,
+      "closest_segment_said": "",
+      "closest_segment_language": "",
+      "closest_segment_confidence": null
+    },
+    {
+      "target": "Please turn off the lights before you leave the room.",
+      "heard": null,
+      "status": "MISSING_SEGMENT",
+      "why": "no segment recognised",
+      "closest_wer": null,
+      "closest_segment_said": "",
+      "closest_segment_language": "",
+      "closest_segment_confidence": null
+    },
+    {
+      "target": "I would like a cup of coffee and a slice of bread.",
+      "heard": null,
+      "status": "MISSING_SEGMENT",
+      "why": "no segment recognised",
+      "closest_wer": null,
+      "closest_segment_said": "",
+      "closest_segment_language": "",
+      "closest_segment_confidence": null
+    }
+  ],
+  "summary": {
+    "sentences_expected": 3,
+    "sentences_scored": 0,
+    "read_aloud_wer_mean": null,
+    "read_aloud_cer_mean": null,
+    "exact_matches": 0,
+    "language_detection_top1": null,
+    "unmatched_segments": 0
+  },
+  "network_attempts": [],
+  "persistence": {
+    "data_root": "C:\\Users\\shres\\AppData\\Local\\ultron-voice",
+    "files_before": 381,
+    "files_after": 381,
+    "created_during_run": [],
+    "no_audio_written": true
+  },
+  "acceptance": {
+    "no_audio_persisted": "PASS",
+    "offline_no_attempts": "PASS",
+    "false_turn_openings": "PASS",
+    "all_sentences_detected": "FAIL",
+    "empty_transcript_openings": "MEASURED (informational, no pass bar set) - 0 opening(s) outside the quiet window produced no transcript",
+    "read_aloud_wer": "NOT RUN (no segment matched a sentence)",
+    "language_detection": "NOT RUN",
+    "vad_onset_error_ms": "NOT RUN - a manual read-aloud run has no ground-truth onset timestamp to measure against",
+    "endpointing_on_long_pause": "NOT RUN - step 3 of the protocol covers it",
+    "noise_and_barge_in": "NOT RUN - steps 4 and 6"
+  }
+}

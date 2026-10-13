@@ -947,3 +947,31 @@ has already fetched, which was ruled out, so the subjects stay and the disambigu
 
 No microphone capture was started. No model was downloaded, trained, promoted or integrated; no default
 changed; no voice retention; `src/` untouched; A39 and every unrelated finding left exactly as found.
+
+
+---
+
+# Progress ledger — entry 14 (2026-10-13, Test A: a room-noise baseline with nobody speaking)
+
+One supervised capture, approved as Test A on its own and stopped there. Test B was not launched.
+
+The result is the quietest kind of evidence this project has produced: **zero turn openings from 12.02
+seconds of a silent room**, with the quiet window measured at 2.0 s, median 0.00148 and peak 0.0086, and
+`false_turn_openings: 0`. Against the three read-aloud runs - which peaked at 0.0788 to 0.0866 - the
+detector showed roughly nine times of headroom between this room and a voice. That converts a criterion
+which had only ever passed by accident into one that passes with a measured margin.
+
+The baseline also said two less flattering things. The room is noisier now than during the earlier quiet
+captures - about four times the median - so a baseline has to be taken near the run it qualifies, not cited
+from history. And the window median (0.00148) sits well above the whole-capture median (0.000484), which
+looks like a device ramp-in transient at stream start rather than flat room tone; named, not investigated,
+not claimed.
+
+A44's new informational measure appeared in the report as designed and read `0` with an empty onset list.
+A43's language attribution had nothing to attribute in a silent run, so its console rendering is still
+unit-tested only. Full numbers, both readings and the caution are in `docs/audit-register.md` Addendum 10.
+
+Nothing else moved: the read-aloud artefact still hashes to `add7a3969bc545edf09d4e789cb821668dfaae8ac096b8318a27bda7dc4c8170`
+unchanged, the synthetic corpus manifest is untouched, retention was `none` with no recordings written and
+381 files before and after, and the offline guard recorded zero attempts. A separate `--out` path was used
+precisely so that no existing evidence would be overwritten.

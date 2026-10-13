@@ -247,3 +247,49 @@ offline guard with zero attempts, and all 8 kept clips were re-hashed afterwards
 their own manifest. **A41 stays OPEN.** The only remaining way to advance it is a supervised human run
 with the language pinned, which needs a `--language` flag on the harness - a change not yet authorised -
 or `--retention keep`, which needs an explicit consent decision.
+
+
+### Addendum 10 — Test A: the clean room-noise baseline is now obtained (2026-10-13 18:03:52)
+
+Ruling item 5 in Addendum 8 said a clean baseline was **not obtained**, because the 17:19 reading began at
+0.84 s inside the measurement window. It has since been measured on its own terms: the reader stayed
+silent after GO for a whole capture, with no sentences read.
+
+Command `python tools/real_speech_check.py --countdown 15 --limit 12 --out artifacts/device/mic-baseline-post-go.json` -
+a separate path, so no read-aloud evidence was overwritten; the live read-aloud artefact still hashes to
+`add7a3969bc545edf09d4e789cb821668dfaae8ac096b8318a27bda7dc4c8170`, unchanged, and the synthetic corpus
+manifest is likewise untouched.
+
+| Measure | Value | Against |
+|---|---|---|
+| `quiet_window_seconds` | **2.0** | as measured, not a chunk length |
+| `quiet_window_median_level` | **0.00148** | earlier quiet captures: 0.000358 and 0.000412 |
+| `quiet_window_peak_level` | **0.0086** | earlier quiet captures: 0.0021 and 0.0086 |
+| whole-window median / peak | 0.000484 / 0.0086 | 12.02 s of audio in 12.533 s of wall |
+| `openings_in_quiet_window` | **0** | the criterion's denominator |
+| `false_turn_openings` | **0** | a PASS that now means something |
+| `segments_detected` | **0** | silence produced no turn at all |
+| `empty_transcript_openings_outside_quiet_window` | **0**, onset list `[]` | A44's new measure, idle because there were no openings |
+| retention / persistence | `none`, `recordings_written: []`, 381 files before and after, `created_during_run: []` | |
+| network | `attempts: []` | offline guard held |
+
+Two readings worth recording, and one caution.
+
+1. **The detector has real headroom, now measured.** At a room peak of 0.0086 the energy detector opened
+   **nothing**, while the three supervised read-aloud runs peaked at 0.0788-0.0866 - about nine times
+   higher. That is the first quantitative support for the claim that a turn opens on speech and not on
+   this room.
+2. **The room was noisier than during the earlier baselines** - the window median is roughly four times
+   the 0.000358-0.000412 recorded earlier, at a different time of day. Room tone is not a constant, so the
+   baseline has to be re-measured near the run it qualifies rather than cited from history.
+3. **Caution on the window median itself:** 0.00148 sits well above the whole-capture median of 0.000484,
+   which suggests an elevated level at stream start - a device ramp-in or first-frame transient - rather
+   than flat room tone. Not investigated and not claimed as a defect: naming it is enough here, and a
+   `--stimulus`-style keyed test would separate the two explanations.
+
+Ruling item 5 can therefore move from "NOT obtained" to **obtained**, and the false-opening PASS from the
+17:19 run is now corroborated by a silent room. Items 3, 4, 6 and 7 of the ruling stand exactly as ruled:
+recognition demonstrated but not universally validated, deliberate 1.5-second endpointing still NOT RUN,
+and A41, A43, A44 and A39 untouched. A43's new console rendering was not exercised by this run either -
+with no segments there was nothing to attribute - so it remains unit-tested only until a run produces an
+unmatched segment.
