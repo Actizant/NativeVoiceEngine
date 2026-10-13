@@ -1239,8 +1239,10 @@ and the A50 transcripts.
 
 `python -m pytest` → **753 passed, 7 skipped** (736 pre-existing plus the 17 guard tests; the 7 skips are the
 standing `NOT RUN` asset gates, unchanged). `python -m pytest tests/test_no_personal_paths.py` → **17 passed in
-2.03 s**. Diff: **25 files changed, 196 insertions(+), 87 deletions(-)**, where the 87 deletions are exactly the
-87 path lines and 109 insertions are new ledger prose (41 here, 68 in `docs/audit-register.md`). Parity against
+2.03 s**. The privacy cleanup is **`c93a75f`** - 26 paths, being **87 path replacements** with each deletion
+answered line-for-line by its rewrite, plus new ledger prose - and the two follow-up corrections are
+**`8745bf3`**. Insertion and deletion totals are not quoted here: every later documentation edit changes them,
+while the commits and the 87 replacements do not. Parity against
 `HEAD`: for each of the 23 path-only files, applying the placeholder substitution to the committed blob
 reproduces the working tree byte-for-byte; the two prose files differ only by additions. Zero files under `src/`
 or `tools/` were modified, and `git grep` for the account name over tracked files returns **0 files**. Lint and
