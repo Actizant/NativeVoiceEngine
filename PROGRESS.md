@@ -1222,14 +1222,18 @@ untouched. Everything else in the diff is new ledger prose in this file and `doc
 controls assembled from synthetic account names, positive controls for every approved placeholder, `.pre-audit`
 manifest copies included in the parse check, a coverage floor derived from `git ls-files` rather than a pinned
 count, and the one local-only exception declared explicitly instead of silently excluded. It was checked against
-the real pre-scrub `HEAD` blobs - **57** findings across seven files, **0** now - and that check is recorded as a
-reproducible audit procedure in `docs/audit-register.md` rather than committed as a test, so the ordinary suite
-never depends on Git objects. A guard that only passes on its own fixtures proves nothing.
+the real pre-cleanup blobs at `511a660` - **57** findings across seven files, **0** in those same files at the
+current tip. That is a measurement of `511a660`, not a live result: with the tip now clean, the procedure pins
+`511a660` explicitly, and the check is recorded as a reproducible audit step in `docs/audit-register.md` rather
+than committed as a test, so the ordinary suite never depends on Git objects. A guard that only passes on its own
+fixtures proves nothing.
 
 Two findings are recorded in `docs/audit-register.md`: **A52** (historical exposure, S3 proposed) and **A53**
 (the nine writer call sites that will republish it on the next run, S2 proposed). The severity call is his, not
 mine, and neither row is closed: A52 sanitises the working-tree version of those files, not the published
-history. Nothing in this pass is committed or pushed; the working tree carries it for review.
+history. Corrected on 2026-10-14: this pass was **committed as `c93a75f`**, and nothing has been pushed. A52
+stays open regardless of the commit, because the 24 earlier commits still carry the paths, the author identity
+and the A50 transcripts.
 
 ## Verification of this pass
 

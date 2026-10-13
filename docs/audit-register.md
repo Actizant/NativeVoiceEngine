@@ -396,7 +396,7 @@ live property of the code and will republish the same datum on the next run.
 
 | # | Severity | Component | Defect | Evidence | Status |
 |---|---|---|---|---|---|
-| A52 | **S3 proposed, awaiting his ruling** | committed artefacts + docs (25 files) | Machine-generated evidence recorded absolute home paths containing the operator's Windows account name, and those files were then published. The path layout of the working machine - cache roots, data root, scratch workspace, session directory - became public alongside it | **87** occurrences in **25** tracked files at `511a660`, all of them path segments and none of them a measurement. A scan of all **270** historical blobs for ten credential shapes (private-key blocks, GitHub/Slack/AWS/Google/OpenAI token forms, JWTs, URLs with embedded credentials, bearer headers, credential-shaped assignments) returned **0 hits**, so the account name and the directory layout are the whole of it. Author name and personal email, and a `+05:30` offset, are present in all **24** commit objects | **MITIGATED AT THE TIP ONLY - NOT REMEDIATED IN HISTORY, NOT CLOSED, NOT YET COMMITTED.** This cleanup sanitises the *working-tree version* of those files: all 87 occurrences now read `[USER_HOME]`, a repository-relative path, or the neutral literal `ACCOUNT` for one folder slug; `src/` and `tools/` are untouched; the change is **87 path replacements** with every altered line a path line. The historical commits still carry the original paths and remain publicly fetchable, and rewriting history has been declined. This row must not be read as closure of the exposure |
+| A52 | **S3 proposed, awaiting his ruling** | committed artefacts + docs (25 files) | Machine-generated evidence recorded absolute home paths containing the operator's Windows account name, and those files were then published. The path layout of the working machine - cache roots, data root, scratch workspace, session directory - became public alongside it | **87** occurrences in **25** tracked files at `511a660`, all of them path segments and none of them a measurement. A scan of all **270** historical blobs for ten credential shapes (private-key blocks, GitHub/Slack/AWS/Google/OpenAI token forms, JWTs, URLs with embedded credentials, bearer headers, credential-shaped assignments) returned **0 hits**, so the account name and the directory layout are the whole of it. Author name and personal email, and a `+05:30` offset, are present in all **24** commit objects | **MITIGATED AT THE TIP ONLY - NOT REMEDIATED IN HISTORY, NOT CLOSED.** Committed as `c93a75f` (2026-10-14): all 87 occurrences in the tracked tree now read `[USER_HOME]`, a repository-relative path, or the literal `ACCOUNT` for one folder slug; `src/` and `tools/` were untouched and every altered line was a path line. That is the entire extent of what this does. The 24 earlier commits, `511a660` among them, still carry the original paths and remain publicly fetchable, as do the author name and personal email, the `+05:30` offsets, the initial commit's co-author trailer and the A50 third-party transcripts. Rewriting history has been declined. **This row is explicitly not a closure of the exposure.** |
 | A53 | **S2 proposed, awaiting his ruling** | artefact writers in `tools/` (nine call sites) | The writers emit real absolute paths at serialisation time, so **any** future capture, evaluation, asset audit or platform demonstration reintroduces the account name into newly committed evidence. A52 without A53 is a one-time cleanup of a leak that is still open | `tools/multilingual_eval.py:175,205,314,388,389`; `tools/real_speech_check.py:356,599` via `preserve_previous():400`; `tools/platform_demo.py:248,251,252`; `tools/asset_status_audit.py:59,148`; and the voice-identity `evidence`/`source` fields seeded through `src/nativevoice/voices/identity.py:58` | **OPEN - proposal delivered, implementation not authorised.** Must land before the next capture or evaluation run, because `tests/test_no_personal_paths.py` fails on any newly written personal path by design. Constraint recorded: `asset_root` is load-bearing (`models/integrity.py:34`, `stt/adapters/faster_whisper_engine.py:68`), so normalisation is confined to the serialisation boundary of **committed copies** and must not touch live manifests under the data root |
 
 #### Falsification procedure for A52 - an audit step, deliberately not a test
@@ -417,39 +417,44 @@ FILES = ("artifacts/evaluation/multilingual-inventory.json",
          "artifacts/platform/platform-run.json",
          "artifacts/device/mic-baseline-post-go.json",
          "docs/relocation.md", "docs/audit-register.md", "PROGRESS.md")
+PRE = "511a660"          # the pre-cleanup revision; NOT HEAD, which is clean since c93a75f
 tb = ta = 0
 for name in FILES:
-    before = subprocess.run([git, "show", f"HEAD:{name}"],
+    before = subprocess.run([git, "show", f"{PRE}:{name}"],
                             capture_output=True).stdout.decode("utf-8", "replace")
     after = open(name, encoding="utf-8").read()
     hb = sum(len(guard.personal_path_findings(l)) for l in before.splitlines())
     ha = sum(len(guard.personal_path_findings(l)) for l in after.splitlines())
     tb += hb; ta += ha
-    print(f"{name}: HEAD={hb} now={ha}")
-print(f"TOTAL HEAD={tb} now={ta}")
+    print(f"{name}: {PRE}={hb} tip={ha}")
+print(f"TOTAL {PRE}={tb} tip={ta}")
 PY
 ```
 
-Recorded on this machine at the time of writing, verbatim:
+**Historical measurement, taken at revision `511a660` before the cleanup was committed.** These are results from
+that revision; the same command run against the current tip yields 0 and 0 and demonstrates nothing:
 
 ```
-artifacts/evaluation/multilingual-inventory.json: HEAD=41 now=0
-artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit: HEAD=1 now=0
-artifacts/platform/platform-run.json: HEAD=6 now=0
-artifacts/device/mic-baseline-post-go.json: HEAD=1 now=0
-docs/relocation.md: HEAD=4 now=0
-docs/audit-register.md: HEAD=1 now=0
-PROGRESS.md: HEAD=3 now=0
-TOTAL HEAD=57 now=0
+artifacts/evaluation/multilingual-inventory.json: 511a660=41 tip=0
+artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit: 511a660=1 tip=0
+artifacts/platform/platform-run.json: 511a660=6 tip=0
+artifacts/device/mic-baseline-post-go.json: 511a660=1 tip=0
+docs/relocation.md: 511a660=4 tip=0
+docs/audit-register.md: 511a660=1 tip=0
+PROGRESS.md: 511a660=3 tip=0
+TOTAL 511a660=57 tip=0
 ```
 
-Interpretation, stated narrowly: the detector flags **57** real published path segments across these seven
-files - including the `.pre-audit` manifest copy, which is in scope - and reports **0** in the same files now.
-Detection was confirmed separately for the Windows-JSON, Git-Bash `/c/Users/…` and folder-slug forms. That the
-numbers differ from the 87 total is expected: this list is seven files, not all 25. A non-zero `HEAD` count with
-a zero working-tree count is the point - a guard that only passes on its own fixtures proves nothing.
+Interpretation, stated narrowly: at `511a660` the detector flagged **57** real published path segments across
+these seven files - including the `.pre-audit` manifest copy, which is in scope - while the same seven files at
+the current tip report **0**. Detection was confirmed separately for the Windows-JSON, Git-Bash `/c/Users/…` and
+folder-slug forms. That 57 differs from the 87 total is expected: this list is seven files, not all 25. A
+non-zero count at the pre-cleanup revision against zero at the tip is the point - a guard that only passes on its
+own fixtures proves nothing.
 
-This step depends on `HEAD` containing the unremediated blobs, which stops being true once the scrub is
-committed. It is a record of A52's verification, not a permanent regression check; the permanent checks are the
-fixture-driven negative and positive controls inside the committed test file.
+This step depends on the **pre-cleanup** revision still containing the unremediated blobs, which is why it pins
+`511a660` explicitly rather than reading `HEAD`: since `c93a75f` the tracked tree is clean, so a `HEAD`-based
+version of this command now returns zero on both sides and proves nothing. It stays here as the record of how
+A52 was verified, not as a permanent regression check - the permanent checks are the fixture-driven negative and
+positive controls inside the committed test file.
 
