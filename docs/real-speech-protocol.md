@@ -239,3 +239,93 @@ figure of 0.0494 remains a synthetic result only. Language detection through the
 A41, open, not investigated. Endpointing on real pauses: **still NOT RUN**, because the one run that would
 have answered it was confounded by A36 and the run after that by A42. A rerun with both fixed is the next
 measurement, and it is the reader's to trigger.
+
+
+## Results — step 2 with both harness defects cleared (2026-10-13 17:19:15)
+
+```
+python tools/real_speech_check.py --countdown 15 --limit 90
+```
+
+Artefact `artifacts/device/real-speech-read-aloud.json`, 5,561 bytes, SHA-256
+`add7a3969bc545edf09d4e789cb821668dfaae8ac096b8318a27bda7dc4c8170`. Exit 0, and the report printed cleanly
+including a non-Latin hallucination - A40 confirmed fixed on live audio, not only in tests. The 15:31 run
+was auto-preserved at `real-speech-read-aloud.20261013-153133.previous.json`.
+
+### Timeline evidence that A42 is fixed
+
+`countdown_seconds: 15`, `stream_opened_at: GO`, `wall_seconds: 90.541` against `audio_seconds: 90.02`.
+Ninety seconds of audio cost ninety seconds of wall time, so there is no backlog being replayed. The first
+turn opened at **0.84 s**, i.e. 0.84 s after GO - previously that number would have carried a countdown
+offset.
+
+### Openings, as measured
+
+| Segment | Onset after GO | Length | Became |
+|---|---|---|---|
+| 0 | 0.84 s | 4.00 s | the pangram, matched, inside the quiet window |
+| 1 | 5.34 s | 4.02 s | "Setelah menonton, sebelum anda mempunyai terlihat." - unmatched |
+| 2 | 9.90 s | 4.54 s | the coffee sentence, matched |
+| 3 | 32.36 s | 0.78 s | empty transcript - unmatched |
+
+**The hardest case in this protocol happened for real:** the reader started at 0.84 s, *inside* the 2-second
+quiet baseline. A36 used to file that audio as noise and discard it while counting it as a false opening.
+Here it was captured, transcribed **word for word**, matched to its sentence, and reported as
+`speech_inside_quiet_window: 1` with `false_turn_openings: 0`. The fix is proven on human audio, not just
+by a synthetic burst.
+
+One consequence of that, stated plainly: because he spoke inside it, this run's quiet-window statistics
+(median 0.002742, peak 0.0672) describe **his first utterance, not the room**. The room-tone reference
+remains the earlier quiet runs at median ~0.0004 / peak 0.0021-0.0029.
+
+### Transcription, per sentence — all measured, none estimated
+
+| Target | Heard | WER | CER | Word errors | Language | Confidence |
+|---|---|---|---|---|---|---|
+| The quick brown fox jumps over the lazy dog. | identical | **0.0000** | **0.0000** | 9 correct, 0/0/0 | `en` | 0.9202 |
+| Please turn off the lights before you leave the room. | *no match* | — | — | segment 1 returned Indonesian | — | — |
+| I would like a cup of coffee and a slice of bread. | "I would like a cup of coffee and slice of it with" | **0.2500** | **0.1842** | 10 correct, 1 sub, 1 ins, 1 del | `en` | 0.9781 |
+
+Mean over matched sentences **WER 0.125 / CER 0.0921**, one exact match, language top-1 **1.000** on the
+matched pair. The lights sentence is the failure: ~4 s of his voice at 5.34 s came back as an Indonesian
+sentence that sounds nothing like it - a recognition and language-assertion error, not a segmentation error.
+
+### Acceptance
+
+| Criterion | Result |
+|---|---|
+| Nothing persisted | **PASS** - `retention: none`, `recordings_written: []`, 381 files before and after, `created_during_run: []` |
+| Offline | **PASS** - `network_attempts: []`, zero attempts |
+| False turn-opens | **PASS** - 0 by the predeclared window-scoped definition (see A44 for what that definition misses) |
+| All sentences matched | **FAIL** - 2 of 3 |
+| Read-aloud WER / CER | **MEASURED** - 0.125 / 0.0921, no pass bar by design |
+| Language detection | **MEASURED** - 1.000 on matched sentences |
+| VAD onset error | **NOT RUN** - A31, no ground-truth onset in a manual run |
+| Endpointing on the protocol's 1.5 s deliberate pauses | **NOT RUN** - step 3 |
+| Noise, barge-in | **NOT RUN** - steps 4 and 6 |
+
+### What this run says about endpointing, and what it still does not
+
+Three consecutive read-aloud sentences separated by roughly half a second produced **exactly three
+segments**, with no merging and no splitting - the first clean segmentation evidence in this protocol, and
+the opposite of the 15:31 run where the pangram was cut into two. That is encouraging but it is **not**
+the predeclared test: step 3 asks for deliberate 1.5 s pauses, which were not used here, so
+`endpointing_on_long_pause` stays NOT RUN. Separately, the opening at 32.36 s that produced an empty
+transcript is a real turn opening on non-speech that the quiet-window-scoped criterion does not count -
+logged as A44 rather than quietly passed.
+
+### Across the four human runs (labelled, because the harness changed twice)
+
+| Run | Matched | Mean WER | Language on matched |
+|---|---|---|---|
+| 14:51 (positional scoring) | 1 of 3, word-exact | 0.0000 against its own sentence | `en` 1.000 |
+| 15:18 | 1 of 3 | 0.4444 | `nn` 0.9467 - wrong |
+| 15:31 | 2 of 3 | 0.3084 | `en` 0.9782 / 0.9557 |
+| 17:19 | 2 of 3 | 0.1250 | `en` 0.9202 / 0.9781 |
+
+Six matched sentences out of twelve expected across all four runs; the four best are 0.0, 0.0, 0.2 and
+0.25 WER. Recognition on human speech at the laptop microphone is therefore **working and variable**, and
+the worst failures are not partial mis-hearings but whole-sentence language substitutions. The 15:18 and
+15:31 rows were taken under a harness with A36 or A42 active, which affected sentence pairing and timing -
+not the audio inside a segment - so their per-sentence WERs remain valid measurements while their counts
+and timing claims do not.

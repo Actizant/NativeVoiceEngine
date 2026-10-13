@@ -180,3 +180,15 @@ A41 and A39 stay **OPEN and untouched** by instruction. A41 gained a data point 
 answered `nn` at 0.9467 for clear English, so the vendor's auto-detection is **unstable**, not consistently
 wrong - which is a different and worse property to design against. The Japanese hallucination in a
 silence-adjacent fragment appeared in both runs.
+
+
+### Addendum 7 — observations from the 17:19 clean run (recorded, deliberately not fixed)
+
+| # | Severity | Component | Observation | Evidence | Status |
+|---|---|---|---|---|---|
+| A43 | S3 | `tools/real_speech_check.py` | Unmatched segments are reported with their text and closest distance but **not** with the language the engine asserted, so a whole-sentence language substitution cannot be attributed after the fact | the 17:19 run returned "Setelah menonton, sebelum anda mempunyai terlihat." for the lights sentence; `heard[]` held a language per segment but only matched sentences were carried into `results[]`, so this run cannot say whether the engine claimed Indonesian or still said `en` | **OPEN** - a report-completeness gap in the harness, named rather than fixed, because the instruction for this pass was no unrelated changes |
+| A44 | S3 | `docs/real-speech-protocol.md` criterion | The predeclared false-opening bar is scoped to the quiet room before speech, so a turn opening on non-speech anywhere **after** that window is not counted as false | the 17:19 run opened a turn at 32.36 s lasting 0.78 s that transcribed to an empty string, and `false_turn_openings` still read 0 - correct against the written criterion, and misleading as a description of the run | **OPEN** - the criterion is what was agreed before any audio existed, so changing its meaning is the approver's decision, not a mid-task edit. Steps 4 and 6 need a definition of a false opening by intent rather than by clock position |
+
+A40 and A42 are now confirmed on live audio rather than only by tests: the report printed a non-Latin
+hallucination and exited 0, and 90.02 s of audio took 90.541 s of wall time with the first opening at 0.84 s
+after GO.

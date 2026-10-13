@@ -778,3 +778,64 @@ enabled, all three artefact generations are on disk, Kokoro is still the platfor
 isolated under `.trials/kitten/`, no identity or engine changed, nothing was downloaded, nothing was
 trained, nothing was integrated into ULTRON or FieldMind, and no production behaviour was modified: every
 line of code changed in this entry lives under `tools/` or `tests/`.
+
+
+---
+
+# Progress ledger — entry 11 (2026-10-13, the clean supervised run at 17:19)
+
+One capture, exactly as authorised, and nothing after it:
+`python tools/real_speech_check.py --countdown 15 --limit 90`, retention `none`, offline guard on.
+
+## The run proved both fixes on human audio, not only in tests
+
+A40: a Japanese-to-Indonesian set of hallucinations printed without raising, and the process exited **0**.
+
+A42: `countdown_seconds: 15`, `stream_opened_at: GO`, `wall_seconds 90.541` against `audio_seconds 90.02` -
+ninety seconds of audio took ninety seconds of wall time, so no backlog is being replayed, and the first
+turn opened at **0.84 s after GO** rather than carrying a countdown offset.
+
+And the protocol's hardest case arrived uninvited: the reader **started speaking at 0.84 s, inside the
+two-second quiet baseline**. Under A36 that audio would have been measured, filed as noise, discarded, and
+then counted against the run as a false opening. Here it was captured, transcribed **word for word**,
+matched to the pangram at WER 0.0000 / CER 0.0000 with `en` at 0.9202, and reported as
+`speech_inside_quiet_window: 1` with `false_turn_openings: 0`.
+
+## What the audio said
+
+Four openings: 0.84 s (4.00 s, matched the pangram exactly), 5.34 s (4.02 s, returned
+"Setelah menonton, sebelum anda mempunyai terlihat."), 9.90 s (4.54 s, matched the coffee sentence at WER
+**0.2500** / CER 0.1842, `en` 0.9781), and 32.36 s (0.78 s, empty transcript).
+
+Mean over matched sentences **WER 0.125 / CER 0.0921**, one exact match, language top-1 **1.000**. The
+lights sentence is the failure: four seconds of his voice came back as an Indonesian sentence. Acceptance:
+nothing persisted **PASS** (381 files before and after, `created_during_run` and `recordings_written` both
+empty), offline **PASS** with `network_attempts: []`, false openings **PASS** by the predeclared definition,
+all-sentences-matched **FAIL** at 2 of 3, WER and language **MEASURED**, onset error / long-pause
+endpointing / noise / barge-in **NOT RUN**.
+
+Three consecutive sentences at roughly half-second gaps produced exactly three segments - no merge, no
+split - which is the first clean segmentation evidence we have, and the opposite of the 15:31 split
+pangram. It is still **not** the predeclared endpointing test, which asks for deliberate 1.5 s pauses, so
+that criterion stays NOT RUN rather than being upgraded because the news was good.
+
+## Two observations recorded and deliberately not fixed
+
+A43 - unmatched segments carry their text but not the language the engine asserted, so this run cannot say
+what language was claimed for the Indonesian substitution. A44 - the false-opening bar is scoped to the
+quiet window, so the 32.36 s opening on non-speech that transcribed to nothing is not counted; that is
+correct against the criterion agreed before any audio existed, and misleading as a description of the run.
+Both left OPEN: naming them is allowed by this pass, editing them is not.
+
+Register stands at **43 findings, 34 fixed, 9 open**. A39 and A41 untouched by instruction; A41 now has a
+fourth data point (2 of 2 correct this run, 0 of 2 in the 15:18 run, and a whole-sentence language
+substitution in between), which keeps it firmly "unstable" rather than "wrong".
+
+## Verification and boundaries
+
+No code changed in this entry - it is one artefact and three documents - so the suites above stand as the
+record for the current tree: **709 passed, 7 skipped**, **716 passed** with `--run-approved-assets`, audit
+**11 passed / 0 failed**, offline proof **PASS** with zero attempts, platform demo **PASS**. Nothing was
+downloaded, promoted, integrated or retrained; Kokoro remains the default, Kitten remains under
+`.trials/kitten/`, `src/` is untouched, and all five artefact generations are on disk. **No further capture
+has been started.**
