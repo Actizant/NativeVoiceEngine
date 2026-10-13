@@ -337,7 +337,7 @@ Test B himself. **That was wrong, and it is withdrawn.** The approver's instruct
 launched it was correct; I assumed it anyway, and the assumption was false.
 
 The origin is now established from this session's own transcript log
-(`~/.qoder/projects/C--Users-shres-Documents-Qoder-2026-10-12-76969c5c/76969c5c-....jsonl`), which records
+(`~/.qoder/projects/C--Users-ACCOUNT-Documents-Qoder-2026-10-12-76969c5c/76969c5c-....jsonl`), which records
 every tool call with a timestamp. Local times, +05:30:
 
 | Time | Log line | Event |
@@ -385,3 +385,71 @@ Full results in `docs/multilingual-eval-2026-10-13.md`. These four are the ones 
 | A49 | S3 | `tools/multilingual_eval.py` | The repeated-clause detector compares comma-separated clauses, so repetition **inside** one clause is invisible; `repeated_clause: false` therefore does not mean no repetition happened | the baseline's Chinese output contains 都會**屬於屬於屬於** and the flag reads false | **OPEN** - named and labelled in the evaluation document rather than silently fixed, so nobody reads the field as a clean bill of health |
 | A50 | S2 | evaluation dataset provenance | The 13 attachments are third-party **synthetic speech** with no licence, consent basis, redistribution statement or provenance metadata. They are voice-product previews, and a voice preview is a product asset, not a corpus | the filenames carry only speaker labels; the recognised text of the English clip is itself vendor copy - "After months of intensive development, **Fish Audio 1.5** has just launched with major improvements to expressiveness, stability, and cross-language capabilities"; 11 of 13 timestamps fall inside one 24-minute window (18:25-18:49) | **OPEN, pre-distribution** - read in place, hashed before and after, never copied into the repository; only isolated 16 kHz working copies exist outside it at `../_multilingual_eval`, and only text metrics plus short excerpts are committed. They must not become a shipped evaluation set or a training corpus without a decision. Local use is unblocked |
 | A51 | S2 | `core/language.py` capability model | Capability status is keyed on **language alone**, so "Hindi recognised" can be satisfied by output in the **wrong writing system**. The baseline asserted `hi` and produced Perso-Arabic script, and every existing gate - status, routing, metrics - passed it | Hindi cue recall **0.00** under both baseline quantisations versus **0.90** for `large-v3` in Devanagari; Bengali behaved identically, asserted `bn` and written in Arabic script across 13 segments. Both are invisible to a language-only check | **OPEN** - this is a design gap in how support is represented, not a defect to patch mid-evaluation. Whether script becomes part of a capability claim is a ruling, and it changes the registry schema and the routing gate |
+
+### Addendum 13 - the published repository carried personal paths (2026-10-14): two findings
+
+The repository was made public with `origin/master` at `511a660`. An unauthenticated fetch of a committed
+evaluation artefact returned HTTP 200 with its JSON intact, and that JSON contained the operator's Windows
+account name inside absolute home-directory paths. The two findings below are deliberately kept apart: one is
+already in public history and cannot be undone without a rewrite that has been declined twice; the other is a
+live property of the code and will republish the same datum on the next run.
+
+| # | Severity | Component | Defect | Evidence | Status |
+|---|---|---|---|---|---|
+| A52 | **S3 proposed, awaiting his ruling** | committed artefacts + docs (25 files) | Machine-generated evidence recorded absolute home paths containing the operator's Windows account name, and those files were then published. The path layout of the working machine - cache roots, data root, scratch workspace, session directory - became public alongside it | **87** occurrences in **25** tracked files at `511a660`, all of them path segments and none of them a measurement. A scan of all **270** historical blobs for ten credential shapes (private-key blocks, GitHub/Slack/AWS/Google/OpenAI token forms, JWTs, URLs with embedded credentials, bearer headers, credential-shaped assignments) returned **0 hits**, so the account name and the directory layout are the whole of it. Author name and personal email, and a `+05:30` offset, are present in all **24** commit objects | **MITIGATED AT THE TIP ONLY - NOT REMEDIATED IN HISTORY, NOT CLOSED, NOT YET COMMITTED.** This cleanup sanitises the *working-tree version* of those files: all 87 occurrences now read `[USER_HOME]`, a repository-relative path, or the neutral literal `ACCOUNT` for one folder slug; `src/` and `tools/` are untouched; the change is **87 path replacements** with every altered line a path line. The historical commits still carry the original paths and remain publicly fetchable, and rewriting history has been declined. This row must not be read as closure of the exposure |
+| A53 | **S2 proposed, awaiting his ruling** | artefact writers in `tools/` (nine call sites) | The writers emit real absolute paths at serialisation time, so **any** future capture, evaluation, asset audit or platform demonstration reintroduces the account name into newly committed evidence. A52 without A53 is a one-time cleanup of a leak that is still open | `tools/multilingual_eval.py:175,205,314,388,389`; `tools/real_speech_check.py:356,599` via `preserve_previous():400`; `tools/platform_demo.py:248,251,252`; `tools/asset_status_audit.py:59,148`; and the voice-identity `evidence`/`source` fields seeded through `src/nativevoice/voices/identity.py:58` | **OPEN - proposal delivered, implementation not authorised.** Must land before the next capture or evaluation run, because `tests/test_no_personal_paths.py` fails on any newly written personal path by design. Constraint recorded: `asset_root` is load-bearing (`models/integrity.py:34`, `stt/adapters/faster_whisper_engine.py:68`), so normalisation is confined to the serialisation boundary of **committed copies** and must not touch live manifests under the data root |
+
+#### Falsification procedure for A52 - an audit step, deliberately not a test
+
+The committed suite is self-contained: no ordinary test reads Git objects, so the suite runs identically in any
+checkout. Proving the guard would actually have caught the published exposure is therefore a separate,
+reproducible audit step. It loads `personal_path_findings()` straight out of `tests/test_no_personal_paths.py`
+and runs it over the **pre-scrub blobs at `HEAD`** alongside the working-tree files:
+
+```bash
+python - <<'PY'
+import importlib.util, shutil, subprocess
+spec = importlib.util.spec_from_file_location("guard", "tests/test_no_personal_paths.py")
+guard = importlib.util.module_from_spec(spec); spec.loader.exec_module(guard)
+git = shutil.which("git")
+FILES = ("artifacts/evaluation/multilingual-inventory.json",
+         "artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit",
+         "artifacts/platform/platform-run.json",
+         "artifacts/device/mic-baseline-post-go.json",
+         "docs/relocation.md", "docs/audit-register.md", "PROGRESS.md")
+tb = ta = 0
+for name in FILES:
+    before = subprocess.run([git, "show", f"HEAD:{name}"],
+                            capture_output=True).stdout.decode("utf-8", "replace")
+    after = open(name, encoding="utf-8").read()
+    hb = sum(len(guard.personal_path_findings(l)) for l in before.splitlines())
+    ha = sum(len(guard.personal_path_findings(l)) for l in after.splitlines())
+    tb += hb; ta += ha
+    print(f"{name}: HEAD={hb} now={ha}")
+print(f"TOTAL HEAD={tb} now={ta}")
+PY
+```
+
+Recorded on this machine at the time of writing, verbatim:
+
+```
+artifacts/evaluation/multilingual-inventory.json: HEAD=41 now=0
+artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit: HEAD=1 now=0
+artifacts/platform/platform-run.json: HEAD=6 now=0
+artifacts/device/mic-baseline-post-go.json: HEAD=1 now=0
+docs/relocation.md: HEAD=4 now=0
+docs/audit-register.md: HEAD=1 now=0
+PROGRESS.md: HEAD=3 now=0
+TOTAL HEAD=57 now=0
+```
+
+Interpretation, stated narrowly: the detector flags **57** real published path segments across these seven
+files - including the `.pre-audit` manifest copy, which is in scope - and reports **0** in the same files now.
+Detection was confirmed separately for the Windows-JSON, Git-Bash `/c/Users/…` and folder-slug forms. That the
+numbers differ from the 87 total is expected: this list is seven files, not all 25. A non-zero `HEAD` count with
+a zero working-tree count is the point - a guard that only passes on its own fixtures proves nothing.
+
+This step depends on `HEAD` containing the unremediated blobs, which stops being true once the scrub is
+committed. It is a record of A52's verification, not a permanent regression check; the permanent checks are the
+fixture-driven negative and positive controls inside the committed test file.
+

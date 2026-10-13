@@ -2675,7 +2675,7 @@
       "url": ""
     }
   ],
-  "asset_root": "C:\\Users\\shres\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
+  "asset_root": "[USER_HOME]\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
   "minimum_profile": "balanced",
   "notes": "Multi-language offline TTS. Language coverage is verified by inspecting the extracted files, not assumed. Authorisation relied on: TTS asset approved for local use with licence verified from the package LICENSE (2026-10-12). front-end files shipped in the package: lexicon-us-en, lexicon-gb-en, lexicon-zh and the zh date/number FSTs. Languages without a lexicon here are not supported by this asset, whatever espeak-ng could romanise."
 }

@@ -20,7 +20,7 @@
         "why": "evidence missing: no licence text inside the installed package; weights are a third-party conversion of OpenAI Whisper; the licence text itself was not archived locally, and no statement was read about Whisper's training-data provenance; no per-voice or per-speaker consent record reviewed; no publisher terms page read and archived at review time"
       },
       "evidence_inspected": {
-        "checked_directory": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base",
+        "checked_directory": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base",
         "licence_text_shipped_in_package": false,
         "licence_text_head": "",
         "declared_licence_spdx": "MIT",
@@ -30,7 +30,7 @@
       },
       "still_loads_for_local_use": true,
       "approval_blockers": [],
-      "backup_of_previous_manifest": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\audit\\manifest-snapshots\\faster-whisper-base.json.pre-audit"
+      "backup_of_previous_manifest": "artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit"
     },
     {
       "model_id": "faster-whisper-small",
@@ -49,7 +49,7 @@
         "why": "evidence missing: no licence text inside the installed package; as faster-whisper-base: conversion provenance and training-data disclosure unread; no per-voice or per-speaker consent record reviewed; no publisher terms page read and archived at review time"
       },
       "evidence_inspected": {
-        "checked_directory": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-small",
+        "checked_directory": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-small",
         "licence_text_shipped_in_package": false,
         "licence_text_head": "",
         "declared_licence_spdx": "MIT",
@@ -59,7 +59,7 @@
       },
       "still_loads_for_local_use": true,
       "approval_blockers": [],
-      "backup_of_previous_manifest": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\audit\\manifest-snapshots\\faster-whisper-small.json.pre-audit"
+      "backup_of_previous_manifest": "artifacts/audit/manifest-snapshots/faster-whisper-small.json.pre-audit"
     },
     {
       "model_id": "kokoro-int8-multi-lang-v1_1",
@@ -78,7 +78,7 @@
         "why": "evidence missing: the package bundles an espeak-ng data tree under GPL-3.0, and the per-voice consent and dataset terms are referenced on an upstream voices page that was not read or archived; no per-voice or per-speaker consent record reviewed; no publisher terms page read and archived at review time"
       },
       "evidence_inspected": {
-        "checked_directory": "C:\\Users\\shres\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
+        "checked_directory": "[USER_HOME]\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
         "licence_text_shipped_in_package": true,
         "licence_text_head": "Apache License",
         "declared_licence_spdx": "Apache-2.0",
@@ -194,7 +194,7 @@
       },
       "still_loads_for_local_use": true,
       "approval_blockers": [],
-      "backup_of_previous_manifest": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\audit\\manifest-snapshots\\kokoro-int8-multi-lang-v1_1.json.pre-audit"
+      "backup_of_previous_manifest": "artifacts/audit/manifest-snapshots/kokoro-int8-multi-lang-v1_1.json.pre-audit"
     }
   ]
 }

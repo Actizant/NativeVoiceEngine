@@ -22,7 +22,7 @@ not proof about the model. Every file decoded cleanly, so nothing below is a dec
 
 ## Inventory — 13 of 13 accessible and decodable
 
-All files were found in `C:\Users\shres\Downloads`, opened read-only, hashed before and after, and **verified
+All files were found in `[USER_HOME]\Downloads`, opened read-only, hashed before and after, and **verified
 unchanged**. Isolated 16 kHz mono copies were written to `../_multilingual_eval/`, outside the repository.
 Decoding and resampling were performed by ffmpeg through PyAV 18.1.0 identically for every file and every
 model, so no preprocessing difference can be mistaken for a recognition difference.

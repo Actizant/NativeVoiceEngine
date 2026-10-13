@@ -5,9 +5,9 @@ authoritative yet.** Nothing was deleted.
 
 ## Target
 
-`C:\Users\shres\Documents\Qoder\2026-10-12\nativevoice` — chosen because it sits beside the session
+`[USER_HOME]\Documents\Qoder\2026-10-12\nativevoice` — chosen because it sits beside the session
 folder, is human-named, and needs no privileges. The original remains at
-`C:\Users\shres\Documents\Qoder\2026-10-12\76969c5c`.
+`[USER_HOME]\Documents\Qoder\2026-10-12\76969c5c`.
 
 ## Method
 
@@ -58,13 +58,13 @@ developer depended on the layout.
 
 ## N10 — the unexplained interpreter directory, recorded rather than removed
 
-- **Location:** `C:\Users\shres\Documents\Qoder\2026-10-12\76969c5c\Python\` (inside the original
+- **Location:** `Python/` (inside the original
   workspace root, therefore absent from the clone).
 - **Contents:** `pythoncore-3.15-64` (42 MB, the interpreter itself: `python.exe`, `python315.dll`,
   `DLLs/`, `Lib/`, CPython `LICENSE.txt`), `_pythoncore-3.15-64` (9 KB metadata), `_cache` with
   `last_welcome.txt`. 744 files total.
 - **Ownership evidence:** it is **not ours**. (a) We never invoke it — every command in this project runs
-  `C:\Users\shres\AppData\Local\Python\pythoncore-3.14-64\python.exe`, Python **3.14.7**, and the stray
+  `[USER_HOME]\AppData\Local\Python\pythoncore-3.14-64\python.exe`, Python **3.14.7**, and the stray
   tree is **3.15**; (b) the `pythoncore-<version>-<arch>` layout plus `_cache/last_welcome.txt` is the
   Windows Python install manager's own on-disk shape, and its install root on this machine is
   `%LOCALAPPDATA%\Python` — the same naming we see here, resolved relative to the current working

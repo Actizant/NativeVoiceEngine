@@ -14,7 +14,7 @@
         "value": 0.0,
         "measured_on": "2026-10-13"
       },
-      "evidence": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\platform-run.json",
+      "evidence": "artifacts/platform/platform-run.json",
       "limitations": [
         "round-trip on machine-generated speech; measures the TTS+STT pair, not human speech",
         "heard as: The voice platform serves several applications from one engine."
@@ -55,7 +55,7 @@
     "state": "installed",
     "version": "1",
     "installed_on": "2026-10-13T19:37:35",
-    "source": "C:\\Users\\shres\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
+    "source": "[USER_HOME]\\AppData\\Local\\ultron-voice\\models\\kokoro-int8-multi-lang-v1_1",
     "digests": {
       "date-zh.fst": "eb8aa079ae3cb81d8f4404992f39d61a0cb990947512b5b8d1e54d1f6980e718",
       "dict/generate_user_dict.py": "24541017b4b60d8e1ad94a5165f7097d2fd107d4ceecbf13583dd37682fdd2a7",

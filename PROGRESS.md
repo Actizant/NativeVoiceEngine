@@ -356,7 +356,7 @@ Two things left alone on purpose, both recorded rather than tidied:
 
 ## Version control baseline
 
-No parent repository exists at any level up to `/c/Users/shres`, so this is a new root, not a nested one.
+No parent repository exists at any level up to `[USER_HOME]`, so this is a new root, not a nested one.
 `.gitignore` excludes build noise, generated audio (the corpus keeps its digests, so the manifest is the
 evidence and the WAVs are reproducible), credential-shaped files, and the stray interpreter directory.
 `.gitattributes` pins `text=auto eol=lf`, so the CRLF churn git warned about cannot become a diff.
@@ -413,7 +413,7 @@ before recording; produce a TTS comparison as a proposal only; ASR fine-tuning s
 
 ## Relocation (N9) - verified in the new copy, original untouched
 
-`C:\Users\shres\Documents\Qoder\2026-10-12\nativevoice` now holds a `git clone` of the repository. A
+`[USER_HOME]\Documents\Qoder\2026-10-12\nativevoice` now holds a `git clone` of the repository. A
 clone rather than a copy, deliberately: it can only contain tracked history, so anything missing is
 something that was never versioned, which is the question a relocation should answer.
 
@@ -1112,7 +1112,7 @@ found - unimplemented. Nothing was captured, downloaded, registered, promoted or
 
 ## Accessibility came first, and it passed
 
-All 13 attachments were found in `C:\Users\shres\Downloads`, opened read-only, hashed before and after, and
+All 13 attachments were found in `[USER_HOME]\Downloads`, opened read-only, hashed before and after, and
 **verified unchanged**. Isolated 16 kHz mono copies went to `../_multilingual_eval/`, outside the repository -
 the same rule already applied to the reference archives. No audio, and no third-party bytes of any kind,
 entered the repo. Total audio 209.7 s; every file decoded cleanly, so nothing below is a decoding artefact.
@@ -1194,3 +1194,50 @@ passed, 0 failed, 0 not run**; `tools/offline_proof.py` → **PASS**, `"attempts
 (the new tools introduce no network path); `tools/platform_demo.py` → exit **0**, verdict **PASS**, zero
 network attempts. `src/` is untouched: everything added is a new evaluation tool, a new test file, and
 documentation.
+
+## The repository was made public carrying the operator's account name
+
+`origin` was added and `master` pushed at `511a660`, and the repository is **public**. The published evidence
+files turned out to contain absolute home-directory paths naming the operator's Windows account: **87**
+occurrences across **25** tracked files. Measured rather than inferred - an unauthenticated fetch of
+`raw.githubusercontent.com` returned the evaluation inventory with HTTP 200 and its JSON intact.
+
+The account name and the directory layout are the whole of the personal datum. A scan of all **270** historical
+blobs against ten credential shapes returned **0** hits, and the operator's email address appears in no
+committed file. What does remain in public history, and cannot be removed without a rewrite that has been
+declined twice: the pre-scrub blobs of these same files, the author name and personal email on all 24 commits,
+a `+05:30` offset on every timestamp, the AI co-author trailer on the initial commit, the A50 third-party
+transcripts and speaker-labelled filenames, and the SHA-256 digests of the 13 source audio files. **This is not
+a closed finding - it is a tip-only remediation of an exposure that is still open.**
+
+Every occurrence now reads `[USER_HOME]`, a repository-relative path, or the neutral literal `ACCOUNT` for the
+one case where the path is embedded in a folder name. Structure was dropped where it carried no evidential
+meaning and kept where the prose was *about* the location, so `docs/relocation.md` and `docs/baseline.md` still
+argue what they argued about the hashed session directory. Measurements, verdicts, timestamps, filenames,
+digests and provenance statements are byte-identical: the path replacements are **87 deletions answered
+line-for-line by 87 rewrites**, every altered pre-existing line is a path line, and `src/` and `tools/` are
+untouched. Everything else in the diff is new ledger prose in this file and `docs/audit-register.md`.
+
+`tests/test_no_personal_paths.py` is the part that keeps working: 17 tests over five path formats, with negative
+controls assembled from synthetic account names, positive controls for every approved placeholder, `.pre-audit`
+manifest copies included in the parse check, a coverage floor derived from `git ls-files` rather than a pinned
+count, and the one local-only exception declared explicitly instead of silently excluded. It was checked against
+the real pre-scrub `HEAD` blobs - **57** findings across seven files, **0** now - and that check is recorded as a
+reproducible audit procedure in `docs/audit-register.md` rather than committed as a test, so the ordinary suite
+never depends on Git objects. A guard that only passes on its own fixtures proves nothing.
+
+Two findings are recorded in `docs/audit-register.md`: **A52** (historical exposure, S3 proposed) and **A53**
+(the nine writer call sites that will republish it on the next run, S2 proposed). The severity call is his, not
+mine, and neither row is closed: A52 sanitises the working-tree version of those files, not the published
+history. Nothing in this pass is committed or pushed; the working tree carries it for review.
+
+## Verification of this pass
+
+`python -m pytest` → **753 passed, 7 skipped** (736 pre-existing plus the 17 guard tests; the 7 skips are the
+standing `NOT RUN` asset gates, unchanged). `python -m pytest tests/test_no_personal_paths.py` → **17 passed in
+2.03 s**. Diff: **25 files changed, 196 insertions(+), 87 deletions(-)**, where the 87 deletions are exactly the
+87 path lines and 109 insertions are new ledger prose (41 here, 68 in `docs/audit-register.md`). Parity against
+`HEAD`: for each of the 23 path-only files, applying the placeholder substitution to the committed blob
+reproduces the working tree byte-for-byte; the two prose files differ only by additions. Zero files under `src/`
+or `tools/` were modified, and `git grep` for the account name over tracked files returns **0 files**. Lint and
+typecheck: **NOT RUN** - `ruff` and `mypy` are not installed and neither is configured in `pyproject.toml`.

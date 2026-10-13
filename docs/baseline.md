@@ -103,6 +103,6 @@ can be imported by the deliverable.
 
 ## Workspace
 
-`C:\Users\shres\Documents\Qoder\2026-10-12\76969c5c` was **empty** at inspection. It is the standalone
+`[USER_HOME]\Documents\Qoder\2026-10-12\76969c5c` was **empty** at inspection. It is the standalone
 project root per §2 of the specification — separate from the main ULTRON repository, which has not been
 read, referenced or modified, and which has no dependency on anything created here.

@@ -9,11 +9,11 @@
       "silenced": false,
       "language": "en",
       "frames_played": 84695,
-      "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\ultron-reply.wav",
+      "audio_file": "artifacts/platform/ultron-reply.wav",
       "notes": [],
       "voice_refusal": "",
-      "data_root": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\ultron",
-      "store_isolated": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\ultron\\recordings"
+      "data_root": "artifacts/platform/hosts/ultron",
+      "store_isolated": "artifacts/platform/hosts/ultron/recordings"
     },
     "fieldmind": {
       "default_voice": "voice.host.fieldmind.speaker7",
@@ -23,11 +23,11 @@
       "silenced": false,
       "language": "en",
       "frames_played": 121450,
-      "audio_file": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\fieldmind-reply.wav",
+      "audio_file": "artifacts/platform/fieldmind-reply.wav",
       "notes": [],
       "voice_refusal": "",
-      "data_root": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\fieldmind",
-      "store_isolated": "C:\\Users\\shres\\Documents\\Qoder\\2026-10-12\\76969c5c\\artifacts\\platform\\hosts\\fieldmind\\recordings"
+      "data_root": "artifacts/platform/hosts/fieldmind",
+      "store_isolated": "artifacts/platform/hosts/fieldmind/recordings"
     }
   },
   "measurements": {

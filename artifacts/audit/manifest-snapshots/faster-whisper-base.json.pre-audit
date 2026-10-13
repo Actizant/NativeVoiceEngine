@@ -65,7 +65,7 @@
       "url": ""
     }
   ],
-  "asset_root": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base",
+  "asset_root": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base",
   "minimum_profile": "lite",
   "notes": "Already resident in the local Hugging Face cache; provisioning verifies digests, it does not download. Authorisation relied on: Use pretrained weights already resident locally or provisioned with verified licence (2026-10-12). OpenAI Whisper's published 97-language list includes English, Hindi and Bengali; vendor claim, measured here only for the languages the round-trip evaluation covers"
 }

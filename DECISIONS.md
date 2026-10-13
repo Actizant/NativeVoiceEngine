@@ -127,7 +127,7 @@ that is how it is implemented.
 
 ## S4 — Where does this project live, and under what name?
 
-The working directory `C:\Users\shres\Documents\Qoder\2026-10-12\76969c5c` is the hashed Qoder session
+The working directory `[USER_HOME]\Documents\Qoder\2026-10-12\76969c5c` is the hashed Qoder session
 folder, which is a poor home for a standalone repository you will keep.
 
 - **(a) Recommended.** Keep building here now (it is the authorised workspace), then move it — or `git init`

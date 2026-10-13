@@ -1,7 +1,7 @@
 {
   "pass": "base-int8",
   "repo": "Systran/faster-whisper-base",
-  "snapshot": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base\\snapshots\\ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+  "snapshot": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-base\\snapshots\\ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
   "snapshot_model_bin_bytes": 145217532,
   "compute_type": "int8",
   "beam_size": 5,

@@ -1,7 +1,7 @@
 {
   "pass": "large-v3-int8",
   "repo": "Systran/faster-whisper-large-v3",
-  "snapshot": "C:\\Users\\shres\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-large-v3\\snapshots\\edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "snapshot": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-large-v3\\snapshots\\edaa852ec7e145841d8ffdb056a99866b5f0a478",
   "snapshot_model_bin_bytes": 3087284237,
   "compute_type": "int8",
   "beam_size": 5,

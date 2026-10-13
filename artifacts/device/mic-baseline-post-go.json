@@ -104,7 +104,7 @@
   },
   "network_attempts": [],
   "persistence": {
-    "data_root": "C:\\Users\\shres\\AppData\\Local\\ultron-voice",
+    "data_root": "[USER_HOME]\\AppData\\Local\\ultron-voice",
     "files_before": 381,
     "files_after": 381,
     "created_during_run": [],
