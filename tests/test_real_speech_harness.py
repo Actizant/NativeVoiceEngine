@@ -33,6 +33,7 @@ from tools.real_speech_check import (  # noqa: E402
     ALIGN_WER_CAP,
     SENTENCES,
     align_targets,
+    annotate_alignment,
     classify_openings,
     collect_segments,
     configure_console,
@@ -314,6 +315,18 @@ class FakeStream:
 
 
 class TestConsoleGuard:
+    def test_without_transcripts_the_new_measure_is_unmeasured_not_zero(self):
+        report = classify_openings([segment(32000, 0.78)], RATE, 2.0, set())
+        assert report["empty_transcript_openings_outside_quiet_window"] is None
+        assert report["empty_transcript_openings_outside_quiet_window_onsets"] is None
+        assert "transcript_empty" not in report["openings"][0]
+
+    def test_a_real_transcript_outside_the_window_is_not_counted(self):
+        report = classify_openings(
+            [segment(32000, 3.0)], RATE, 2.0, set(), texts=["Please turn off the lights"]
+        )
+        assert report["empty_transcript_openings_outside_quiet_window"] == 0
+
     """A40: a Japanese or Cyrillic hallucination crashed the report *after* the evidence was saved."""
 
     def test_emit_reprints_as_ascii_when_the_console_cannot_encode_it(self, monkeypatch):
@@ -465,3 +478,63 @@ class TestStartTiming:
         )
         elapsed = time.perf_counter() - started
         assert stats["wall_seconds"] < elapsed - 0.15, "the countdown must not be billed to the capture"
+
+class TestLanguageAttribution:
+    """A43: an unmatched segment must record the language the engine claimed it heard."""
+
+    def test_extra_segments_carry_the_language_and_confidence_they_were_heard_in(self):
+        texts = [SENTENCES[0], "Setelah menonton, sebelum anda mempunyai terlihat."]
+        heard = [
+            {"text": texts[0], "language": "en", "confidence": 0.92},
+            {"text": texts[1], "language": "id", "confidence": 0.81},
+        ]
+        annotated = annotate_alignment(align_targets(list(SENTENCES), texts), heard)
+        extra = annotated["extra_segments"][0]
+        assert extra["segment_index"] == 1
+        assert extra["detected_language"] == "id"
+        assert extra["confidence"] == 0.81
+
+    def test_a_missing_target_records_what_the_closest_segment_actually_said(self):
+        said = "Setelah menonton, sebelum anda mempunyai terlihat."
+        heard = [{"text": said, "language": "id", "confidence": 0.77}]
+        annotated = annotate_alignment(align_targets(list(SENTENCES), [said]), heard)
+        missing = {item["target_index"]: item for item in annotated["missing_targets"]}
+        assert missing[1]["closest_segment_text"] == said
+        assert missing[1]["closest_segment_language"] == "id"
+        assert missing[1]["closest_segment_confidence"] == 0.77
+
+    def test_no_language_is_invented_when_the_engine_asserts_none(self):
+        heard = [{"text": "", "language": "", "confidence": None}]
+        annotated = annotate_alignment(align_targets(list(SENTENCES), [""]), heard)
+        extra = annotated["extra_segments"][0]
+        assert extra["detected_language"] == ""
+        assert extra["confidence"] is None
+
+    def test_annotations_never_invent_a_match(self):
+        texts = [SENTENCES[0], SENTENCES[0]]
+        heard = [{"text": t, "language": "en", "confidence": 0.9} for t in texts]
+        annotated = annotate_alignment(align_targets(list(SENTENCES), texts), heard)
+        assert len(annotated["matches"]) == 1
+        assert annotated["extra_segments"][0]["reason"] == "duplicate of sentence 1"
+
+
+class TestEmptyTranscriptMeasure:
+    """A44: the quiet-window bar keeps its agreed meaning; other openings get their own count."""
+
+    def test_an_empty_transcript_outside_the_window_is_counted_separately(self):
+        report = classify_openings([segment(32000, 0.78)], RATE, 2.0, set(), texts=[""])
+        assert report["false_turn_openings"] == 0
+        assert report["empty_transcript_openings_outside_quiet_window"] == 1
+        assert report["empty_transcript_openings_outside_quiet_window_onsets"] == [2.0]
+
+    def test_the_quiet_window_metric_keeps_its_original_meaning(self):
+        segments = [segment(1600, 0.3), segment(48000, 2.0)]
+        legacy = classify_openings(segments, RATE, 2.0, {1})
+        extended = classify_openings(segments, RATE, 2.0, {1}, texts=["", "hello there"])
+        for key in ("openings_in_quiet_window", "false_turn_openings", "speech_inside_quiet_window"):
+            assert legacy[key] == extended[key]
+
+    def test_an_empty_transcript_inside_the_window_is_a_false_opening_not_the_new_measure(self):
+        report = classify_openings([segment(800, 0.3)], RATE, 2.0, set(), texts=[""])
+        assert report["false_turn_openings"] == 1
+        assert report["empty_transcript_openings_outside_quiet_window"] == 0

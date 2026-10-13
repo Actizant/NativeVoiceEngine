@@ -228,34 +228,74 @@ def align_targets(targets: list[str], heard: list[str]) -> dict:
 
 
 def classify_openings(
-    segments: list, rate: int, quiet_window_seconds: float, taken_segments: set[int]
+    segments: list, rate: int, quiet_window_seconds: float, taken_segments: set[int], texts: list[str] | None = None
 ) -> dict:
     """Describe every turn opening the detector made, and which of them can honestly be called false.
 
     An opening inside the quiet window counts as false only when it claimed no sentence: speech spoken
     immediately after the countdown is genuine input, not room noise, and it is transcribed and aligned
     like any other utterance.
+
+    `texts`, when supplied, also counts openings **outside** that window that produced an empty
+    transcript. That is a separate measure with its own name - the quiet-window bar was agreed before any
+    audio existed, and a later finding must not silently move it (A44).
     """
     openings = []
     for segment_index, segment in enumerate(segments):
         onset_seconds = segment.first_sample / rate
-        openings.append(
-            {
-                "segment_index": segment_index,
-                "onset_seconds": round(onset_seconds, 3),
-                "duration_seconds": round(segment.duration_s, 3),
-                "within_quiet_window": onset_seconds < quiet_window_seconds,
-                "matched_a_sentence": segment_index in taken_segments,
-                "truncated": segment.truncated,
-            }
-        )
+        opening = {
+            "segment_index": segment_index,
+            "onset_seconds": round(onset_seconds, 3),
+            "duration_seconds": round(segment.duration_s, 3),
+            "within_quiet_window": onset_seconds < quiet_window_seconds,
+            "matched_a_sentence": segment_index in taken_segments,
+            "truncated": segment.truncated,
+        }
+        if texts is not None:
+            opening["transcript_empty"] = not (texts[segment_index] or "").strip()
+        openings.append(opening)
     inside = [item for item in openings if item["within_quiet_window"]]
-    return {
+    report = {
         "openings": openings,
         "openings_in_quiet_window": len(inside),
         "false_turn_openings": sum(1 for item in inside if not item["matched_a_sentence"]),
         "speech_inside_quiet_window": sum(1 for item in inside if item["matched_a_sentence"]),
     }
+    if texts is None:
+        report["empty_transcript_openings_outside_quiet_window"] = None
+        report["empty_transcript_openings_outside_quiet_window_onsets"] = None
+        return report
+    empty_outside = [
+        item for item in openings if not item["within_quiet_window"] and item["transcript_empty"]
+    ]
+    report["empty_transcript_openings_outside_quiet_window"] = len(empty_outside)
+    report["empty_transcript_openings_outside_quiet_window_onsets"] = [
+        item["onset_seconds"] for item in empty_outside
+    ]
+    return report
+
+
+def annotate_alignment(alignment: dict, heard: list[dict]) -> dict:
+    """Attach the language and confidence the engine asserted to every segment the report mentions.
+
+    A sentence that came back in the wrong language is only evidence if the run records what language was
+    claimed. Unmatched segments used to carry the text alone, which left a whole-sentence substitution
+    unattributable after the fact (A43). Values are copied from what the engine returned; an empty or
+    missing code stays empty rather than being filled in.
+    """
+    for item in alignment["extra_segments"]:
+        voice = heard[item["segment_index"]]
+        item["detected_language"] = voice.get("language", "")
+        item["confidence"] = voice.get("confidence")
+    for item in alignment["missing_targets"]:
+        index = item.get("closest_segment_index")
+        if index is None or index >= len(heard):
+            continue
+        voice = heard[index]
+        item["closest_segment_text"] = voice.get("text", "")
+        item["closest_segment_language"] = voice.get("language", "")
+        item["closest_segment_confidence"] = voice.get("confidence")
+    return alignment
 
 
 def collect_segments(
@@ -463,8 +503,11 @@ def main(argv: list[str] | None = None) -> int:
         counter.close()
 
     alignment = align_targets(list(SENTENCES), [item["text"] for item in heard])
+    alignment = annotate_alignment(alignment, heard)
     taken = {item["segment_index"] for item in alignment["matches"]}
-    opening_report = classify_openings(segments, args.rate, quiet_seconds, taken)
+    opening_report = classify_openings(
+        segments, args.rate, quiet_seconds, taken, texts=[item["text"] for item in heard]
+    )
 
     results = []
     for target_index, sentence in enumerate(SENTENCES):
@@ -480,6 +523,9 @@ def main(argv: list[str] | None = None) -> int:
                     "status": "MISSING_SEGMENT",
                     "why": closest.get("reason", "no segment recognised"),
                     "closest_wer": closest.get("closest_wer"),
+                    "closest_segment_said": closest.get("closest_segment_text", ""),
+                    "closest_segment_language": closest.get("closest_segment_language", ""),
+                    "closest_segment_confidence": closest.get("closest_segment_confidence"),
                 }
             )
             continue
@@ -579,6 +625,15 @@ def main(argv: list[str] | None = None) -> int:
             else "FAIL"
         ),
         "all_sentences_detected": "PASS" if len(scored) == len(SENTENCES) else "FAIL",
+        "empty_transcript_openings": (
+            "NOT RUN - no transcripts were taken"
+            if opening_report["empty_transcript_openings_outside_quiet_window"] is None
+            else (
+                "MEASURED (informational, no pass bar set) - "
+                f"{opening_report['empty_transcript_openings_outside_quiet_window']} opening(s) outside "
+                "the quiet window produced no transcript"
+            )
+        ),
         "read_aloud_wer": "MEASURED (no pass bar set, by design)" if scored else "NOT RUN (no segment matched a sentence)",
         "language_detection": "MEASURED" if scored else "NOT RUN",
         "vad_onset_error_ms": "NOT RUN - a manual read-aloud run has no ground-truth onset timestamp to measure against",
@@ -605,9 +660,21 @@ def main(argv: list[str] | None = None) -> int:
                 f"  (WER {item['wer']}, CER {item['cer']}, lang {item['detected_language']})"
             )
         else:
-            emit_block(f"  target: {item['target']}\n  heard : none ({item['why']})")
+            said = item.get("closest_segment_said") or ""
+            nearest = (
+                f" | closest segment said {said!r} as"
+                f" {item.get('closest_segment_language') or '(no language asserted)'}"
+                f" at confidence {item.get('closest_segment_confidence')}"
+                if said
+                else ""
+            )
+            emit_block(f"  target: {item['target']}\n  heard : none ({item['why']}){nearest}")
     for item in alignment["extra_segments"]:
-        emit(f"  extra : {item['text']}  ({item['reason']}, closest WER {item['closest_wer']})")
+        emit(
+            f"  extra : {item['text']}  ({item['reason']}, closest WER {item['closest_wer']},"
+            f" heard as {item['detected_language'] or '(no language asserted)'}"
+            f" at confidence {item['confidence']})"
+        )
     emit(f"artefact -> {args.out}" + (f"  (previous kept at {kept})" if kept else ""))
     return 0
 
