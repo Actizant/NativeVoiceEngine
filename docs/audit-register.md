@@ -192,3 +192,22 @@ silence-adjacent fragment appeared in both runs.
 A40 and A42 are now confirmed on live audio rather than only by tests: the report printed a non-Latin
 hallucination and exited 0, and 90.02 s of audio took 90.541 s of wall time with the first opening at 0.84 s
 after GO.
+
+
+### Addendum 8 — outcome as ruled by the approver (2026-10-13, after the 17:19 run)
+
+Seven statuses were ruled on the evidence rather than accepted as a pass. They are recorded here in the
+approver's own terms and are the authoritative reading of this validation state:
+
+| # | Ruling | Evidence it rests on |
+|---|---|---|
+| 1 | **A40 verified by the live run** | the 17:19 run printed Indonesian and empty transcripts and exited 0; `write_artefact()` had already written 5,561 bytes that parsed back to the same report |
+| 2 | **A42 verified by measured capture and wall duration** | `countdown_seconds: 15`, `stream_opened_at: GO`, `audio_seconds 90.02` against `wall_seconds 90.541`, first opening at 0.84 s - no backlog, no offset |
+| 3 | **Basic English live recognition demonstrated, not universally validated** | word-exact pangram (WER 0.0000) plus 0.2500 in the same run, and a whole-sentence Indonesian substitution in the same run; four runs, six matched sentences, no coverage claim |
+| 4 | **Endpointing on deliberate 1.5-second pauses NOT RUN** | the 17:19 gaps were ~0.5 s, not the predeclared 1.5 s; three segments for three sentences is encouraging evidence, not the agreed test |
+| 5 | **Clean room-noise baseline NOT obtained in this run** | speech began at 0.84 s, inside the 2.0 s window, so `quiet_window_median_level 0.002742` / `peak 0.0672` describe an utterance, not the room; the room reference stays the earlier quiet captures (~0.0004 median, 0.0021-0.0029 peak) |
+| 6 | **A41 and A43 remain OPEN** | language substitution observed in the same run that produced two correct `en` results; and the asserted language for an unmatched segment was not recorded, so it is now unrecoverable |
+| 7 | **A44 remains OPEN** | the 32.36 s opening with an empty transcript is not counted as false under the window-scoped criterion; the criterion predates any audio, so redefining it is the approver's decision |
+
+Nothing in this addendum changes a status by inference: A40 and A42 move from "fixed and tested" to "fixed,
+tested, and verified on live audio", and items 3-7 stay exactly as unresolved as the evidence makes them.

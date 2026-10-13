@@ -839,3 +839,34 @@ record for the current tree: **709 passed, 7 skipped**, **716 passed** with `--r
 downloaded, promoted, integrated or retrained; Kokoro remains the default, Kitten remains under
 `.trials/kitten/`, `src/` is untouched, and all five artefact generations are on disk. **No further capture
 has been started.**
+
+
+---
+
+# Progress ledger — entry 12 (2026-10-13, ruling on the 17:19 evidence; documentation only)
+
+Seven statuses were ruled by the approver on the evidence from the 17:19 run and are recorded verbatim in
+`docs/audit-register.md` Addendum 8. No code, artefact or configuration was changed by this entry.
+
+What the ruling settles: **A40 and A42 are verified on live audio**, not merely tested - a report that
+prints non-Latin text and exits 0, and 90.02 s of audio that took 90.541 s of wall time with the first
+opening at 0.84 s after GO.
+
+What it deliberately does not settle, in the approver's words: basic English live recognition is
+**demonstrated, not universally validated**; endpointing on deliberate 1.5-second pauses is **NOT RUN**; a
+**clean room-noise baseline was not obtained**, because the reading began inside the measurement window;
+and **A41, A43 and A44 stay open**.
+
+That last distinction matters for how the system is described anywhere else. One word-exact sentence in the
+same run as one whole-sentence Indonesian substitution is not a capability claim - it is two data points
+about unstable behaviour. Any status field, capability row or summary that reads "English ASR: verified"
+from this evidence would be over-claiming, and the capability registry is built so that a claim like that
+needs a measured status per language and task, not one good run.
+
+Register: **43 findings, 34 fixed, 9 open**, plus the seven ruled statuses above. Workspace stays clean at
+the committed tree, all artefact generations intact, no capture started since 17:19, `src/` untouched,
+Kitten still confined to `.trials/kitten/`, Kokoro still the default, A39 untouched, nothing downloaded,
+trained or integrated.
+
+The closure plan for each open validation criterion is delivered as a report-only summary alongside this
+entry; nothing in it has been started.
