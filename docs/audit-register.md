@@ -399,6 +399,27 @@ live property of the code and will republish the same datum on the next run.
 | A52 | **S3 proposed, awaiting his ruling** | committed artefacts + docs (25 files) | Machine-generated evidence recorded absolute home paths containing the operator's Windows account name, and those files were then published. The path layout of the working machine - cache roots, data root, scratch workspace, session directory - became public alongside it | **87** occurrences in **25** tracked files at `511a660`, all of them path segments and none of them a measurement. A scan of all **270** historical blobs for ten credential shapes (private-key blocks, GitHub/Slack/AWS/Google/OpenAI token forms, JWTs, URLs with embedded credentials, bearer headers, credential-shaped assignments) returned **0 hits**, so the account name and the directory layout are the whole of it. Author name and personal email, and a `+05:30` offset, are present in all **24** commit objects | **MITIGATED AT THE TIP ONLY - NOT REMEDIATED IN HISTORY, NOT CLOSED.** Committed as `c93a75f` (2026-10-14): all 87 occurrences in the tracked tree now read `[USER_HOME]`, a repository-relative path, or the literal `ACCOUNT` for one folder slug; `src/` and `tools/` were untouched and every altered line was a path line. That is the entire extent of what this does. The 24 earlier commits, `511a660` among them, still carry the original paths and remain publicly fetchable, as do the author name and personal email, the `+05:30` offsets, the initial commit's co-author trailer and the A50 third-party transcripts. Rewriting history has been declined. **This row is explicitly not a closure of the exposure.** |
 | A53 | **S2 proposed, awaiting his ruling** | artefact writers in `tools/` (nine call sites) | The writers emit real absolute paths at serialisation time, so **any** future capture, evaluation, asset audit or platform demonstration reintroduces the account name into newly committed evidence. A52 without A53 is a one-time cleanup of a leak that is still open | `tools/multilingual_eval.py:175,205,314,388,389`; `tools/real_speech_check.py:356,599` via `preserve_previous():400`; `tools/platform_demo.py:248,251,252`; `tools/asset_status_audit.py:59,148`; and the voice-identity `evidence`/`source` fields seeded through `src/nativevoice/voices/identity.py:58` | **OPEN - proposal delivered, implementation not authorised.** Must land before the next capture or evaluation run, because `tests/test_no_personal_paths.py` fails on any newly written personal path by design. Constraint recorded: `asset_root` is load-bearing (`models/integrity.py:34`, `stt/adapters/faster_whisper_engine.py:68`), so normalisation is confined to the serialisation boundary of **committed copies** and must not touch live manifests under the data root |
 
+#### Coverage limit of the guard's local-only inventory check (2026-10-14)
+
+`tests/test_no_personal_paths.py` has two scopes and they must not be read as one. The tracked-tree scan
+(`test_no_home_path_names_a_real_account`, `test_operator_account_name_is_not_committed`) is a repository
+invariant and runs everywhere; `.trials` is excluded from it by design. The separate local-only inventory
+check inspects the ignored residue itself, and **its detection half runs only when the declared root exists**
+- `.trials/` is skipped when the directory is absent, because an absent directory holds no personal path. On
+any machine that has never provisioned a candidate - including the relocated workspace - that check therefore
+verifies **nothing about trial residue**: a pass there is the absence of a directory, not evidence of clean
+residue. What the machine cannot exercise, the ledger must not imply. The ignore-rule assertion for every
+declared local-only root now runs regardless of existence, so a root that ceases to be git-ignored fails on
+every machine; before this correction it sat behind the existence check and so was silently skipped on
+precisely the machines with no trial directory.
+
+The declared exception - `.trials/kitten/models/manifests/kitten-nano-en-v0_8-int8.json` - stays in the list
+and stays correct in substance: `tools/provision.py:252` writes `asset_root` as a resolved absolute path, so a
+trial manifest necessarily carries the account name, and A53's constraint forbids normalising live manifests.
+Fail-closed behaviour is preserved for both real regressions: a present trial root whose declared exception has
+been cleaned reports `gone=`, and unexpected residue reports `added=`. **This note records a coverage limit; it
+closes nothing. A52 remains tip-only and A53 remains S2 proposed, OPEN, implementation not authorised.**
+
 #### Falsification procedure for A52 - an audit step, deliberately not a test
 
 The committed suite is self-contained: no ordinary test reads Git objects, so the suite runs identically in any

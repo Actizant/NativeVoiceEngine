@@ -179,14 +179,23 @@ def test_local_only_personal_paths_are_declared() -> None:
     These files are never published, but they still hold the real account name on this machine, so the
     exception list is explicit: it fails if another one appears, or if a declared one is cleaned and
     the list was not updated.
+
+    The two halves of this check have different scopes, deliberately. The ignore-rule assertion runs for
+    every declared root whether or not the root exists, because a root that stopped being ignored is a
+    finding on any machine. The inventory comparison is scoped to the roots that exist: an absent trial
+    directory contains no personal path, so asserting against it would report "nothing is here" with the
+    same message as "the declared exception was cleaned and the list was not updated". Machines without a
+    trial root therefore exercise detection of nothing - see A53 in `docs/audit-register.md`.
     """
     gitignore = (REPO / ".gitignore").read_text(encoding="utf-8")
-    offenders = set()
+    offenders: set[str] = set()
+    expected: set[str] = set()
     for root_name in DECLARED_LOCAL_ONLY_ROOTS:
+        assert f"{root_name}/" in gitignore, f"{root_name} is no longer git-ignored"
         root = REPO / root_name
         if not root.is_dir():
             continue
-        assert f"{root_name}/" in gitignore, f"{root_name} is no longer git-ignored"
+        expected |= {entry for entry in LOCAL_ONLY_EXCEPTIONS if entry.split("/", 1)[0] == root_name}
         for path in sorted(root.rglob("*")):
             if not path.is_file():
                 continue
@@ -196,9 +205,9 @@ def test_local_only_personal_paths_are_declared() -> None:
                 continue
             if personal_path_findings(text) or Path.home().name in text:
                 offenders.add(str(path.relative_to(REPO)).replace("\\", "/"))
-    assert offenders == LOCAL_ONLY_EXCEPTIONS, (
-        f"local-only personal paths changed: added={sorted(offenders - LOCAL_ONLY_EXCEPTIONS)} "
-        f"gone={sorted(LOCAL_ONLY_EXCEPTIONS - offenders)}"
+    assert offenders == expected, (
+        f"local-only personal paths changed: added={sorted(offenders - expected)} "
+        f"gone={sorted(expected - offenders)}"
     )
 
 
