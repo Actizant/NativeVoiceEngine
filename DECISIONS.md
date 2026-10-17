@@ -28,9 +28,10 @@ RTF is 1.59 and first audio 5.06 s after the chunk-budget fix. The options are a
 or GPU execution, which needs an onnxruntime build with a CUDA provider. Nothing is downloaded until that
 proposal is approved.
 
-**N9 - repository location.** Version control now exists at the hashed Qoder session path, which is a poor
-long-term home. Moving it is `git clone`/copy plus a path change; the history is two commits deep, so this
-is cheap now and expensive later.
+**N9 - repository location.** Written on 2026-10-13, when the working copy was still the hashed Qoder session
+path and the history was two commits deep. The tree has since moved to a named folder and the history is
+28 commits deep, so both figures here are the 2026-10-13 facts: moving the working copy is now costlier than
+this paragraph describes, and rewriting the history to make it cheap again is not on the table.
 
 **N10 - a stray interpreter in the working tree.** `Python/pythoncore-3.15-64` (45 MB) materialised inside
 the project directory during the session - not created by any command here, and deliberately **not** deleted.
@@ -40,7 +41,6 @@ It is git-ignored; removing it is yours to decide.
 
 # Original decision text (2026-10-12)
 
-Everything in `Phase B` that I can build without you is being built now. These seven items are the ones
 Everything in `Phase B` that I can build without you is being built now. These seven items are the ones
 where I either need money/compute/time from you, or where the specification contradicts itself and I will
 not silently pick a reading. Each has my recommended default; if you do not answer, that default is what I

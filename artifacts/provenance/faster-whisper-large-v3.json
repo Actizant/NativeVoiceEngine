@@ -1,0 +1,110 @@
+{
+  "record": "asset identity evidence for the selected recognition teacher; not a manifest, not an approval, not a licence finding",
+  "model_id": "faster-whisper-large-v3",
+  "repository": "Systran/faster-whisper-large-v3",
+  "revision_pinned": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "verified_on": "2026-10-14",
+  "verified_with": "tools/provision.py published-digest comparison, recomputed on this machine, read-only",
+  "task": "measurement only; this asset is not eligible for the product path and no manifest for it exists in either registry",
+  "cache_root_configured": "[USER_HOME]\\.cache\\huggingface\\hub",
+  "snapshot_considered": "[USER_HOME]\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-large-v3\\snapshots\\edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "snapshot_identity": {
+    "how_the_revision_is_established": "huggingface_hub names each snapshot directory after the commit it fetched, and writes the published file table for that commit under models--<repo>/trees/<revision>.json; this record compares the files in the pinned snapshot directory against that table",
+    "reference_form": "loose refs are not used: this repository's cache carries no refs/main for the model, so the commit id is taken from the pin, not from a symbolic ref",
+    "pin_is_not_advisory": "a snapshot directory for an unrecorded revision yields no files, so provisioning refuses the asset rather than digesting whatever newest directory happens to exist",
+    "weight_bytes_never_committed": "this file records digests and sizes only; model.bin is 3087284237 bytes and stays outside Git"
+  },
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 1519,
+      "sha256_computed_locally": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+      "published_lfs_sha256": "",
+      "published_blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+      "published_size": 1519,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    },
+    {
+      "path": "config.json",
+      "bytes": 2394,
+      "sha256_computed_locally": "a9306624f5ec14270a014b647e5c316b6e03a662c369758d1b90697a7b0655b9",
+      "published_lfs_sha256": "",
+      "published_blob_id": "75336feae814999bae6ccccdecf177639ffc6f9d",
+      "published_size": 2394,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    },
+    {
+      "path": "model.bin",
+      "bytes": 3087284237,
+      "sha256_computed_locally": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+      "published_lfs_sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+      "published_blob_id": "e91bbba72de41ca3cdc9a656b17aa9407c7e85b6",
+      "published_size": 3087284237,
+      "agrees_with": "lfs_sha256",
+      "basis": "computed SHA-256 of the whole weight file matches the LFS digest the source publishes for this revision; the blob id hashes the LFS pointer, not these bytes, so it is recorded but not compared"
+    },
+    {
+      "path": "preprocessor_config.json",
+      "bytes": 340,
+      "sha256_computed_locally": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711",
+      "published_lfs_sha256": "",
+      "published_blob_id": "931c77a740890c46365c7ae0c9d350ba3cca908f",
+      "published_size": 340,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2052,
+      "sha256_computed_locally": "39e96252229f5a3d0141dc81afb65a36fd205461ac21e5b70f2cd1248ef0082c",
+      "published_lfs_sha256": "",
+      "published_blob_id": "a84bfa7f20cac02ea5a99efa5eaf687ad58c1caf",
+      "published_size": 2052,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 2480617,
+      "sha256_computed_locally": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+      "published_lfs_sha256": "",
+      "published_blob_id": "3a5e2ba63acdcac9a19ba56cf9bd27f185bfff61",
+      "published_size": 2480617,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    },
+    {
+      "path": "vocabulary.json",
+      "bytes": 1068114,
+      "sha256_computed_locally": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+      "published_lfs_sha256": "",
+      "published_blob_id": "0adcd01e7c237205d593b707e66dd5d7bc785d2d",
+      "published_size": 1068114,
+      "agrees_with": "blob_id",
+      "basis": "computed content hashes to the git blob the source publishes for this revision"
+    }
+  ],
+  "files_total": 7,
+  "files_checked_against_published_metadata": 7,
+  "uncompared_metadata": {
+    "what_is_present": "the cached trees/edaa852ec7e145841d8ffdb056a99866b5f0a478.json entry for model.bin carries, besides size, blob_id, lfs_size and the lfs_sha256 this record compares, a xet_hash of 64 hex characters: 28bbcc8f4671df0a8411524f1973dbc978d276b79cac96059a737abadf3c134a",
+    "why_it_is_not_a_verification": "nothing in this repository computes or compares it. tools/provision.py checks size, then lfs_sha256, then the git blob id, and ignores every other key; the value above differs from the SHA-256 of the file, so it is a different function over a different input. Its definition and any procedure to reconstruct it from model.bin have not been read or established on this machine",
+    "local_provenance_inspected": "[USER_HOME]\\.cache\\huggingface\\xet exists and holds one staging directory named for a CAS endpoint plus two log files; no artefact there is keyed by the hash above, and none of its contents was interpreted",
+    "claim_made": "none. The hash is recorded as present in the publisher's own metadata, not as verified, and it supports none of the fields in this record"
+  },
+  "licence_spdx": "NOASSERTION",
+  "does_not_prove": [
+    "a licence: the conversion is tagged license:mit by its publisher while openai/whisper-large-v3 is tagged license:apache-2.0, neither states which terms govern converted weights, and no licence text ships in the snapshot",
+    "that these are OpenAI's original model weights: they are a third party's CTranslate2 conversion, and that conversion step is the unanchored link",
+    "commercial clearance, redistribution permission, or product-path eligibility",
+    "accuracy: no WER or CER is recorded for this asset anywhere in the repository's evidence",
+    "hardware fit: the single recorded pass is CPU int8 and no accelerated run has ever been measured"
+  ],
+  "does_prove": "that the bytes on this machine at this path are the bytes the publisher serves for revision edaa852ec7e145841d8ffdb056a99866b5f0a478, which is the only claim a digest comparison can carry",
+  "related_records": {
+    "licence and rights findings": "src/nativevoice/provenance.py, CANDIDATE_EVIDENCE[faster-whisper-large-v3]",
+    "the one recorded measurement pass": "artifacts/evaluation/multilingual-large-v3-int8.json"
+  }
+}

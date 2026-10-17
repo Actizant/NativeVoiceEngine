@@ -19,7 +19,7 @@ from typing import Any
 
 from ..core.errors import ConfigurationError, StorageError
 from ..core.language import Task
-from .api import Asset, AssetKind, ModelManifest, Provenance, ResourceRequirement, ReviewStatus
+from .api import Asset, AssetKind, AssetScope, ModelManifest, Provenance, ResourceRequirement, ReviewStatus
 
 _UNKNOWN_NOTE = "unknown keys preserved"
 
@@ -123,6 +123,7 @@ _KNOWN_FIELDS = frozenset(
         "assets",
         "asset_root",
         "minimum_profile",
+        "use_scope",
         "notes",
     }
 )
@@ -147,6 +148,7 @@ def to_dict(manifest: ModelManifest) -> dict:
         "assets": [_asset_to_dict(a) for a in manifest.assets],
         "asset_root": manifest.asset_root,
         "minimum_profile": manifest.minimum_profile,
+        "use_scope": manifest.use_scope.value,
         "notes": manifest.notes,
     }
 
@@ -173,6 +175,13 @@ def from_dict(data: dict) -> ModelManifest:
         review = ReviewStatus(review_raw)
     except ValueError as exc:
         raise ConfigurationError("unknown review status", review=review_raw) from exc
+    # An unreadable scope raises instead of folding into `notes` like an unknown key:
+    # defaulting it to PRODUCT would put a research asset on the shipped path.
+    scope_raw = data.get("use_scope", AssetScope.PRODUCT.value)
+    try:
+        use_scope = AssetScope(scope_raw)
+    except ValueError as exc:
+        raise ConfigurationError("unknown use scope", use_scope=scope_raw) from exc
     provenance_data = data.get("provenance") or {}
     requirements_data = data.get("requirements") or {}
     assets_data = data.get("assets") or []
@@ -199,6 +208,7 @@ def from_dict(data: dict) -> ModelManifest:
         assets=tuple(_asset_from_dict(a) for a in assets_data),
         asset_root=str(data.get("asset_root", "")),
         minimum_profile=str(data.get("minimum_profile", "lite")),
+        use_scope=use_scope,
         notes=notes,
     )
 

@@ -32,6 +32,16 @@ from nativevoice.diagnostics.offline import OfflineGuard, static_scan  # noqa: E
 from nativevoice.models.registry import ModelRegistry  # noqa: E402
 
 
+def finding_label(finding) -> str:
+    """Render one static-scan finding as the published record names it: `file:line:module`.
+
+    `Finding` defines `file` and `line` (`src/nativevoice/diagnostics/offline.py`), and the
+    label has to agree with that. Reading `path` and `lineno` instead raised the moment a
+    finding actually existed, which is why the record's historically empty list concealed it.
+    """
+    return f"{finding.file}:{finding.line}:{finding.module}"
+
+
 def run(voice_text: str, language: str, threads: int) -> dict:
     from nativevoice.stt.api import TranscriptionRequest
     from nativevoice.tts.api import SynthesisRequest
@@ -94,7 +104,7 @@ def run(voice_text: str, language: str, threads: int) -> dict:
     result["attempts"] = [f"{attempt.host}:{attempt.port}" for attempt in guard.attempts]
     result["guard_clean"] = not guard.attempts
     findings = static_scan(str(ROOT / "src" / "nativevoice"))
-    result["static_findings"] = [f"{finding.path}:{finding.lineno}:{finding.module}" for finding in findings]
+    result["static_findings"] = [finding_label(finding) for finding in findings]
     result["total_seconds"] = round(time.perf_counter() - started, 2)
     verdict = "PASS" if result["guard_clean"] and not result["static_findings"] and heard.text.strip() else "FAIL"
     result["verdict"] = verdict

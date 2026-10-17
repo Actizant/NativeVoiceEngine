@@ -58,11 +58,39 @@ DETECTORS = (
 
 EVIDENCE_MUST_BE_SCANNED = (
     "artifacts/evaluation/multilingual-inventory.json",
+    "artifacts/evaluation/multilingual-large-v3-int8.json",
     "artifacts/audit/manifest-snapshots/faster-whisper-base.json.pre-audit",
+    "artifacts/audit/asset-status-corrections.json",
+    "artifacts/audit/mechanical-findings.json",
+    "artifacts/device/real-speech-read-aloud.json",
     "artifacts/platform/platform-run.json",
+    "artifacts/platform/voices/voice.platform.default.json",
     "docs/relocation.md",
     "tests/test_config.py",
+    # The rest of the tracked evidence that carries the committed placeholder. Each of these
+    # was covered by the whole-tree scan but undeclared here, so a future narrowing of that
+    # scan would have dropped it from the guarantee silently - see
+    # `test_every_placeholder_carrying_artefact_is_named`.
+    "artifacts/audit/manifest-snapshots/faster-whisper-small.json.pre-audit",
+    "artifacts/audit/manifest-snapshots/kokoro-int8-multi-lang-v1_1.json.pre-audit",
+    "artifacts/device/mic-baseline-post-go.json",
+    "artifacts/device/real-speech-read-aloud.20261013-145157.human-run.original.json",
+    "artifacts/device/real-speech-read-aloud.20261013-145157.previous.json",
+    "artifacts/device/real-speech-read-aloud.20261013-151857.previous.json",
+    "artifacts/device/real-speech-read-aloud.20261013-153133.previous.json",
+    "artifacts/device/real-speech-read-aloud.20261013-171915.previous.json",
+    "artifacts/device/real-speech-read-aloud.20261013-180908.previous.json",
+    "artifacts/evaluation/multilingual-base-default.json",
+    "artifacts/evaluation/multilingual-base-int8.json",
+    "artifacts/provenance/faster-whisper-large-v3.json",
+    "artifacts/platform/voices/voice.host.fieldmind.speaker7.json",
 )
+
+#: The published stand-in for a home directory, as it appears inside committed evidence.
+#: `artifacts/` is the tree the serialization boundary writes to, so it is what the
+#: inventory below has to cover; prose that merely names the token is not evidence.
+PLACEHOLDER = "[USER_HOME]"
+EVIDENCE_TREE = "artifacts/"
 
 
 def personal_path_findings(text: str) -> list[str]:
@@ -103,8 +131,9 @@ def files_and_text() -> list[tuple[Path, str]]:
         GIT_BASH + ACCOUNT,
         POSIX_HOME + ACCOUNT,
         SLUG + ACCOUNT + "-Documents-Qoder",
+        WINDOWS_DOUBLE + ACCOUNT + "-Documents-Qoder-nativevoice-artifacts-device-",
     ],
-    ids=["windows-json", "windows-single", "git-bash", "posix-home", "folder-slug"],
+    ids=["windows-json", "windows-single", "git-bash", "posix-home", "folder-slug", "repo-internal-json"],
 )
 def test_every_supported_personal_path_format_is_detected(fixture: str) -> None:
     """Negative control: a format this guard cannot see is a format it cannot protect."""
@@ -243,3 +272,44 @@ def test_scan_coverage_is_reported(files_and_text: list[tuple[Path, str]]) -> No
 
     missing = [name for name in EVIDENCE_MUST_BE_SCANNED if name not in names]
     assert not missing, f"evidence files outside the scan: {missing}"
+
+
+def test_every_placeholder_carrying_artefact_is_named() -> None:
+    """Deleting a path from the inventory must fail, not quietly shrink the guarantee.
+
+    `test_scan_coverage_is_reported` proves every named entry is scanned; it cannot see an
+    entry that was removed, which is how a list of ten could sit over eighteen artefacts that
+    carry the placeholder. The whole-tree scan is what protects them today, so a shortened
+    list is invisible until that scan is narrowed - and by then the evidence has already been
+    published. This test makes the removal itself the failure.
+
+    Derived from `git ls-files` rather than pinned, so a new redacted artefact has to be
+    declared before it can be tracked. Scoped to `artifacts/` and to tracked paths: prose
+    that merely names the token (this repository's own guard, the audit register) is not
+    output of the serialization boundary, and an untracked file is not yet evidence.
+    """
+    git = shutil.which("git")
+    if git is None:
+        pytest.skip("NOT RUN: git is unresolvable, so the tracked-artefact set cannot be derived")
+    listed = subprocess.run([git, "ls-files", "-z"], cwd=REPO, capture_output=True)
+    tracked = sorted(name for name in listed.stdout.decode("utf-8", "replace").split("\0") if name.startswith(EVIDENCE_TREE))
+    assert tracked, "NOT RUN: git ls-files produced no paths under the evidence tree"
+
+    carrying = []
+    for name in tracked:
+        path = REPO / name
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if PLACEHOLDER in text:
+            carrying.append(name)
+    assert carrying, "NOT RUN: no tracked artefact carries the placeholder, so nothing was proved"
+
+    undeclared = sorted(set(carrying) - set(EVIDENCE_MUST_BE_SCANNED))
+    assert not undeclared, (
+        f"{len(carrying)} tracked artefact(s) under {EVIDENCE_TREE} carry {PLACEHOLDER!r} and "
+        f"{len(undeclared)} of them are not in EVIDENCE_MUST_BE_SCANNED: {undeclared}"
+    )

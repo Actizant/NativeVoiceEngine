@@ -107,9 +107,9 @@ New since entry 1: `models/` `hardware/` `config/` (71 tests) · `language/` `st
 | `faster-whisper-base` | STT | HF tag `license:mit` on `Systran/faster-whisper-base`; already resident, nothing downloaded | 141 MB | manifested |
 | `faster-whisper-small` | STT | same | 464 MB | manifested |
 
-Runtime for both is **already installed and licence-clean**: sherpa-onnx 1.13.8 (Apache-2.0) and
+Runtime for both was **already installed as recorded on 2026-10-12**: sherpa-onnx 1.13.8 (Apache-2.0) and
 onnxruntime 1.30.0 (MIT) for TTS; faster-whisper 1.2.1 + ctranslate2 4.8.2 (MIT) for STT.
-**No package was installed and no other model was downloaded.**
+**No package was installed and no other model was downloaded.** Those identifiers are the software packages' own licences; they do not establish clearance for the model weights, the data bundled with them, or the speech the packages generate, and no asset-level clearance is recorded here.
 
 Rejected on licence grounds, with the evidence recorded rather than assumed: Coqui XTTS-v2
 (`license: other` — non-commercial), F5-TTS and ChatTTS (`cc-by-nc-4.0`), fish-speech
@@ -203,12 +203,12 @@ installed and nothing downloaded after the earlier provisioning.
 | Measurement | Value | Where |
 |---|---|---|
 | English round-trip WER / CER | **0.0494 / 0.0242** | `artifacts/evaluation/roundtrip-2026-10-12.json` |
-| TTS real-time factor | **1.55–2.38** — slower than real time at every thread count tried | evaluation + `artifacts/benchmarks/profiles.json` |
-| TTS first-audio | **3.9–4.8 s** (eval harness) and **6.3–8.3 s** (profile harness) | both retained, neither discarded |
+| TTS real-time factor | **1.79–2.53** — slower than real time at every thread count tried | 14-utterance evaluation: `tts_real_time_factor` 2.0585–2.5271; profile benchmark (median of 3 sentences, 1 repeat): `tts_rtf_median` 1.7913–2.3766 |
+| TTS first-audio | **4.03–6.47 s** (14-utterance evaluation) and **6.28–8.33 s** (profile harness, 1 repeat per profile) | both retained, neither discarded |
 | STT real-time factor | **0.85** at 2 threads, **0.50** at 4, **0.44** at 8 | profile benchmark |
 | Peak RSS during evaluation | **708.8 MiB** | evaluation artefact |
 | Peak RSS per profile | 1,001 / 1,015 / 1,046 MiB at 2 / 4 / 8 threads | profile benchmark |
-| Model load | TTS 2.56 s, STT 1.18 s | `artifacts/audit/offline-proof.json` |
+| Model load | TTS 2.144 s, STT 0.89 s | `artifacts/audit/offline-proof.json` |
 | Offline proof | full TTS→STT round-trip, **0 connection attempts**, static scan clean, verdict PASS | `artifacts/audit/offline-proof.json` |
 | Assets verified by digest | 377 kokoro files + 4 + 4 whisper files, all installed/verified/usable | registry `status_all()` |
 
@@ -1153,7 +1153,7 @@ about what a capability claim contains, not a bug to patch mid-evaluation.
 
 | Pass | Mean cue recall (12 cued) | Mean RTF | Load | Peak RSS | Script mismatches |
 |---|---|---|---|---|---|
-| `base-default` (production) | 0.8480 | 0.231 | 0.61 s | 607.9 MiB | 2 |
+| `base-default` (as measured) | 0.8480 | 0.231 | 0.61 s | 607.9 MiB | 2 |
 | `base-int8` | 0.8688 | **0.151** | 0.50 s | 306.0 MiB | 2 |
 | `large-v3-int8` | **0.9562** | 2.363 | 10.16 s | 3246.4 MiB | **0** |
 
@@ -1247,3 +1247,221 @@ while the commits and the 87 replacements do not. Parity against
 reproduces the working tree byte-for-byte; the two prose files differ only by additions. Zero files under `src/`
 or `tools/` were modified, and `git grep` for the account name over tracked files returns **0 files**. Lint and
 typecheck: **NOT RUN** - `ruff` and `mypy` are not installed and neither is configured in `pyproject.toml`.
+
+# Progress ledger — entry 18 (2026-10-15, the synthetic corpus was quarantined from training)
+
+## Correction to entry 4, dated 2026-10-15
+
+Entry 4 recorded that `artifacts/corpus/en-synthetic-01/manifest.json` "marks `usable_for: [training,
+adaptation, asr-domain-evaluation]`", and at the time it was written that was true of the file. It is no longer
+true, and the claim is retired here rather than edited in place: **4 of the batch's 8 kept clips repeat a
+sentence the English round-trip evaluation scores** — `en_slot0_001/002/003/006.wav`, 11.2355 s of its 24.4271 s,
+three collided by carrying an extra clause and `en_slot0_006.wav` character-for-character. Train on that and
+then score it on `tools/evaluate.py` and the number measures memorisation. Register row **A54** (Addendum 16)
+carries the measurement; the two hand-written sentence lists lived in different files and nothing compared them.
+
+## Quarantine as applied
+
+Quarantine of the whole batch from training and adaptation, with its history intact. Its `usable_for` is now
+`["asr-domain-evaluation"]` — that use is **retained**, including the read-only probe A41 phase 1 ran over these
+same 8 clips — and it carries a `training_quarantine` record: the four colliding clip names, the 11.2355 s
+measured from their recorded durations, the dropped records that collided too, the written rule, the ruling, and
+`digests_verified: false`. Every sample, digest, count, dropped record, generator and verifier field and
+timestamp is byte-preserved, and **no `training_boundary` block was added to it**: the batch predates the
+disjointness checks, so back-filling one would assert evidence that was never produced. No audio was deleted or
+regenerated — none exists to delete, which is the next paragraph.
+
+**The audio is absent and the digests cannot be checked.** `.gitignore` excludes `artifacts/**/*.wav`, so the
+clips were never tracked, and no WAV of this batch is on this machine: the manifest's 8 SHA-256 values are the
+only surviving record of them and are unverifiable here. Training therefore stays blocked on a condition this
+batch can never meet — a caller must hand the gate digests recomputed from bytes it actually read — and the
+quarantine is a text-boundary decision evidenced by the descriptor, not a re-verified audio claim.
+
+**Enforcement, because a JSON field that nothing reads is not a decision.** `usable_for` had no consumer before
+this pass. `tools/corpus_forge.py` now has `corpus_training_blockers(manifest, clip_digests=…)`, which refuses a
+batch for reasons it re-derives rather than reads: `usable_for` must claim both training and adaptation, a
+recorded quarantine must read exactly `CLEARED` with digests verified, `split` must say training, a
+`training_boundary` must be well-formed with `collisions_found == 0` and the excluded inputs named, the counts
+must add up against the rows they describe, provenance fields must be non-empty, and each sample sentence is
+re-checked against the live evaluation pool **and** against every sentence in any batch not cleared for
+training. Writing `"status": "CLEARED"` into `en-synthetic-01` still returns blockers — no split, no boundary,
+four live collisions, no caller digests. Evaluation eligibility is answered by a separate function so the
+training decision cannot retire the measurement. `main()` refuses before a registry is opened, and refuses when
+the quarantine records are unreadable rather than assuming no leak.
+
+**The training pool was rewritten twice, and the second rewrite was the finding.** Replacing the eight
+evaluation colliders produced eight sentences that turned out to recycle text the quarantined batch had already
+used (its dropped records named them). The third version — eight sentences now in `TRAIN_SENTENCES` — shares no
+sentence with the evaluation pool or with any of the 16 recorded by the quarantine, measured at worst Jaccard
+0.176 against both. No audio was generated and no new corpus was created in this pass.
+
+## Two gate defects found by the tests written for the gate
+
+`build_corpus_manifest` emitted the module-level `TEACHER_TARGET_RECORD` by reference, so flipping one
+manifest's `enabled` flag flipped it for every manifest built afterwards — including the refusal a trainer reads;
+the builder copies it now and a test asserts two builds are distinct objects. `_strings()` accepted an empty
+list, so `"usable_for": []` would have been reported as a missing *claim* instead of an undeclared scope. Both
+were caught because the focused tests pin an accepted case alongside each refusal; a suite of refusals alone
+would have gone green over both.
+
+## Verification of this pass
+
+`tests/test_corpus_forge_boundary.py` → **106 passed** (34 before this entry; 72 added, engine-free, and the run
+reaches no registry — a fixture makes `ModelRegistry` raise). Full suite → **1053 passed, 7 skipped** (the 7
+skips are the standing `NOT RUN` asset gates). Manifest JSON re-parsed after the edit; 16 top-level keys, up
+from 15, with the quarantine record the only addition and `usable_for` the only changed value. `artifacts/audit/
+offline-proof.json` and `mechanical-findings.json` were not opened for writing, no audit tool was run, nothing
+was staged or committed, and no package, dataset, model, benchmark or GPU probe was touched — the suites were
+bracketed by a byte-level snapshot of the repository tree and the two snapshots are identical (`13821c6d69f991b5`,
+206 files, no path added or removed). Lint and typecheck: **NOT RUN**, `ruff` and `mypy` remain uninstalled.
+
+**The suite is not decorative — six temporary mutation probes, each reverted.** `return ()` from the gate:
+**45 failed**, 61 passed. Drop the quarantine reuse check: **2**. Make a damaged quarantine record skip instead
+of raising: **1**. Remove the caller-digest demand: **3**. Re-introduce the shared `TEACHER_TARGET_RECORD`:
+**1**. Let `_strings()` accept an empty list again: **1** — so each of the two defects above has a test that
+fails the moment its fix is undone, and no refusal test passes because the gate answers nothing. `tools/
+corpus_forge.py` was restored from a byte-exact copy after each probe and is byte-identical to it.
+
+**Blocked, unchanged by this entry:** a usable training corpus needs a batch forged from the new pool, whose
+manifest carries valid boundary evidence, whose digests are recomputed from audio that exists on the machine
+verifying them, and whose rights position (§3, §4, §7 of `docs/provenance.md`) is settled. None of that is
+performed here, and A54's severity is proposed and not yet decided.
+
+# Progress ledger — entry 19 (2026-10-15, the corpus boundary was anchored outside the manifest)
+
+**What entry 18 left open, stated plainly.** Its gate re-derives eligibility from the batch's own fields, and
+every one of those fields lives in the document being judged. A batch could therefore authorise itself: write a
+`training_boundary` block naming the live pools and this file's five excluded paths, and the recorded leak stops
+mattering, because nothing outside the manifest was consulted. The authority was moved out of the
+descriptor and into a tracked file a reviewer sees in a diff, and the record is required to say what a hash does
+**not** prove.
+
+## What was built
+
+- **P1, a versioned contract.** Every manifest `build_corpus_manifest` emits carries
+  `training_boundary.boundary_contract`: the contract version and `pool_set_sha256(TRAIN_SENTENCES, EVAL_SENTENCES)`
+  — both pools normalised, joined by a unit separator so a pool boundary cannot be shifted to manufacture a
+  match. The header is checked against the pools as the code defines them now, not taken on trust.
+- **P2, the tracked register.** `artifacts/corpus/legacy-batches.json` (new, untracked) records the pool set cleared
+  for training, under the version, the verbatim disjointness rule and both pool sizes, plus `en-synthetic-01`
+  as `QUARANTINED` against the SHA-256 of its manifest **as read from disk** (`7a39791a…`). Editing a manifest
+  invalidates its own registration. `boundary_register()` re-reads on every call and raises on damage — an
+  unreadable, absent, non-object, wrong-schema or under-fielded register is a refusal, never an empty one.
+- **P3, a closed use vocabulary.** `ALLOWED_USES` is the only set a `usable_for` entry may draw from; a use
+  outside it is a blocker, and `corpus_evaluation_uses()` reports only allowed uses.
+- **P4, the quarantine flags demoted to records.** `training_quarantine.status` and `digests_verified` describe a
+  past review and authorise nothing; an absent quarantine field does not make a batch permissive either.
+  `boundary_provenance_blockers()` anchors a batch one of two ways only: a contract the register records *and*
+  this code still implements — with every kept sample text re-checked against that registered pool — or a
+  registered pre-contract batch matched by the caller's digest of the file on disk *and* an explicit `CLEARED`
+  decision. `training_boundary.issued_by` is deliberately never read: it is a claim about an author.
+- **M1, the reader and caller fences.** `tests/test_corpus_reader_fence.py` (new, 16 tests) pins that
+  `tools/corpus_forge.py` is the only module opening a corpus descriptor, that `tools/evaluate.py` hand-writes its
+  own `CORPUS` and reads none, that `SampleManifest.load()` refuses a corpus batch rather than downgrading it, and
+  that any module touching weights names the gate. Both fences are tested against synthetic non-vacuous fixtures:
+  an unlisted reader, a listed reader that skips the accessors, a trainer without the gate, and a compliant trainer.
+- **The named door.** `corpus_training_eligible(manifest_path, audio_dir)` reads the bytes itself, hashes the
+  manifest, re-hashes every listed clip, and raises `CorpusNotEligible` — a member of `CorpusBoundaryError` so a
+  future trainer can catch exactly this — listing every remaining reason. **Nothing calls it: there is no trainer
+  in this repository**, and entry 19 does not add one.
+
+Judgment calls applied as approved: exact set equality for `excluded_inputs`; keyword-only `manifest_sha256=None`,
+with a missing digest never releasing a legacy batch; `CorpusNotEligible` inside the existing family; acceptance
+fixtures updated to the new contract rather than weakened.
+
+## The consequence a reviewer must see without asking
+
+Two adversarial controls (H and J in this pass's probe script) show a batch forged from the live pool, with audio
+on disk and the shipped register intact, answering **0 blockers** — and a *pre-contract* batch whose `training_boundary`
+is intact, registered by digest, and explicitly ruled `CLEARED` likewise answering 0. That is what a real release
+would look like, and it is reachable today only by editing the tracked register: no such entry ships, and
+`en-synthetic-01` stays `QUARANTINED` and ineligible. Provenance, not permission: nothing here establishes
+licensing, consent, authorship or redistribution, and the rights fields stay unanchored because P5 was declined.
+
+## Acceptance expectations changed, and why
+
+1. The committed quarantined batch's blocker count is pinned at **12, up from 11**: a pre-contract batch now also
+   has to show the caller read the file it is registered under.
+2. `disjointness_rule` cases moved from *"is missing or empty"* to *"is not the rule this code enforces"*, and a
+   weakened rule is now a case of its own.
+3. Two new declaration cases: a boundary claiming `training_sentences: 800` / `evaluation_sentences: 800` is
+   refused as declaring pools this code does not define; `excluded_inputs` naming a sixth path is refused as naming
+   an input no review recorded.
+4. `{"status": "CLEARED", "digests_verified": true}` forged over a cleared-looking batch now yields **only** the
+   clip-digest blocker — the P4 decision made the flags inert, which is the behaviour change, not a relaxation.
+5. `TestGenerationRefuses` gained four register cases: unregistered pool set, unreadable register, a different
+   recorded rule, wrong recorded sizes.
+
+## Two mutation probes survived, and both were test gaps
+
+Round one removed each critical check in turn (23 probes, full suite each time). Twenty-one failed tests; two did
+not. `boundary_register()`'s requirements that a pool set carry a **disjointness rule** and that a batch record
+carry a **manifest digest** were untested: the damaged-register parametrization broke several fields per case and
+asserted only the generic *"the boundary register cannot be read"*, so any other validator satisfied it — a green
+test passing for the wrong reason. The cases were rebuilt as fifteen single-field documents, each asserting its own
+refusal phrase in both the blocker list and the raised error. Round two: **23 of 23 probes fail at least one
+test** (1 to 48 failures; removing the whole anchoring step fails 48), and `tools/corpus_forge.py` was restored
+byte-identically after each, ending at `de82810d3a5b53cc…`.
+
+## Adversarial pass
+
+Ten bypass attempts against the shipped register, all read-only under a temporary directory: the committed batch
+(12 blockers); its quarantine flags forged to `CLEARED`/`digests_verified: true`/`usable_for: training+adaptation`
+(8); a hand-written valid-looking contract stamped onto it (18 — the register's `QUARANTINED` entry for its *name*
+refuses it, and 8 of its samples are named as outside the registered pool); that header re-forged under a fresh
+name (25); an invented `training-and-redistribution` use (11); the register edited to clear `en-synthetic-01`
+without a caller digest (12) and with one (11 — `training_boundary` absent is still missing evidence); a training
+sentence swapped for an evaluation sentence (3, all three mechanisms naming it); a sixth `excluded_inputs` path (1);
+the register withdrawing the pool set (1); the register loosening the rule while the code stays strict (1). Through
+the named door: absent audio and misnamed audio both raise, an absent register raises, and only the clean control
+batch returns None.
+
+## Verification of this pass
+
+`tools/corpus_forge.py` **+438 / −12** against the copy held at the start of this pass; `tests/test_corpus_forge_boundary.py`
+**106 → 191**; `tests/test_corpus_reader_fence.py` new at **16**; `docs/provenance.md` §7 — the *Enforcement, not
+intention* and *For a batch that already exists* passages replaced by seven paragraphs describing the contract, the
+register, the byte-identity limit, the door, and the fact that `asr-domain-evaluation` is a permission on record
+rather than a runnable path. Focused: **209 passed** on the 2026-10-16 re-run of this pair, exit code 0 (**207 passed** when this entry was first written; `--run-approved-assets` was not passed and the full suite was not re-run alongside it). Full suite: **1154 passed, 7 skipped**
+(entry 18's 1053 plus the 101 new tests, 85 boundary and 16 fence; the same seven standing `NOT RUN` asset gates,
+none force-enabled).
+Lint/typecheck: **NOT RUN**, `ruff` and `mypy` remain uninstalled.
+
+No-write proof: the baseline tree snapshot (206 files, aggregate `b383274f86f8c77f`) versus the snapshot taken
+before this entry was written (212 files, `6918585e4c423428`) differ in exactly three changed paths —
+`tools/corpus_forge.py`, `tests/test_corpus_forge_boundary.py`, `docs/provenance.md` — two intended new paths,
+`artifacts/corpus/legacy-batches.json` and `tests/test_corpus_reader_fence.py`, and the four foreign files recorded
+in the next section. All 15 protected digests are
+unchanged: the two audit evidence files, the three `.pre-audit` manifest snapshots, `asset-status-corrections.json`,
+the eight evaluation artefacts and `en-synthetic-01/manifest.json` still at `7a39791a…`. No audit tool was run,
+nothing was staged, committed, pushed or deleted, no model, dataset, audio, GPU or dependency was touched. Writing
+this entry adds one further changed path, `PROGRESS.md`.
+
+## An unresolved filesystem anomaly observed during this pass
+
+Four Windows shell-cache files (`cversions.2.db` and three GUID-named `.db` files, 16 KB–662 KB) appeared **inside
+the working tree** at 2026-10-15 21:32 under a literal `%SystemDrive%/ProgramData/Microsoft/Windows/Caches/`
+directory — the unexpanded form of an environment variable, used as a relative path. **The cause is unidentified.**
+What is established is only that the write burst falls inside this session's validation window, between the
+protected-hash baseline and the mutation-probe results file, so the timing is a correlation with the work this pass
+did and not evidence about which process wrote them. No writer process was identified. Three of the four are
+byte-identical copies of the live
+`C:\ProgramData\Microsoft\Windows\Caches` files under a different version suffix, and the fourth has the same size
+with different content, so the hazard is machine cache data, not project data. A read-only screen for identity
+strings found none: no account name in either ASCII or UTF-16LE, no user-home path, no repository path — and the
+screen was shown to be capable of matching, so the zeros mean something. That screen is a bounded set of needles,
+not a proof that nothing sensitive is stored in them.
+
+They were untracked and **not** ignored, which made them a publication hazard of the same family as A53. The
+root-anchored line `/%SystemDrive%/` is now in `.gitignore` (`.gitignore:25`), so an ordinary `git add -A` does not
+sweep them up; a deliberate force-add still would. They are left in place — removing an untracked file is a
+separate decision, not part of this entry.
+
+## Remaining limitations
+
+The register is editable by anyone with write access to the tree, so it is reviewable provenance and not
+attestation. No trainer consults the gate, so P1–P4 bind a build and a test, not a run. The rights fields
+(`licence_basis`, `consent_basis`, `synthetic`, `generator.model_id`, `verifier.model_id`) are still checked for
+shape only — P5 declined. `main()` still returns 0 when every asset is refused. The corpus audio remains absent,
+so `digests_verified` stays false and unverifiable by construction. And A54 remains **proposed S2**, with A50,
+A52 and A53 untouched.

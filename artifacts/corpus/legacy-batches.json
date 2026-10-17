@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "purpose": "which sentence pools and which pre-contract corpus batches the project has reviewed. tools/corpus_forge.py reads this file when it decides whether a corpus manifest may update model weights, so a batch cannot authorise its own boundary evidence.",
+  "limitation": "reviewable provenance, not cryptographic attestation. a digest in this file proves byte identity only: it says two documents hold the same bytes, and says nothing about licensing, consent, authorship or redistribution rights. the register is a tracked file, so every change to it is a diff a reviewer sees - that review is the control, not the hash. no signature scheme exists here and none is implied.",
+  "pool_sets": [
+    {
+      "pool_set_sha256": "7e217b9e325d37b33396fb490b7e0ac97b095d57036c3479e625d1a7fb8f7de3",
+      "boundary_contract_version": 1,
+      "disjointness_rule": "identical, or one word set containing the other, or word-set Jaccard >= 0.8, or at least 5 leading words in common, after case folding and punctuation-to-space normalisation",
+      "training_sentences": 8,
+      "evaluation_sentences": 8,
+      "issued": "2026-10-15",
+      "ruling": "the third training-pool rewrite of 2026-10-15: eight sentences that appear in neither the evaluation pool nor the quarantined batch, in either kept or dropped form. approved by the project owner as part of the en-synthetic-01 quarantine; recorded in docs/audit-register.md Addendum 16, docs/provenance.md section 7 and PROGRESS.md entry 18. a pool or rule change must be recorded here, in code and in the contract version together, or generation refuses.",
+      "retired_pool_sets": "two earlier pools are deliberately not registered. the first (16 sentences, eight of which collide with the evaluation pool) is the pool en-synthetic-01 was forged from and stands before this contract, so it is registered as a batch rather than as a pool set. the second (8 replacement sentences that recycled quarantined text) was withdrawn before any batch was forged from it, and an unrecorded pool must not become eligible by someone adding it here after the fact."
+    }
+  ],
+  "pre_contract_batches": [
+    {
+      "name": "en-synthetic-01",
+      "manifest_evidence": "artifacts/corpus/en-synthetic-01/manifest.json",
+      "manifest_sha256": "7a39791aae553097890976c2ba19add1ad329151d86c3751aab1da7efd6384ae",
+      "status": "QUARANTINED",
+      "ruling_date": "2026-10-15",
+      "reason": "four of its eight kept clips are the same example as an English evaluation sentence under the disjointness rule, including en_slot0_006.wav whose sentence is character-for-character the evaluation sentence. training on it and scoring on that evaluation would measure memorisation. severity and closure criteria are proposed, not ruled: see docs/audit-register.md row A54.",
+      "evaluation_use": "retained. the batch keeps asr-domain-evaluation; the quarantine stops gradient updates from reusing leaked text and does not retire what was already measured.",
+      "decision_document": "docs/audit-register.md Addendum 16; docs/provenance.md section 7; PROGRESS.md entry 18",
+      "cleared_for_training": false,
+      "audio_evidence": "the batch's audio is not on this machine, so its per-clip digests cannot be recomputed here. that alone keeps it blocked whatever this file says.",
+      "registered_against": "the manifest bytes in the working copy on 2026-10-15, which carry the uncommitted quarantine record. committing those bytes leaves this digest correct; rewriting them does not."
+    }
+  ]
+}

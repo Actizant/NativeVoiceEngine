@@ -132,6 +132,21 @@ class TestEndToEndExchange:
         events = list(voice.stream_hearing(iter([sine(seconds=0.1)]), None))
         assert [event.kind for event in events] == [TranscriptionKind.PARTIAL, TranscriptionKind.FINAL]
 
+    def test_hear_transcribes_one_finished_utterance(self):
+        stt = FakeStt()
+        voice = interface(transcriber=stt)
+        result = voice.hear(sine(seconds=0.2))
+        assert result.text == "switch to hindi please"
+        assert len(stt.invocations) == 1
+
+    def test_hear_applies_the_language_it_is_asked_to_force(self):
+        stt = FakeStt()
+        voice = interface(transcriber=stt)
+        voice.hear(sine(seconds=0.2), language=LanguageTag("en"))
+        request = stt.invocations[0]
+        assert request.language == LanguageTag("en")
+        assert request.allow_auto_detection is False
+
     def test_converse_segments_a_continuous_capture(self):
         detector = UtteranceSegmenter(
             EnergySpeechDetector(format=AudioFormat(16000, 1)),

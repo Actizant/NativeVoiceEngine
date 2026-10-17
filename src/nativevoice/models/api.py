@@ -2,17 +2,23 @@
 
 The specification forbids shipping third-party weights without an explicit
 provenance and licence review, so that rule is expressed as data and enforced at
-load time rather than left to documentation. Three axes are kept separate
+load time rather than left to documentation. Four axes are kept separate
 because the reference study showed them being conflated:
 
 * `ReviewStatus` - has a human approved this asset? starts `UNREVIEWED`, and
   nothing in the loader will proceed past it.
 * integrity - does the file on disk match the digest recorded at review time?
 * `requirements` - does it fit the machine, per measurement rather than guess?
+* `AssetScope` - which registry may serve the asset at all. This is not part of
+  approval: an asset can be reviewed and approved and still be confined to
+  measurement work, because "a human approved this" answers a different question
+  from "this may be routed to a customer". `review` alone cannot express the
+  second, so conflating them would turn an approval record into a distribution
+  claim.
 
-An asset can be present and corrupt, present and unapproved, or approved and
-not installable offline; each of those is a different error with a different
-remedy, so each gets its own field.
+An asset can be present and corrupt, present and unapproved, approved and not
+installable offline, or approved and not meant for the product path at all; each
+of those is a different error with a different remedy, so each gets its own field.
 """
 
 from __future__ import annotations
@@ -30,13 +36,44 @@ class ReviewStatus(str, Enum):
     REJECTED = "rejected"
 
 
+class AssetScope(str, Enum):
+    """Which registry may serve this asset, independent of whether it is approved.
+
+    `PRODUCT` is the shipped voice path: routing, the model manager and anything
+    a customer can reach. `MEASUREMENT` is local research only - an asset that is
+    on disk and may even be fully approved, but whose permission to be *served*
+    has not been established. A manifest with no `use_scope` is `PRODUCT`, so
+    existing manifests keep loading exactly as before; isolation always has to be
+    asserted, never inferred from absence.
+    """
+
+    PRODUCT = "product"
+    MEASUREMENT = "measurement"
+
+
 class AssetKind(str, Enum):
+    """What one file inside an asset package *is*.
+
+    The four trailing values exist because a package is not only model data: it
+    carries its licence text, its README, its VCS attributes and occasionally a
+    helper script. Before them the choice was to label those as a tokenizer asset or
+    to refuse the whole package, and both answers destroy evidence - the first puts
+    a wrong description into the provenance record a later review reads, the second
+    leaves the file out of the digest list entirely. Recorded with their own digest
+    and size, they are pinned like any other file and loaded by nothing.
+    """
+
     MODEL = "model"
+    MODEL_CONFIG = "model_config"  # config.json / preprocessor_config.json: not weights, not a vocabulary
     TOKENIZER = "tokenizer"
     VOICE_ASSET = "voice_asset"
     RUNTIME_BINARY = "runtime_binary"
     EVALUATION_DATA = "evaluation_data"
     TRAINING_DATA = "training_data"
+    LICENCE = "licence"  # the licence text shipped with the asset, read rather than summarised
+    DOCUMENTATION = "documentation"  # README / model card: prose, never a runtime input
+    PACKAGE_METADATA = "package_metadata"  # .gitattributes and friends: packaging, not content
+    SOURCE = "source"  # executable code shipped inside a package, whose licence may differ
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +167,7 @@ class ModelManifest:
     assets: tuple[Asset, ...] = ()
     asset_root: str = ""
     minimum_profile: str = "lite"
+    use_scope: AssetScope = AssetScope.PRODUCT
     notes: str = ""
 
     @property

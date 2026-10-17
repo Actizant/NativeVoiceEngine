@@ -3,15 +3,29 @@
 The lightweight ``FasterWhisperAdapter`` in this package refuses to run unless a
 caller hands it ``approved=True``; it exists so the plumbing can be tested without
 a model. This module is the genuine path: a ``TranscriptionEngine`` that resolves
-its weights through a reviewed ``ModelManifest``, runs them past the licence gate
-and integrity verifier before importing ``faster_whisper``, and propagates
-``ModelNotApproved`` / ``IntegrityError`` / ``ModelNotInstalled`` unchanged.
+its weights through a reviewed ``ModelManifest``, runs them past the scope guard for
+the path it was built to serve - product scope plus the licence gate by default, the
+measurement-use gate and its asset-root rule on request - and the integrity verifier
+before importing ``faster_whisper``, and propagates ``ModelNotApproved`` /
+``IntegrityError`` / ``ModelNotInstalled`` unchanged.
+
+A measurement-scoped asset reaches this class through
+:func:`nativevoice.models.measurement.load`, which constructs it with
+``serve_scope=AssetScope.MEASUREMENT``. Handing the manifest-free adapter
+``approved=True`` is not a research path: that object fabricates a product-scoped
+manifest with no assets and no provenance, so nothing below would be verified.
 
 Where the weights live is *not* hardcoded. The asset directory is derived from the
 configured Hugging Face cache root (``default_cache_root``) by matching a
 ``models--*--<model_id>`` repository, and the exact CT2 snapshot sub-directory is
 read from the manifest's own recorded relative paths. No absolute path appears in
-library code.
+library code. A measurement-scoped object additionally refuses a directory that is or
+shares the product user-data tree, at both points where one exists: the declared
+``asset_root`` and ``asset_dir`` at the approval gate, and whatever this derivation
+actually returned at the verification seam, before any digest is read. So the
+derivation above is not the whole answer on that axis: the hub cache is shared by
+design and passes, while an ``HF_HOME`` redirected into the product tree does not even
+when the manifest declared nothing.
 
 CPU by default. onnxruntime on this box has no CUDA provider, and 4 GB of VRAM is
 not a promise, so ``device`` defaults to ``"cpu"`` with an explicit ``compute_type``
@@ -27,11 +41,11 @@ than passed off as frame-level streaming.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from ..api import TranscriptionRequest, TranscriptionResult
 from ..text_context import build_prompt
+from ...config.paths import hf_hub_cache_root
 from ...core.audio import AudioBuffer, AudioFormat, Recognition
 from ...core.cancel import guard
 from ...core.errors import (
@@ -43,18 +57,22 @@ from ...core.errors import (
 from ...core.events import TranscriptionEvent
 from ...core.language import Capability, CapabilityStatus, LanguageTag, Task
 from ...core.time import Timings, new_id
-from ...models.api import ModelManifest
-from ...models.approval import ensure_approved
+from ...models.api import AssetScope, ModelManifest
+from ...models.approval import ensure_approved, ensure_measurement_use, ensure_product_scope
 from ...models.integrity import inspect as inspect_integrity
+from ...models.roots import ensure_asset_root_isolated
 
 ENGINE_ID = "faster-whisper"
 
 
 def default_cache_root() -> str:
-    """HF hub cache prefix, from the environment, never a literal path."""
-    override = os.environ.get("HF_HOME")
-    base = override if override else os.path.join(os.path.expanduser("~"), ".cache", "huggingface")
-    return os.path.join(base, "hub")
+    """HF hub cache prefix, from the environment, never a literal path.
+
+    Delegates to :func:`nativevoice.config.paths.hf_hub_cache_root` so the directory
+    this engine loads from is the same one provisioning digested: a digest recorded
+    against a cache the loader never opens proves nothing about the bytes in use.
+    """
+    return str(hf_hub_cache_root())
 
 
 def resolve_asset_dir(manifest: ModelManifest, cache_root: str | None = None) -> Path:
@@ -116,7 +134,7 @@ def _to_float32(buffer: AudioBuffer):
 
 
 class FasterWhisperEngine:
-    """A manifest-gated, integrity-verified Whisper recognition engine."""
+    """A manifest-gated, integrity-verified Whisper engine for one asserted path."""
 
     engine_id = ENGINE_ID
     format = AudioFormat(16000, 1)
@@ -134,12 +152,17 @@ class FasterWhisperEngine:
         beam_size: int = 5,
         vad_filter: bool = False,
         language_codes: tuple[str, ...] | None = None,
+        serve_scope: AssetScope = AssetScope.PRODUCT,
     ) -> None:
         if manifest.task is not Task.STT:
             raise ConfigurationError(
                 "manifest is not an STT asset", model_id=manifest.model_id, task=manifest.task.value
             )
         self.manifest = manifest
+        # Coerced, not trusted: a value that is not a scope must raise here rather than
+        # compare unequal to both members and leave this object serving the shipped
+        # path while its caller believed it asked for the research one.
+        self.serve_scope = AssetScope(serve_scope)
         self.model_id = manifest.model_id
         self.device = device
         self.compute_type = compute_type
@@ -155,6 +178,23 @@ class FasterWhisperEngine:
     # -- gates ----------------------------------------------------------------
 
     def _require_approved(self) -> None:
+        # Scope first, and whichever scope this object was built to serve: an approval
+        # override is a decision about one asset's review record, not a widening of
+        # which path an asset may serve. Both guards raise ModelNotApproved unchanged.
+        # The measurement axis is not the product axis with a lower bar: `review` can
+        # grant it nothing, it refuses a product-scoped manifest, and it reads the
+        # review field only to honour a rejection - so a research route cannot become
+        # the way to run a shipped asset unapproved, and cannot overrule a human who
+        # said no to the asset itself.
+        if self.serve_scope is AssetScope.MEASUREMENT:
+            ensure_measurement_use(self.manifest)
+            # After the authorisation gate, and covering the directory this object will
+            # really open rather than only the one the manifest names: an `asset_dir`
+            # handed to the constructor replaces the declared root, and a research run
+            # pointed into the product tree is not a research run.
+            ensure_asset_root_isolated(AssetScope.MEASUREMENT, self.manifest.asset_root, self._asset_dir)
+            return
+        ensure_product_scope(self.manifest)
         ensure_approved(self.manifest)
 
     def _resolved_asset_dir(self) -> Path:
@@ -165,6 +205,14 @@ class FasterWhisperEngine:
 
     def _require_verified(self) -> Path:
         repo_dir = self._resolved_asset_dir()
+        # The resolved directory, not the declared one: with an empty `asset_root` and no
+        # `asset_dir` the gate above had nothing to compare, and this is the point where
+        # the environment's cache root has already been turned into a path. An
+        # `HF_HUB_CACHE` set under the product tree is exactly the case a declared-root
+        # check cannot see, and it is checked here rather than in `_require_approved`
+        # because resolving a directory is filesystem work, which the gate precedes.
+        if self.serve_scope is AssetScope.MEASUREMENT:
+            ensure_asset_root_isolated(AssetScope.MEASUREMENT, repo_dir)
         report = inspect_integrity(self.manifest, repo_dir)
         if report.missing:
             raise ModelNotInstalled(

@@ -94,12 +94,13 @@ rather than a boolean called `has_gpu`.
 
 | Archive | Extracted size | Files | Working copy |
 |---|---|---|---|
-| `openwhispr-main (1).zip` | 41 MB | 3,230 | `../_refs/openwhispr-main/` |
-| `pocket-tts-main.zip` | 2.1 MB | 166 | `../_refs/pocket-tts-main/` |
+| `openwhispr-main (1).zip` | 41 MB | 3,230 | local research extract, outside this repository |
+| `pocket-tts-main.zip` | 2.1 MB | 166 | local research extract, outside this repository |
 
-Both originals in `~/Downloads` were left unmodified; the ZIPs were never opened for writing. Extracted
-copies are read-only references for this build and are outside the project directory, so no reference code
-can be imported by the deliverable.
+The original archives were left unmodified and the ZIPs were never opened for writing. The extracted copies are
+read-only research references held outside the project directory, so no reference code can be imported by the
+deliverable. Neither upstream is redistributed by this repository, and its licence terms were not reviewed here,
+so nothing in this section clears them for redistribution.
 
 ## Workspace
 

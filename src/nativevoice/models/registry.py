@@ -9,6 +9,12 @@ caller can decide to route, fall back, or report the limitation from one object.
 
 Load failures are collected rather than raised: a single malformed manifest in a
 curated directory must not blind the registry to the other forty models.
+
+A registry also has a :class:`~nativevoice.models.api.AssetScope`, and the scope
+tag on each manifest is checked at the one place every manifest passes through -
+indexing. A measurement-scoped manifest is therefore not merely hidden from a
+product registry, it is never in its index, so there is nothing for a later
+caller to route.
 """
 
 from __future__ import annotations
@@ -16,10 +22,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..core.errors import CapabilityUnavailable
+from ..core.errors import CapabilityUnavailable, ModelNotApproved
 from ..core.language import Task
-from .api import ModelManifest, ModelStatus
-from .approval import approval_blockers
+from .api import AssetScope, ModelManifest, ModelStatus
+from .approval import approval_blockers, scope_blockers
 from .integrity import inspect as inspect_integrity
 from .manifest_io import load_manifest
 
@@ -35,6 +41,7 @@ class RegistryIssue:
 @dataclass(slots=True)
 class ModelRegistry:
     root: Path
+    scope: AssetScope = AssetScope.PRODUCT
     manifests: dict[str, ModelManifest] = field(default_factory=dict)
     _by_language: dict[tuple[Task, str], list[str]] = field(default_factory=dict)
     issues: list[RegistryIssue] = field(default_factory=list)
@@ -59,19 +66,32 @@ class ModelRegistry:
     def _ingest_path(self, path: Path) -> ModelManifest | None:
         try:
             manifest = load_manifest(path)
+            return self._index(manifest)
         except Exception as exc:  # a bad file is reported, never fatal to the scan
             self.issues.append(RegistryIssue(path=str(path), reason=str(exc)))
             return None
-        return self._index(manifest)
 
     def _index(self, manifest: ModelManifest) -> ModelManifest:
+        blockers = scope_blockers(manifest, self.scope)
+        if blockers:
+            raise ModelNotApproved(
+                "model is not indexed by this registry",
+                model_id=manifest.model_id,
+                reasons=blockers,
+                registry_scope=self.scope.value,
+            )
         self.manifests[manifest.model_id] = manifest
         for language in manifest.languages:
             self._by_language.setdefault((manifest.task, language), []).append(manifest.model_id)
         return manifest
 
     def register(self, manifest: ModelManifest) -> ModelManifest:
-        """Add or replace a manifest in the index without touching disk."""
+        """Add or replace a manifest in the index without touching disk.
+
+        Scope-checked like discovery: this is the path a hand-built manifest takes,
+        so refusing here is what makes the isolation a property of the index rather
+        than of the files on disk.
+        """
         return self._index(manifest)
 
     def reload(self) -> None:

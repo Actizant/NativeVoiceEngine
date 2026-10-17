@@ -3,8 +3,9 @@
 ``ModelManager`` turns a registry's *declarations* into running engine objects
 under three constraints the specification insists on:
 
-* a model is never handed to an engine until it is installed, integrity-verified
-  and approved, each with its own error so the remedy is unambiguous;
+* a model is never handed to an engine until it is installed, integrity-verified,
+  approved and scoped for the product path, each with its own error so the remedy
+  is unambiguous;
 * a failed load leaves no half-loaded state - either the engine object exists and
   is tracked, or nothing was recorded and the failure is visible via ``status``;
 * the loaded set stays inside a per-task concurrency cap and a resource budget,
@@ -27,7 +28,7 @@ from ..core.errors import (
     ResourceLimitExceeded,
 )
 from .api import ModelManifest, ModelStatus
-from .approval import ApprovalGate
+from .approval import ApprovalGate, ensure_product_scope
 from .integrity import inspect as inspect_integrity
 from .registry import ModelRegistry
 
@@ -83,6 +84,9 @@ class ModelManager:
         return record.engine
 
     def _gate(self, manifest: ModelManifest) -> None:
+        # Scope first and scope only: an override widens nothing about which path an
+        # asset may serve, and a combined check here would silence the override.
+        ensure_product_scope(manifest)
         self.approvals.check(manifest)
 
     def _require_installed_and_verified(self, manifest: ModelManifest) -> None:

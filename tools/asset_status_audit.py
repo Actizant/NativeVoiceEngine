@@ -20,15 +20,18 @@ conservative boolean `False` is used, and the distinction lives in the accompany
 and in the correction record: `False` here means "not established", never "prohibited", unless the
 record says a prohibition was read.
 
-Historical artefacts are preserved: each manifest is copied verbatim into
+Historical artefacts are preserved: each manifest is copied into
 `artifacts/audit/manifest-snapshots/` before it is rewritten, so the value the earlier tool wrote is
-still inspectable after the correction.
+still inspectable after the correction. The copy is not the live file byte for byte: `redact_copy`
+substitutes `[USER_HOME]` for this machine's home directory, and mirrors whether the source ends in a
+final newline, which is the convention the committed copies already carry. A manifest whose JSON does
+not parse is not backed up at all - it is reported as its own failure, its bytes left exactly as
+found, and the remaining assets are still audited.
 """
 
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -38,6 +41,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from nativevoice.config import models_dir  # noqa: E402
 from nativevoice.core.language import Task  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import redact_copy, write_json  # noqa: E402
 from nativevoice.models.approval import approval_blockers  # noqa: E402
 from dataclasses import replace
 
@@ -95,6 +99,34 @@ def judge(manifest, evidence: dict) -> dict:
     }
 
 
+def write_corrections(payload: dict, out: Path) -> Path:
+    """Save the corrections record, redacting the asset directories it names.
+
+    `checked_directory` and `backup_of_previous_manifest` are absolute on the machine that
+    ran this tool, and this file is published, so they leave through the serialization
+    boundary with `[USER_HOME]` in place of the home directory.
+    """
+    return write_json(out, payload)
+
+
+def backup_manifest(live: Path, backup: Path) -> str | None:
+    """Copy one live manifest into the snapshot tree, redacted.
+
+    Returns ``None`` when the copy was written, otherwise the reason it was not. Reported
+    per asset rather than raised: this loop runs over every installed manifest, and one
+    unreadable record must not cost the operator the backups of all the others. Losing the
+    whole pass on a single corrupt file is the worse failure, because the snapshot is the
+    only thing that makes the previous rights claim inspectable after the rewrite.
+    """
+    try:
+        redact_copy(live, backup)
+    except json.JSONDecodeError as error:
+        return f"not backed up: {live.name} is not valid JSON ({error})"
+    except OSError as error:
+        return f"not backed up: {live.name} could not be read or copied ({type(error).__name__}: {error})"
+    return None
+
+
 def main() -> int:
     registry = ModelRegistry(models_dir())
     snapshot_dir = ROOT / "artifacts" / "audit" / "manifest-snapshots"
@@ -109,7 +141,31 @@ def main() -> int:
             "notes_head": manifest.provenance.notes[:160],
         }
         backup = snapshot_dir / f"{manifest.model_id}.json.pre-audit"
-        shutil.copy2(Path(models_dir()) / "manifests" / f"{manifest.model_id}.json", backup)
+        live_manifest = Path(models_dir()) / "manifests" / f"{manifest.model_id}.json"
+        # The committed copy is redacted; the live manifest under the data root keeps its
+        # real asset root, because that is the value the integrity check digests.
+        backup_error = backup_manifest(live_manifest, backup)
+        if backup_error is not None:
+            # Without the snapshot there is no inspectable record of the claim about to be
+            # overwritten, so the correction stops here for this asset and the others continue.
+            corrections.append(
+                {
+                    "model_id": manifest.model_id,
+                    "task": manifest.task.value,
+                    "engine": manifest.engine,
+                    "previous_claim": previous,
+                    "backup_error": backup_error,
+                    "corrected_claim": None,
+                    "evidence_inspected": None,
+                    "still_loads_for_local_use": None,
+                    "approval_blockers": [
+                        "not re-checked: the manifest was left exactly as found because its "
+                        "previous bytes could not be backed up"
+                    ],
+                }
+            )
+            print(f"  {manifest.model_id:34s} SKIPPED - {backup_error}")
+            continue
 
         evidence = evidence_for(manifest)
         verdict = judge(manifest, evidence)
@@ -127,7 +183,7 @@ def main() -> int:
             ),
         )
         updated = replace(manifest, provenance=provenance)
-        save_manifest(updated, str(Path(models_dir()) / "manifests" / f"{manifest.model_id}.json"))
+        save_manifest(updated, str(live_manifest))
         blockers = approval_blockers(updated)
 
         corrections.append(
@@ -160,12 +216,16 @@ def main() -> int:
             "The missing-evidence versus prohibited distinction therefore lives in this record's "
             "`rights_status` and `why` text, and in `permissions` - not in the boolean. A prohibited "
             "asset would be recorded here as `rights_status: prohibited` with the term quoted; none "
-            "was found for these assets."
+            "was found for these assets. "
+            "An entry with `backup_error` is an asset this pass did not touch: its live manifest "
+            "could not be read as JSON, so no snapshot was taken and no correction was written, and "
+            "its `corrected_claim`, `evidence_inspected` and `still_loads_for_local_use` are null "
+            "because they were never evaluated. The other assets were still audited."
         ),
         "corrections": corrections,
     }
     out = ROOT / "artifacts" / "audit" / "asset-status-corrections.json"
-    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    write_corrections(payload, out)
     print(f"record -> {out}")
 
     after = ModelRegistry(models_dir())

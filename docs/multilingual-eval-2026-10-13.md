@@ -71,7 +71,7 @@ transcript. It carries no filename quote, which is why it has no cue score.
 
 `cr` is cue recall, `script` is the writing system the transcript actually arrived in, `rt` is real time factor.
 
-| Sample | lang | base-default (production) | base-int8 | large-v3-int8 |
+| Sample | lang | base-default (float32, as measured) | base-int8 | large-v3-int8 |
 |---|---|---|---|---|
 | Energetic-Male | en | en/latin cr1.00 rt0.26 | en/latin cr1.00 rt0.18 | en/latin cr1.00 rt2.61 |
 | Paula | en | en/latin cr1.00 rt0.18 | en/latin cr1.00 rt0.12 | en/latin cr1.00 rt1.87 |
@@ -100,14 +100,15 @@ transcript. It carries no filename quote, which is why it has no cue score.
 
 Configuration was identical across the model comparison except where stated: `beam_size=5`, `vad_filter=False`,
 `cpu_threads=4`, `local_files_only=True`, language auto-detection on, one pass per model, files processed in the
-same order. `base-default` is the production configuration; CTranslate2 reported that the checkpoint's float16
+same order. This report measures the `base-default` configuration; no production configuration is designated
+or approved here. CTranslate2 reported that the checkpoint's float16
 weights were converted to float32 because this backend has no efficient float16 CPU path.
 
 ## Findings separated by kind, because they have different owners
 
 **Recognition and rendering.** Hindi is the only categorical failure: the baseline asserted `hi` at 0.816 and
 produced Urdu-script text, scoring 0.00 against the Devanagari quote in the same filename. Chinese on the
-production float32 pass came back in **traditional** characters against a **simplified** cue and repeated a
+float32 pass came back in **traditional** characters against a **simplified** cue and repeated a
 phrase — 都會屬於屬於屬於 — recalling 0.58; the int8 pass of the *same weights* produced simplified output at
 0.83. Spanish (0.825 in all three) and Japanese (0.88/0.88/0.85) sit below the European pack: the Spanish
 transcript rendered "30 años" where the filename quote says "treinta años", which a character subsequence

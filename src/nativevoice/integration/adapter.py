@@ -82,7 +82,14 @@ class VoiceInterface:
     # ------------------------------------------------------------------ hearing
 
     def hear(self, audio: AudioBuffer, language: LanguageTag | None = None) -> TranscriptionResult:
-        return self.session.hear(audio, language=language)
+        """Transcribe one finished utterance in the language the host asked for.
+
+        The session takes a language when a turn opens, not when it hears, so forcing
+        one here means opening the turn with it - the same way `exchange()` and
+        `stream_hearing()` do. Forwarding it to `hear()` would ignore the request.
+        """
+        self.session.begin_turn(language)
+        return self.session.hear(audio)
 
     def stream_hearing(
         self, chunks: Iterator[AudioBuffer], language: LanguageTag | None = None

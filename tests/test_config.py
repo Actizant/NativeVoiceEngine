@@ -13,6 +13,8 @@ from nativevoice.config.paths import (
     ensure_root,
     ensure_subdir,
     logs_dir,
+    measurement_data_root,
+    measurement_models_dir,
     models_dir,
     subpath,
     voices_dir,
@@ -94,6 +96,42 @@ def test_data_root_honours_env_var(tmp_path, monkeypatch):
     assert logs_dir() == tmp_path / "logs"
     for name in SUBDIRS:
         assert subpath(name).parent == tmp_path
+
+
+def test_measurement_root_is_a_sibling_not_a_subdirectory(tmp_path, monkeypatch):
+    """Measurement assets get their own tree; the product root keeps its name.
+
+    Renaming the product root would move every already-installed model and break
+    the user's backup, so the isolation is expressed beside it, not inside it.
+
+    Two different claims are checked, because they can fail independently. The
+    lexical pair is what the module computes and what a reader can predict from the
+    name; the resolved pair is what the filesystem actually reaches, since a junction
+    or a per-user redirect can make differently-spelled roots land in one tree. Both
+    are compared through ``resolve()``, which creates nothing: the measurement root
+    does not exist on a machine that has never provisioned it, and naming it is not
+    provisioning it.
+    """
+    monkeypatch.setenv("NATIVEVOICE_HOME", str(tmp_path))
+    product = data_root()
+    measurement = measurement_data_root()
+    assert product == tmp_path
+    assert measurement == tmp_path.parent / f"{tmp_path.name}-measurement"
+    assert measurement != product
+    assert product not in measurement.parents
+    assert measurement not in product.parents
+    assert measurement_models_dir() == measurement / "models"
+    assert measurement_models_dir() != models_dir()
+
+    product_resolved = product.resolve()
+    measurement_resolved = measurement.resolve()
+    assert measurement_resolved != product_resolved
+    assert product_resolved not in measurement_resolved.parents
+    assert measurement_resolved not in product_resolved.parents
+    assert measurement_models_dir().resolve().parent == measurement_resolved
+
+    assert not measurement.exists()  # naming the root is not creating it
+    assert not measurement_models_dir().exists()
 
 
 def test_data_root_windows_localappdata(monkeypatch):

@@ -9,6 +9,7 @@ approved Kokoro asset is installed. A skipped real test never counts as passed.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -26,7 +27,8 @@ from nativevoice.core.errors import (
 )
 from nativevoice.core.language import Capability, CapabilityStatus, LanguageTag, Task
 from nativevoice.config.paths import models_dir
-from nativevoice.models.api import Asset, ModelManifest, Provenance, ReviewStatus
+from nativevoice.models.api import Asset, AssetKind, AssetScope, ModelManifest, Provenance, ReviewStatus
+from nativevoice.models.approval import ApprovalGate
 from nativevoice.models.manifest_io import load_manifest
 from nativevoice.tts.api import Prosody, SynthesisRequest, VoiceReference
 from nativevoice.tts.adapters.sherpa_kokoro import (
@@ -67,6 +69,45 @@ def _tts_manifest(**overrides) -> ModelManifest:
     )
     base.update(overrides)
     return ModelManifest(**base)
+
+
+BLOB = b"synthetic-onnx-bytes-not-a-real-model"
+
+
+def _tts_manifest_with_asset(directory: Path, **overrides) -> ModelManifest:
+    """A manifest pinned to the synthetic bytes this test writes into ``directory``.
+
+    It records `asset_root` the way a provisioned manifest does, so the bytes the
+    test installs are the bytes integrity looks for: a refusal below can then only
+    be about scope, never about an accidentally missing or mismatched asset.
+    """
+    base = dict(
+        asset_root=str(directory),
+        assets=(
+            Asset(
+                kind=AssetKind.MODEL,
+                relative_path="model.int8.onnx",
+                sha256=hashlib.sha256(BLOB).hexdigest(),
+                size_bytes=len(BLOB),
+            ),
+        ),
+    )
+    base.update(overrides)
+    return _tts_manifest(**base)
+
+
+def _install_asset(manifest: ModelManifest, directory: Path) -> Path:
+    """Put digest-correct bytes where the manifest says they belong.
+
+    Integrity then cannot be the accidental reason a load was refused: the only
+    variable left is which path the manifest is scoped to.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    for asset in manifest.assets:
+        path = directory / asset.relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(BLOB)
+    return directory
 
 
 # --- construction and pure mapping (no model, no IO) -------------------------
@@ -166,6 +207,42 @@ def test_unapproved_manifest_raises_model_not_approved():
     )
     with pytest.raises(ModelNotApproved):
         engine.warm("en")
+
+
+def test_a_measurement_scoped_manifest_never_reaches_the_speaker_weights(tmp_path):
+    """The synthesis path asks the scope question first, override included.
+
+    The same two axes that keep a research model off the recognition path apply here:
+    an approval record - or a human override of it - says nothing about which path an
+    asset may serve.
+    """
+    directory = tmp_path / "kokoro"
+    manifest = _tts_manifest_with_asset(directory, use_scope=AssetScope.MEASUREMENT)
+    engine = SherpaKokoroEngine(manifest, asset_dir=_install_asset(manifest, directory))
+
+    gate = ApprovalGate()
+    gate.override(manifest, model_id=manifest.model_id, reason="local measurement only")
+    gate.check(manifest)  # the approval axis is wide open here
+    with pytest.raises(ModelNotApproved) as exc:
+        engine.warm("en")
+    assert any("use scope" in reason for reason in exc.value.details["reasons"])
+    assert engine._tts is None
+
+
+def test_an_approved_product_manifest_still_passes_both_guards(tmp_path):
+    """The control the refusal above depends on: nothing about a product asset changed.
+
+    Same synthetic bytes, same digest, only `use_scope` different - so the gate opens
+    and the run fails downstream for the reason it always did, which is the missing
+    front-end files. sherpa-onnx is never imported and no weight is read either way.
+    """
+    directory = tmp_path / "kokoro"
+    manifest = _tts_manifest_with_asset(directory)
+    engine = SherpaKokoroEngine(manifest, asset_dir=_install_asset(manifest, directory))
+    engine._require_approved()  # approved and product-scoped: open exactly as before
+    with pytest.raises(ModelNotInstalled):
+        engine.warm("en")  # integrity passes; the front-end files this engine needs do not exist
+    assert engine._tts is None
 
 
 def test_missing_asset_dir_raises_model_not_installed(tmp_path):

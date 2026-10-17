@@ -8,9 +8,10 @@ Run:
 
 Why this is a separate tool rather than a run of the platform: the objective is to measure recognition
 across languages under **equivalent** configuration, and the only way to keep one model's compute type from
-confounding the comparison is to state it per pass. `base-default` is the production configuration as it
-currently runs; `base-int8` and `large-v3-int8` share one quantisation so the two differ by model size and
-nothing else.
+confounding the comparison is to state it per pass. `base-default` mirrors the settings the production
+adapter uses; `base-int8` and `large-v3-int8` share one quantisation so the two differ by model size and
+nothing else. Mirroring those settings is not the same as measuring the shipped path, and no pass here does
+that: every pass loads from the measurement registry, so `production_configuration` is false on all of them.
 
 Ground truth: **there are none.** The samples carry no verified reference transcripts, and a filename that
 appears to quote the utterance is marketing text, not an annotation. So this tool never computes WER or CER.
@@ -18,10 +19,18 @@ It reports transcribed text, segment structure, empty and repeated output, the l
 and a clearly-labelled *filename cue overlap* - the share of the filename's words that also appear in the
 transcript. That number is a gross-error detector. It is not accuracy, and it is not a quality score.
 
-Boundaries kept by construction: everything runs under `OfflineGuard` with `local_files_only=True`, so no
-model is fetched and no connection is attempted; the source files are opened read-only and hashed before and
-after; conversion writes isolated copies outside the repository; nothing here registers a manifest, changes
-a default or touches the production engine.
+Boundaries kept by construction: the model comes only from
+:func:`nativevoice.models.measurement.load` over :func:`~nativevoice.models.measurement.registry`, so a pass
+that has no authorised measurement manifest is refused before any audio is read, and the scope guard, the
+named authoriser, the provenance record, the asset-root rule and the integrity verifier all run ahead of the
+weights. This tool does not import the backend, does not construct ``WhisperModel`` itself, and does not use
+the manifest-free adapter - that path fabricates a product-scoped manifest with no assets and no provenance,
+so nothing in it would be verified. The revision is pinned: the pass's own pin comes from the provisioner's
+catalogue, and ``snapshot_files`` yields nothing for a revision that is not on disk, so a missing snapshot is
+a refusal rather than a quieter one for whatever newest directory the cache happens to hold. Everything runs
+under `OfflineGuard` with local-only loading, so no model is fetched and no connection is attempted; the
+source files are opened read-only and hashed before and after; conversion writes isolated copies outside the
+repository; nothing here registers a manifest, changes a default or touches the production engine.
 """
 
 from __future__ import annotations
@@ -29,7 +38,6 @@ from __future__ import annotations
 import argparse
 import array
 import hashlib
-import json
 import os
 import sys
 import threading
@@ -38,10 +46,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT))
 
 from nativevoice.audio import read_wav, write_wav  # noqa: E402
+from nativevoice.config.paths import hf_hub_cache_root  # noqa: E402
 from nativevoice.core.audio import AudioBuffer, AudioFormat  # noqa: E402
+from nativevoice.core.errors import ConfigurationError, VoiceError  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import write_json  # noqa: E402
 from nativevoice.diagnostics.offline import OfflineGuard  # noqa: E402
+from nativevoice.models import measurement  # noqa: E402
+from nativevoice.stt.api import TranscriptionRequest  # noqa: E402
+from tools.provision import CATALOGUE, hf_snapshot_dir, snapshot_files  # noqa: E402
 
 DOWNLOADS = Path(os.path.expanduser("~")) / "Downloads"
 WORKSPACE = Path(os.environ.get("ML_EVAL_WORK", str(ROOT.parent / "_multilingual_eval")))
@@ -65,23 +80,120 @@ SAMPLES = [
     ("voice_preview_ultron (2).wav", "unknown", "identity to be determined"),
 ]
 
+#: One entry per pass. `model_id` names the manifest this tool loads from the measurement
+#: registry, and `repo`/`revision` are read from the provisioner's own catalogue so a pin
+#: has exactly one home - the one its digests were verified against. `settings_basis` says
+#: what a pass is equivalent to, which is a statement about settings and not about the
+#: shipped path: no pass here measures the shipped path, because none of them can load
+#: anything but a measurement-scoped manifest.
+def _pass(model_id: str, compute_type: str, settings_basis: str) -> dict:
+    spec = CATALOGUE[model_id]
+    return {
+        "model_id": model_id,
+        "repo": spec["hf_repo"],
+        "revision": str(spec.get("revision") or ""),
+        "compute_type": compute_type,
+        "settings_basis": settings_basis,
+    }
+
+
 PASSES = {
-    "base-default": {"repo": "Systran/faster-whisper-base", "compute_type": "default", "production": True},
-    "base-int8": {"repo": "Systran/faster-whisper-base", "compute_type": "int8", "production": False},
-    "large-v3-int8": {"repo": "Systran/faster-whisper-large-v3", "compute_type": "int8", "production": False},
+    "base-default": _pass(
+        "faster-whisper-base", "default", "the settings the production adapter uses: beam 5, no VAD, the publisher's default quantisation"
+    ),
+    "base-int8": _pass(
+        "faster-whisper-base", "int8", "the same model as base-default at the quantisation the large-v3 pass uses"
+    ),
+    "large-v3-int8": _pass(
+        "faster-whisper-large-v3", "int8", "the selected teacher, one quantisation shared with base-int8 so the two differ by model size and nothing else"
+    ),
 }
 
 
-def locate_snapshot(repo: str) -> Path:
-    """The cached CTranslate2 snapshot for a repo, or an honest failure. Never fetches."""
-    name = "models--" + repo.replace("/", "--")
-    root = Path(os.path.expanduser("~")) / ".cache" / "huggingface" / "hub" / name / "snapshots"
-    if not root.is_dir():
-        raise FileNotFoundError(f"no cached snapshot for {repo}")
-    for candidate in sorted(root.iterdir()):
-        if (candidate / "model.bin").is_file():
-            return candidate
-    raise FileNotFoundError(f"snapshot directory for {repo} holds no model.bin")
+def manifest_revision(manifest) -> str:
+    """The snapshot the manifest's own recorded paths name, or "" when they name none.
+
+    The provisioner records each asset as ``snapshots/<revision>/<file>``, so the digest
+    run says which directory the bytes were verified in. That is a recorded fact about
+    this manifest, and it is what an unpinned pass falls back on - not a directory scan.
+    """
+    for asset in manifest.assets:
+        parts = Path(asset.relative_path).parts
+        if len(parts) >= 3 and parts[0] == "snapshots":
+            return parts[1]
+    return ""
+
+
+def resolve_revision(spec: dict, manifest) -> dict:
+    """Pin this pass to one revision, and refuse when the cache does not hold it.
+
+    Two pins are compared before anything is loaded: the catalogue's and the manifest's.
+    If they disagree, the manifest was digested from a different commit than the pass
+    claims to measure, and the run would produce a number attributed to the wrong file.
+    Then the pinned snapshot is asked for by name: `snapshot_files` returns nothing for a
+    revision that is not on disk, which is the refusal this tool needs in place of the
+    directory scan it used to do, where the first sorted snapshot holding a `model.bin`
+    silently decided which model was measured.
+    """
+    pin = str(spec.get("revision") or "")
+    recorded = manifest_revision(manifest)
+    if pin and recorded and pin != recorded:
+        raise ConfigurationError(
+            "the manifest records a different snapshot than this pass is pinned to",
+            model_id=manifest.model_id,
+            pinned=pin,
+            recorded=recorded,
+            remedy="provision the pinned revision into the measurement registry, or point this pass at the manifest that digested it",
+        )
+    revision = pin or recorded
+    if not revision:
+        raise ConfigurationError(
+            "neither this pass nor its manifest names a revision",
+            model_id=manifest.model_id,
+            remedy="pin the catalogue entry, or re-provision so the manifest records the snapshot it digested",
+        )
+    present = snapshot_files(spec["repo"], revision)
+    if not present:
+        raise ConfigurationError(
+            "no cached snapshot for the revision this pass is pinned to; this tool does not download and will not substitute another snapshot",
+            repo=spec["repo"],
+            revision=revision,
+            cache_root=str(hf_hub_cache_root()),
+        )
+    return {
+        "revision": revision,
+        "revision_basis": (
+            "pinned by the provisioner's catalogue and matched by the manifest's recorded paths"
+            if pin and recorded
+            else "pinned by the provisioner's catalogue"
+            if pin
+            else "the snapshot the manifest recorded when it was digested"
+        ),
+        "repository": str(hf_snapshot_dir(spec["repo"])),
+        "snapshot_files_present": len(present),
+    }
+
+
+def load_pass(name: str):
+    """The one engine this tool will run, with its pin resolved: no other route exists.
+
+    :func:`nativevoice.models.measurement.load` is the only way a model reaches this
+    process, so the registry scope, the manifest's measurement scope, the named
+    authoriser, the provenance record and the asset-root rule are all settled before the
+    object exists, and the integrity verifier plus the resolved-directory guard settle
+    the bytes when it warms. Constructing it reads no weights: the refusal a missing or
+    unauthorised manifest produces here happens before a single sample is opened.
+    """
+    spec = PASSES[name]
+    engine = measurement.load(
+        measurement.registry(),
+        spec["model_id"],
+        compute_type=spec["compute_type"],
+        beam_size=BEAM_SIZE,
+        cpu_threads=CPU_THREADS,
+        vad_filter=False,
+    )
+    return engine, resolve_revision(spec, engine.manifest)
 
 
 QUOTE_STAMP = __import__("re").compile(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-")
@@ -303,40 +415,64 @@ def repeated(text: str) -> bool:
     return len({*parts}) < len(parts) * 0.6
 
 
-def run_pass(name: str, sources: list[dict]) -> dict:
-    import faster_whisper
+def pass_record(name: str, engine, pin: dict) -> dict:
+    """The skeleton every artefact carries: which model, which revision, which scope.
 
-    spec = PASSES[name]
-    snapshot = locate_snapshot(spec["repo"])
-    record = {
+    Read from the engine and the manifest rather than from `PASSES` alone, so a record
+    cannot describe a configuration the object that ran did not have.
+    `production_configuration` is false unconditionally and says why: the only route to a
+    model here is the measurement registry, so nothing this tool produces measures the
+    shipped path, whatever settings a pass mirrors.
+    """
+    manifest = engine.manifest
+    weights = Path(pin["repository"]) / "snapshots" / pin["revision"] / "model.bin"
+    return {
         "pass": name,
-        "repo": spec["repo"],
-        "snapshot": str(snapshot),
-        "snapshot_model_bin_bytes": (snapshot / "model.bin").stat().st_size,
-        "compute_type": spec["compute_type"],
-        "beam_size": BEAM_SIZE,
-        "cpu_threads": CPU_THREADS,
-        "vad_filter": False,
+        "model_id": manifest.model_id,
+        "engine": engine.engine_id,
+        "repo": PASSES[name]["repo"],
+        "hub_cache_root": str(hf_hub_cache_root()),
+        "repository": pin["repository"],
+        "revision": pin["revision"],
+        "revision_basis": pin["revision_basis"],
+        "snapshot_recorded": f"snapshots/{pin['revision']}",
+        "snapshot_files_present": pin["snapshot_files_present"],
+        "snapshot_model_bin_bytes": weights.stat().st_size if weights.is_file() else None,
+        "asset_root": manifest.asset_root,
+        "serve_scope": manifest.use_scope.value,
+        "review_status": manifest.review.value,
+        "compute_type": engine.compute_type,
+        "beam_size": engine.beam_size,
+        "cpu_threads": engine.cpu_threads,
+        "vad_filter": engine.vad_filter,
         "local_files_only": True,
-        "production_configuration": spec["production"],
+        "production_configuration": False,
+        "production_configuration_basis": (
+            "loaded through nativevoice.models.measurement from a measurement-scoped manifest, so no line in "
+            "this file measures the shipped path; " + PASSES[name]["settings_basis"]
+        ),
         "results": [],
     }
+
+
+def run_pass(name: str, sources: list[dict], engine, pin: dict) -> dict:
+    record = pass_record(name, engine, pin)
     guard = OfflineGuard()
     with guard:
         with PeakMemory() as peak:
             started = time.perf_counter()
-            model = faster_whisper.WhisperModel(str(snapshot), device="cpu", local_files_only=True,
-                                                compute_type=spec["compute_type"], cpu_threads=CPU_THREADS)
-            record["model_load_seconds"] = round(time.perf_counter() - started, 3)
+            # `warm` is the gate, the digests, the backend import and the model constructor
+            # together, so it is named for what it times rather than as a load time.
+            engine.warm()
+            record["engine_warm_seconds"] = round(time.perf_counter() - started, 3)
             for info in sources:
                 audio = read_wav(info["working_copy"])
                 wall = time.perf_counter()
-                segments, result = model.transcribe(
-                    _float32(audio), language=None, beam_size=BEAM_SIZE, vad_filter=False, task="transcribe"
-                )
-                segment_list = list(segments)
+                result = engine.transcribe(TranscriptionRequest(audio=audio))
                 elapsed = time.perf_counter() - wall
-                text = " ".join(s.text.strip() for s in segment_list).strip()
+                segments = list(result.segments)
+                text = result.text
+                asserted = result.language.code if result.language else ""
                 row = {
                     "sample": Path(info["source"]).name,
                     "expected_language": info["expected_language"],
@@ -344,14 +480,14 @@ def run_pass(name: str, sources: list[dict]) -> dict:
                     "audio_seconds": info["audio_seconds"],
                     "wall_seconds": round(elapsed, 3),
                     "real_time_factor": round(elapsed / max(0.001, info["audio_seconds"]), 4),
-                    "asserted_language": result.language,
-                    "language_probability": round(float(result.language_probability or 0.0), 4),
-                    "expected_language_asserted": (result.language or "") == info["expected_language"],
-                    "segments": len(segment_list),
-                    "first_segment_start": round(float(segment_list[0].start), 3) if segment_list else None,
-                    "last_segment_end": round(float(segment_list[-1].end), 3) if segment_list else None,
-                    "silent_tail_seconds": (round(info["audio_seconds"] - float(segment_list[-1].end), 3)
-                                            if segment_list else None),
+                    "asserted_language": asserted,
+                    "language_probability": round(float(result.timings.get("language_probability") or 0.0), 4),
+                    "expected_language_asserted": asserted == info["expected_language"],
+                    "segments": len(segments),
+                    "first_segment_start": round(float(segments[0].metadata["start"]), 3) if segments else None,
+                    "last_segment_end": round(float(segments[-1].metadata["end"]), 3) if segments else None,
+                    "silent_tail_seconds": (round(info["audio_seconds"] - float(segments[-1].metadata["end"]), 3)
+                                            if segments else None),
                     "empty_transcript": not text,
                     "repeated_clause": repeated(text),
                     "peak_rss_mib": peak.peak_mib,
@@ -365,16 +501,18 @@ def run_pass(name: str, sources: list[dict]) -> dict:
     return record
 
 
-def _float32(buffer: AudioBuffer):
-    import numpy as np
-
-    return np.asarray(buffer.samples, dtype=np.int16).astype(np.float32) / 32768.0
-
-
 def _write_partial(name: str, record: dict) -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f"multilingual-{name}.json"
-    path.write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_json(OUT / f"multilingual-{name}.json", record)
+
+
+def _write_inventory(inventory: dict) -> Path:
+    """Serialize the inventory as committed evidence.
+
+    `paths`, `source`, `working_copy`, `downloads` and `workspace` are absolute here and
+    stay absolute in memory - the pass opens the working copy by the value in this very
+    dict - so the redaction belongs to this write and nowhere else.
+    """
+    return write_json(OUT / "multilingual-inventory.json", inventory)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -384,6 +522,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     _guard_console()
 
+    if not args.inventory_only:
+        try:
+            # Resolved before a single sample is opened: a pass with no authorised
+            # measurement manifest, or without its pinned snapshot, is refused here
+            # rather than after the audio has been decoded into the workspace. This call
+            # builds the gated object and reads no weights.
+            engine, pin = load_pass(args.pass_name)
+        except VoiceError as error:
+            emit(f"REFUSED: {error}")
+            emit("no pass ran: this tool loads a model only through the measurement registry")
+            return 1
+
     sources_meta = find_sources()
     inventory = {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"), "downloads": str(DOWNLOADS),
                  "workspace": str(WORKSPACE), "samples": sources_meta}
@@ -392,8 +542,7 @@ def main(argv: list[str] | None = None) -> int:
     if len(accessible) != len(SAMPLES):
         missing = [s["prefix"] for s in sources_meta if not s["accessible"]]
         inventory["missing"] = missing
-        (OUT / "multilingual-inventory.json").write_text(json.dumps(inventory, indent=2, ensure_ascii=False),
-                                                          encoding="utf-8")
+        _write_inventory(inventory)
         emit(f"NOT ACCESSIBLE: {missing}")
         emit("stopping: the evaluation set is incomplete and no substitute sample may be invented")
         return 1
@@ -411,20 +560,19 @@ def main(argv: list[str] | None = None) -> int:
 
     inventory["working_copies"] = prepared
     inventory["total_audio_seconds"] = round(sum(p["audio_seconds"] for p in prepared), 2)
-    (OUT / "multilingual-inventory.json").write_text(json.dumps(inventory, indent=2, ensure_ascii=False),
-                                                      encoding="utf-8")
+    _write_inventory(inventory)
     if args.inventory_only:
         emit(f"inventory only -> {OUT / 'multilingual-inventory.json'}")
         return 0
 
-    record = run_pass(args.pass_name, prepared)
-    (OUT / f"multilingual-{args.pass_name}.json").write_text(json.dumps(record, indent=2, ensure_ascii=False),
-                                                              encoding="utf-8")
+    record = run_pass(args.pass_name, prepared, engine, pin)
+    write_json(OUT / f"multilingual-{args.pass_name}.json", record)
 
     after = find_sources()
     tampered = [s["prefix"] for s, b in zip(after, sources_meta) if s["sha256_before"] != b["sha256_before"]]
     emit(f"sources unchanged: {not tampered} | tampered: {tampered or 'none'}")
-    emit(f"pass {args.pass_name}: load={record['model_load_seconds']}s "
+    emit(f"pass {args.pass_name}: {record['model_id']}@{record['revision'][:12]} "
+         f"warm={record['engine_warm_seconds']}s "
          f"peak={record['peak_rss_mib_whole_pass']} MiB network={len(record['network_attempts'])} "
          f"-> {OUT / ('multilingual-' + args.pass_name + '.json')}")
     return 0

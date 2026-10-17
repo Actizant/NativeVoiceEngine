@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import ast
 import io as _io
-import json
 import re
 import sys
 import threading
@@ -388,6 +387,157 @@ def check_approval_gate_is_inalienable() -> Finding:
     )
 
 
+def check_measurement_assets_can_never_reach_the_product_path() -> Finding:
+    """A research asset stays off the shipped path, override included.
+
+    Approval answers "has a human signed this off"; scope answers "may this be
+    served by the product path". They used to be one flag, so a permission written
+    for local benchmarking became product routing the moment someone set
+    `review=approved` - `redistributable=False` satisfies the approval gate by
+    design. Both scopes are written into one directory with byte-identical assets,
+    review state and provenance, so the only variable is `use_scope`, and the
+    research asset must be refused by discovery, by `register()` and by the load
+    seam while the product asset loads. The seam is also tested alone, by writing
+    the manifest into an index discovery had rejected, so a bypass of the registry
+    cannot silently re-open it. The positive control matters as much as the
+    refusals: without it a gate that simply broke every load would report a pass.
+
+    Two guards with nearly the same name own different axes and are proved apart,
+    because reading them as one thing is how the boundary gets broken in review:
+    :func:`ensure_product_scope` is the scope-only half the load seam calls, which no
+    override widens, while :func:`ensure_product_eligible` is the combined
+    approval-plus-scope reporting form that the seam deliberately does not call.
+    """
+    import hashlib
+    import tempfile
+
+    from nativevoice.config.paths import data_root, measurement_data_root
+    from nativevoice.core.errors import ModelNotApproved
+    from nativevoice.core.language import Task
+    from nativevoice.models.api import Asset, AssetKind, AssetScope, ModelManifest, Provenance, ReviewStatus
+    from nativevoice.models.approval import (
+        ApprovalGate,
+        ensure_product_eligible,
+        ensure_product_scope,
+    )
+    from nativevoice.models.lifecycle import ModelManager
+    from nativevoice.models.manifest_io import save_manifest
+    from nativevoice.models.registry import ModelRegistry
+
+    payload = b"audit-identical-weights"
+    record = Asset(
+        kind=AssetKind.MODEL,
+        relative_path="weights.bin",
+        sha256=hashlib.sha256(payload).hexdigest(),
+        size_bytes=len(payload),
+    )
+    # redistributable=False on purpose: that is the real shape of the unresolved
+    # research assets, and it must not be the thing that saves the boundary.
+    signed_off = Provenance(source="audit", licence_spdx="MIT", redistributable=False)
+    common = dict(engine="stub", task=Task.STT, assets=(record,), provenance=signed_off,
+                  review=ReviewStatus.APPROVED, approved_by="audit", approved_on="audit")
+    product = ModelManifest(model_id="audit-product", **common)
+    research = ModelManifest(model_id="audit-research", use_scope=AssetScope.MEASUREMENT, **common)
+
+    escapes: list[str] = []
+
+    def refused(build, label: str) -> None:
+        try:
+            build()
+        except ModelNotApproved as error:
+            if "use scope" not in str(error):
+                escapes.append(f"{label}: refused for the wrong reason - {error}")
+        except Exception as error:
+            escapes.append(f"{label}: raised {type(error).__name__} instead of a scope refusal")
+        else:
+            escapes.append(f"{label}: accepted")
+
+    with tempfile.TemporaryDirectory() as working:
+        for manifest in (product, research):
+            save_manifest(manifest, Path(working) / f"{manifest.model_id}.json")
+            destination = Path(working) / manifest.model_id / "weights.bin"
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(payload)
+        shipped = ModelRegistry(working)
+        research_registry = ModelRegistry(working, scope=AssetScope.MEASUREMENT)
+        if research.model_id in shipped.ids():
+            escapes.append("discovery indexed the research asset")
+        if not any("use scope" in issue.reason for issue in shipped.issues):
+            escapes.append("the research asset was dropped silently, not reported")
+        if research.model_id not in research_registry.ids():
+            escapes.append("the measurement registry does not serve its own scope")
+        refused(lambda: shipped.register(research), "register()")
+        # Proved separately on purpose: this is the scope-only half the load seam
+        # calls, and the next line is the combined reporting form it does not.
+        refused(lambda: ensure_product_scope(research), "scope-only seam guard")
+        refused(lambda: ensure_product_eligible(research), "combined eligibility report")
+
+        gate = ApprovalGate()
+        gate.override(research, model_id=research.model_id, reason="audit: approved for local measurement")
+        # The gate must be open here, or this proves nothing: the whole gap is that
+        # an approved-but-not-redistributable asset passes approval, and scope is
+        # what stops it from going further.
+        try:
+            gate.check(research)
+        except Exception as error:
+            escapes.append(f"control: the approval gate refused it too ({error}), so scope proved nothing")
+        refused(
+            lambda: ModelManager(research_registry, lambda m, b: object(), approvals=gate).load(research.model_id),
+            "load seam under an active override",
+        )
+        # The last seam has to hold on its own: copying the manifest into an index
+        # that discovery already rejected bypasses both `_index()` checks, and the
+        # bytes on disk are digest-correct, so only the load gate can refuse it.
+        injected = ModelRegistry(working)
+        injected.manifests[research.model_id] = research
+        refused(
+            lambda: ModelManager(injected, lambda m, b: object(), approvals=gate).load(research.model_id),
+            "hand-injected manifest with intact assets",
+        )
+        try:
+            ModelManager(shipped, lambda m, b: object()).load(product.model_id)
+        except Exception as error:
+            escapes.append(f"control: the product asset could not be loaded - {type(error).__name__}: {error}")
+
+    # Resolved, not spelled. Two roots can carry different names and still be the same
+    # tree through a junction, a symlink or a per-user redirect, and Windows' Store
+    # build redirects LOCALAPPDATA in exactly that way, so a lexical comparison proves
+    # only that the strings differ. `resolve()` defaults to strict=False: a scope that
+    # has never been provisioned is compared without its directory being created.
+    shipped_root = data_root().resolve()
+    research_root = measurement_data_root().resolve()
+    overlapping = (
+        research_root == shipped_root
+        or shipped_root in research_root.parents
+        or research_root in shipped_root.parents
+    )
+    if overlapping:
+        escapes.append(
+            f"the measurement root is not a separate tree once resolved: {research_root} vs {shipped_root}"
+        )
+    detail = (
+        f"escapes: {escapes}"
+        if escapes
+        else "identical assets: product scope loaded; research scope refused by index, register(), "
+        "the scope-only seam guard, the combined eligibility report and the load seam - override "
+        f"included, injection included; roots distinct as spelled and after resolution ({research_root.name})"
+    )
+    return Finding("measurement assets cannot reach the product path", "PASS" if not escapes else "FAIL", detail)
+
+
+def write_findings(findings: list[Finding], out: Path) -> Path:
+    """Publish the findings table as committed evidence, with home paths redacted.
+
+    A PASS detail names a root by its last component only, but the checks that fail quote
+    the resolved paths to show what collided, and on a real machine those strings carry the
+    account that ran the tool. The artefact is the published form, so the redaction belongs
+    here; the console print above still shows the operator the paths to act on.
+    """
+    from nativevoice.diagnostics.evidence_paths import write_json
+
+    return write_json(out, [item._asdict() for item in findings])
+
+
 def main() -> int:
     checks = [
         check_error_taxonomy,
@@ -399,6 +549,7 @@ def main() -> int:
         check_speech_path_persists_nothing,
         check_asset_fetches_are_forced_offline,
         check_approval_gate_is_inalienable,
+        check_measurement_assets_can_never_reach_the_product_path,
         check_capability_statuses_are_honest,
         check_thread_hygiene,
     ]
@@ -414,10 +565,7 @@ def main() -> int:
         counts[item.status] += 1
         print(f"{item.status:8s} {item.check.ljust(width)}  {item.detail}")
     print(f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['NOT_RUN']} not run")
-    (ROOT / "artifacts" / "audit").mkdir(parents=True, exist_ok=True)
-    (ROOT / "artifacts" / "audit" / "mechanical-findings.json").write_text(
-        json.dumps([item._asdict() for item in findings], indent=2), encoding="utf-8"
-    )
+    write_findings(findings, ROOT / "artifacts" / "audit" / "mechanical-findings.json")
     return 1 if counts["FAIL"] else 0
 
 

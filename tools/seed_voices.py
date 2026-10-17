@@ -47,6 +47,21 @@ def measured_from_artifact(path: Path) -> dict:
     return {row["language"]: row for row in payload.get("results", [])}
 
 
+def voice_registry(out: str) -> VoiceRegistry:
+    """Where the package is written, and whether that place is published evidence.
+
+    With no ``--out`` the identity goes to the data root, which is runtime state the product
+    reads back: its asset root must name the directory that exists. A root inside the
+    repository is a tracked file, and an identity records that root and its evidence file by
+    absolute path, so that copy is redacted as it is serialized. Resolved, because a
+    relative ``--out`` can still point inside the repository.
+    """
+    if not out:
+        return VoiceRegistry()
+    root = Path(out)
+    return VoiceRegistry(root, committed=root.resolve().is_relative_to(ROOT))
+
+
 def build(manifest, artifact: dict, slot: int, host_summary: str, evidence: str = "") -> VoiceIdentity:
     languages = []
     for code, row in sorted(artifact.items()):
@@ -176,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.print_only:
         print(json.dumps(identity.as_dict(), indent=2, ensure_ascii=False))
         return 0
-    target = VoiceRegistry(args.out) if args.out else VoiceRegistry()
+    target = voice_registry(args.out)
     path = target.save(identity)
     print(f"identity {identity.voice_id} -> {path}")
     for item in identity.languages:

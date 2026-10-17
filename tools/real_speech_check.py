@@ -52,6 +52,7 @@ from nativevoice.audio.vad import (  # noqa: E402
 from nativevoice.config import data_root, models_dir  # noqa: E402
 from nativevoice.core.audio import AudioFormat  # noqa: E402
 from nativevoice.core.language import LanguageTag  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import write_json  # noqa: E402
 from nativevoice.diagnostics.offline import OfflineGuard  # noqa: E402
 from nativevoice.eval.transcription import score as score_pair  # noqa: E402
 from nativevoice.models.registry import ModelRegistry  # noqa: E402
@@ -356,7 +357,7 @@ def write_artefact(report: dict, path: Path) -> str:
     kept = preserve_previous(path)
     if kept:
         report["previous_artefact_preserved"] = kept
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_json(path, report)
     return kept
 
 

@@ -2,8 +2,9 @@
 
 This is the first adapter that genuinely speaks. It turns an *approved* Kokoro
 ONNX asset into audible int16 audio, routed through the same gates the rest of the
-stack uses: the licence gate (``models.approval.ensure_approved``) and integrity
-verification (``models.integrity.inspect``) run before sherpa-onnx is imported or
+stack uses: the product-scope guard (``models.approval.ensure_product_scope``), the
+licence gate (``models.approval.ensure_approved``) and integrity verification
+(``models.integrity.inspect``) all run before sherpa-onnx is imported or
 a single weight is read, and ``ModelNotApproved`` / ``IntegrityError`` /
 ``ModelNotInstalled`` propagate unchanged so a caller sees the real reason a voice
 is silent.
@@ -45,7 +46,7 @@ from ...core.language import Capability, CapabilityStatus, LanguageTag, Task
 from ...core.time import Timings, monotonic_ns
 from ...config.paths import models_dir
 from ...models.api import ModelManifest, ReviewStatus
-from ...models.approval import ensure_approved
+from ...models.approval import ensure_approved, ensure_product_scope
 from ...models.integrity import base_directory
 from ...models.integrity import inspect as inspect_integrity
 
@@ -152,7 +153,9 @@ class SherpaKokoroEngine:
 
     def _require_approved(self) -> None:
         # Propagates ModelNotApproved unchanged. A manifest that has not passed the
-        # licence gate never reaches the runtime.
+        # licence gate never reaches the runtime - and scope is asked first, because
+        # an approval override says nothing about which path an asset may serve.
+        ensure_product_scope(self.manifest)
         ensure_approved(self.manifest)
 
     def _require_verified(self) -> None:
@@ -249,7 +252,7 @@ class SherpaKokoroEngine:
         )
 
     def warm(self, language: str | None = None) -> None:
-        """Load the sherpa TTS instance, gated behind approval + integrity."""
+        """Load the sherpa TTS instance, gated behind scope, approval and integrity."""
         if self._closed:
             raise ConfigurationError("engine is closed", engine_id=self.engine_id)
         if self._tts is not None and getattr(self, "_loaded_language", None) == (

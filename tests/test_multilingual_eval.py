@@ -1,14 +1,21 @@
-"""Tests for the multilingual evaluation instrument, not for any model.
+"""The evaluation tool's only door to a model: the measurement seam, at a pinned revision.
 
-The comparison it produces is only as trustworthy as these functions, and two of them were wrong when first
-written - a cue extractor that read the speaker's name instead of the quoted sentence, and a "longest common
-subsequence" that was a greedy scan. Both are pinned here so they cannot silently return.
+No inference, no real weights, no download. The unit under test is *which manifest is
+allowed to become an engine in this tool, and what the resulting record is permitted to
+claim*. Synthetic `model.bin` placeholders stand in for bytes; the assertions are about
+refusals, ordering and metadata.
 
-No microphone, no loudspeaker, no model, no network.
+The tool used to build its own `WhisperModel` from whichever cached snapshot came first
+in a sorted listing, under a hardcoded home-directory cache root. That route checked no
+scope, no authoriser, no provenance and no revision, and it could read a different
+commit than the one the repository's own evidence names - so a number written down here
+could be attributed to a model nobody had verified. Every case below is one of the ways
+that is now impossible.
 """
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -17,124 +24,280 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
-from tools.multilingual_compare import script_of  # noqa: E402
-from tools.multilingual_eval import (  # noqa: E402
-    char_recall,
-    cue_overlap,
-    quote_from_name,
-    quote_tail_from_name,
-    repeated,
+import tools.multilingual_eval as mle  # noqa: E402
+from nativevoice.config.paths import models_dir  # noqa: E402
+from nativevoice.core.errors import (  # noqa: E402
+    CapabilityUnavailable,
+    ConfigurationError,
+    ModelNotApproved,
 )
+from nativevoice.core.language import Task  # noqa: E402
+from nativevoice.models.api import (  # noqa: E402
+    Asset,
+    AssetKind,
+    AssetScope,
+    ModelManifest,
+    Provenance,
+    ResourceRequirement,
+    ReviewStatus,
+)
+from nativevoice.models.registry import ModelRegistry  # noqa: E402
+from tools.provision import CATALOGUE  # noqa: E402
 
-CHINESE_NAME = ("黄丽萍长自述1-2026-10-13-18-31-你们知道吗？每次照镜子的时候，我都会数一数又长出多少根白发。我现在才明白，这些白发就像是我们家族.mp3")
-ENGLISH_NAME = ("Paula-2026-10-13-18-26-Hi-everyone,-I'm-excited-to-share-some-insights.mp3")
-UNTIMED_NAME = "voice_preview_ultron (2).wav"
-
-# the real transcript that the greedy version scored at 0.04 despite being verbatim
-VERBATIM = ("你知道吗,每次照镜子的时候,我都会数一数又长出多少根白发,我现在才明白,这些白发就像是我们家族的印记,"
-            "以前觉得是负担,现在慢慢学会接纳了,其实每个人都有自己的不完美,重要的是怎么去")
-TRADITIONALISED = ("您知道嗎?每次照鏡子的時候我都會屬於屬於屬於長出多少根白髮 我現在才明白這些白髮就像是我們家族的印記 "
-                   "以前覺得是負擔,現在慢慢學會階納了")
-
-
-class TestCueExtraction:
-    """A48: the cue lives after the timestamp, not in the speaker prefix."""
-
-    def test_the_quoted_sentence_is_taken_from_after_the_timestamp(self):
-        words = quote_from_name(ENGLISH_NAME)
-        assert {"everyone", "excited", "share", "insights"} <= set(words)
-        assert "Paula" not in words
-
-    def test_the_cue_keeps_the_original_word_order_for_subsequence_checks(self):
-        tail = quote_tail_from_name(CHINESE_NAME)
-        assert tail.startswith("你们知道吗")
-        assert "2026-10-13" not in tail
-
-    def test_an_unstamped_filename_has_no_cue_rather_than_a_fake_one(self):
-        assert quote_from_name(UNTIMED_NAME) == []
-        assert quote_tail_from_name(UNTIMED_NAME) == ""
-        assert char_recall(quote_tail_from_name(UNTIMED_NAME), "anything") is None
-
-    def test_punctuation_in_the_name_is_not_treated_as_a_word(self):
-        words = quote_from_name(CHINESE_NAME)
-        assert len(words) == 1  # an unspaced sentence is one token, which is exactly the A48 trap
+BLOB = b"synthetic-ct2-bytes-not-a-real-model"
+TEACHER = "faster-whisper-large-v3"
+PIN = CATALOGUE[TEACHER]["revision"]
+PROVENANCE = Provenance(source="Systran/faster-whisper-large-v3", licence_spdx="NOASSERTION", redistributable=False)
 
 
-class TestCharacterRecall:
-    """A48 again, from the other side: an unspaced cue needs a subsequence, not a substring."""
-
-    def test_a_verbatim_transcript_with_restyled_punctuation_scores_high(self):
-        recall = char_recall(quote_tail_from_name(CHINESE_NAME), VERBATIM)
-        assert recall is not None and recall >= 0.85
-
-    def test_a_greedy_scan_would_have_failed_here_and_now_does_not(self):
-        # the cue opens 你们 and the transcript opens 你知道吗: a first-match scan stalls at one character
-        # of nine, and a first-match scan stalls at one character out of ten. The proper subsequence keeps
-        # nine of ten, losing only the 们 the model never said.
-        assert char_recall("你们知道吗每次照镜子", "你知道吗每次照镜子") == 0.9
-
-    def test_an_unrelated_transcript_scores_low(self):
-        assert char_recall(quote_tail_from_name(CHINESE_NAME), "completely unrelated english text") < 0.10
-
-    def test_the_same_script_written_differently_lowers_recall_without_breaking(self):
-        recall = char_recall(quote_tail_from_name(CHINESE_NAME), TRADITIONALISED)
-        assert 0.3 < recall < 0.95
-
-    def test_recall_is_bounded_and_monotonic(self):
-        cue = "abcdefghij"
-        assert char_recall(cue, "") is None
-        assert char_recall(cue, cue) == 1.0
-        assert char_recall(cue, "abc") < char_recall(cue, "abcdefghij")
-
-
-class TestWordCueOverlap:
-    def test_spaced_scripts_are_measured_by_word_presence(self):
-        result = cue_overlap(["everyone", "excited", "share"], "Hi everyone, I am excited to tell you")
-        assert result["filename_cue_words"] == 3
-        assert result["filename_cue_matched"] == 2
-        assert result["filename_cue_overlap"] == pytest.approx(0.667)
-
-    def test_the_result_admits_it_is_not_a_reference(self):
-        assert "not annotated references" in cue_overlap(["a"], "a")["note"]
+def teacher_manifest(**overrides) -> ModelManifest:
+    """A measurement manifest in the state provisioning records it: unreviewed, named authoriser."""
+    base = dict(
+        model_id=TEACHER,
+        engine="faster-whisper",
+        task=Task.STT,
+        display_name="recognition teacher, measurement only",
+        languages=(),
+        provenance=PROVENANCE,
+        review=ReviewStatus.UNREVIEWED,
+        approved_by="researcher@example.com",
+        requirements=ResourceRequirement(ram_mb=3300, threads=4, measured=False),
+        assets=(
+            Asset(
+                kind=AssetKind.MODEL,
+                relative_path=f"snapshots/{PIN}/model.bin",
+                sha256=hashlib.sha256(BLOB).hexdigest(),
+                size_bytes=len(BLOB),
+            ),
+        ),
+        use_scope=AssetScope.MEASUREMENT,
+    )
+    base.update(overrides)
+    return ModelManifest(**base)
 
 
-class TestScriptOf:
-    """A language code and a writing system are different facts, and the baseline conflated them."""
-
-    def test_devanagari_and_bengali_are_told_apart_from_arabic(self):
-        assert script_of("मैं अक्सर आसमान से") == "devanagari"
-        assert script_of("আমি প্রায় আকাশ থেকে") == "bengali"
-        assert script_of("میں اکسر آسوان سے") == "arabic"
-
-    def test_a_hindi_transcript_written_in_arabic_script_is_reported_as_arabic_script(self):
-        # this is the real finding: asserted `hi`, written in Perso-Arabic - right language, wrong script
-        assert script_of("میں اکسل آسوان سے گیتی ہوئی") == "arabic"
-
-    def test_latin_cyrillic_hangul_kana_and_cjk_are_each_identified(self):
-        for text, expected in [("Hello world", "latin"), ("Я не прошу любви", "cyrillic"),
-                               ("고양이가 창문을", "hangul"), ("みなさんこんにちは", "hiragana-katakana"),
-                               ("你们知道吗", "cjk")]:
-            assert script_of(text) == expected, text
-
-    def test_punctuation_only_text_has_no_script(self):
-        assert script_of("...!?") == "none"
+def hub(tmp_path: Path, monkeypatch, revision: str = PIN, inside_product_tree: bool = False) -> Path:
+    """A cache root holding one pinned snapshot of the teacher, with synthetic bytes."""
+    if inside_product_tree:
+        # Set before `models_dir()` is read: the product tree has to be the patched one, or
+        # the redirect lands beside a stale tree and the case this exists to test never arises.
+        monkeypatch.setenv("NATIVEVOICE_HOME", str(tmp_path / "nv"))
+    root = models_dir() / "hub" if inside_product_tree else tmp_path / "hub"
+    snapshot = root / "models--Systran--faster-whisper-large-v3" / "snapshots" / revision
+    snapshot.mkdir(parents=True)
+    (snapshot / "model.bin").write_bytes(BLOB)
+    monkeypatch.setenv("HF_HUB_CACHE", str(root))
+    return root
 
 
-class TestRepeatedClauseDetector:
-    """Documents a known gap rather than pretending it does not exist.
+def serving(monkeypatch, *manifests: ModelManifest) -> ModelRegistry:
+    """What the tool's `measurement.registry()` call returns: these manifests, measurement-scoped."""
+    registry = ModelRegistry(Path("unused") / "measurement-models", scope=AssetScope.MEASUREMENT)
+    for manifest in manifests:
+        registry.register(manifest)
+    monkeypatch.setattr(mle.measurement, "registry", lambda: registry)
+    return registry
 
-    The detector looks for repeated comma-separated clauses. The baseline's Chinese output repeated a
-    *phrase inside one clause* (都會屬於屬於屬於), which it does not see - so "repeated_clause: false" in the
-    artefacts does not mean no repetition happened. Pinned so the limitation stays visible instead of
-    becoming an invisible assurance.
+
+# --- which manifest may become an engine -------------------------------------------
+
+def test_a_pass_with_nothing_in_the_measurement_registry_is_refused(monkeypatch, tmp_path):
+    """No manifest, no run - and no quieter fallback to a cached directory.
+
+    `serving()` hands back an empty registry, so the only thing this can be refusing on
+    is the absence of an authorised record for the model id the pass names.
     """
+    hub(tmp_path, monkeypatch)
+    serving(monkeypatch)
+    with pytest.raises(CapabilityUnavailable) as exc:
+        mle.load_pass("large-v3-int8")
+    assert "no such model in registry" in str(exc.value)
+    assert exc.value.details["model_id"] == TEACHER
 
-    def test_a_repeated_clause_is_caught(self):
-        assert repeated("hello world, hello world, hello world, hello world") is True
 
-    def test_normal_distinct_clauses_are_not_flagged(self):
-        assert repeated("Hi everyone, I am excited to share, some insights") is False
+def test_an_unauthorised_measurement_manifest_is_refused(monkeypatch, tmp_path):
+    """The licence gate's own question, on the evaluation route: who authorised this?"""
+    hub(tmp_path, monkeypatch)
+    serving(monkeypatch, teacher_manifest(approved_by=""))
+    with pytest.raises(ModelNotApproved) as exc:
+        mle.load_pass("large-v3-int8")
+    assert any("authoriser" in reason for reason in exc.value.details["reasons"])
 
-    def test_intra_clause_repetition_is_not_caught_known_gap(self):
-        assert repeated("我都會屬於屬於屬於長出多少根白髮") is False
+
+def test_a_product_registry_is_refused_before_any_model_id_is_resolved(monkeypatch, tmp_path):
+    """Pointing the tool at the shipped registry is refused as a registry problem.
+
+    The manifest is not even looked up, so this is not the scope of the asset speaking:
+    it is the tool being unable to aim itself at the product path.
+    """
+    hub(tmp_path, monkeypatch)
+    product = ModelRegistry(tmp_path / "product-models", scope=AssetScope.PRODUCT)
+    monkeypatch.setattr(mle.measurement, "registry", lambda: product)
+    with pytest.raises(ConfigurationError) as exc:
+        mle.load_pass("large-v3-int8")
+    assert "will not read this registry" in str(exc.value)
+
+
+def test_a_refusal_happens_before_the_samples_are_touched(monkeypatch, tmp_path, capsys):
+    """The refusal's position: no audio read, no workspace written, no partial artefact.
+
+    The old tool resolved a snapshot directory before it asked anyone's permission, so a
+    refused run had already decoded every sample. This asserts the order by making the
+    sample scan leave a trace, and names the refusal in the output because the
+    incomplete-evaluation-set branch returns the same exit code from a later point.
+    """
+    hub(tmp_path, monkeypatch)
+    serving(monkeypatch)
+    scanned: list[str] = []
+    monkeypatch.setattr(mle, "find_sources", lambda: scanned.append("scanned") or [])
+    monkeypatch.setattr(mle, "_guard_console", lambda: None)
+    assert mle.main(["--pass", "large-v3-int8"]) == 1
+    assert scanned == []
+    assert "REFUSED" in capsys.readouterr().out
+
+
+# --- which snapshot the run is about ------------------------------------------------
+
+def test_a_manifest_that_digested_another_revision_is_refused(monkeypatch, tmp_path):
+    """Two pins, one answer: the catalogue's revision and the manifest's must agree.
+
+    The manifest here records a different commit than the teacher is pinned to, so the
+    number would be attributed to bytes the evidence record does not name.
+    """
+    hub(tmp_path, monkeypatch, revision=PIN)
+    serving(monkeypatch, teacher_manifest(assets=(
+        Asset(kind=AssetKind.MODEL, relative_path=f"snapshots/{'f' * 40}/model.bin",
+              sha256=hashlib.sha256(BLOB).hexdigest(), size_bytes=len(BLOB)),
+    )))
+    with pytest.raises(ConfigurationError) as exc:
+        mle.load_pass("large-v3-int8")
+    assert "different snapshot than this pass is pinned to" in str(exc.value)
+    assert exc.value.details["pinned"] == PIN
+
+
+def test_an_absent_pinned_snapshot_is_refused_rather_than_substituted(monkeypatch, tmp_path):
+    """The exact defect the directory scan had: another snapshot exists, so it was used.
+
+    Only a *different* revision is on disk here, and the manifest names the pinned one.
+    The run refuses, because the substitute would be a different model.
+    """
+    hub(tmp_path, monkeypatch, revision="f" * 40)
+    serving(monkeypatch, teacher_manifest())
+    with pytest.raises(ConfigurationError) as exc:
+        mle.load_pass("large-v3-int8")
+    assert "no cached snapshot for the revision" in str(exc.value)
+    assert exc.value.details["revision"] == PIN
+    assert Path(exc.value.details["cache_root"]).name == "hub"
+
+
+def test_an_unpinned_pass_uses_the_revision_the_manifest_recorded(monkeypatch, tmp_path):
+    """No catalogue pin is not no pin: the digest run already wrote down which directory.
+
+    `snapshot_files` asked by that name returns bytes on disk, and the basis says where
+    the revision came from, so the record never implies a catalogue pin that does not
+    exist.
+    """
+    hub(tmp_path, monkeypatch)
+    manifest = teacher_manifest()
+    resolved = mle.resolve_revision({"repo": "Systran/faster-whisper-large-v3", "revision": ""}, manifest)
+    assert resolved["revision"] == PIN
+    assert resolved["revision_basis"] == "the snapshot the manifest recorded when it was digested"
+    assert resolved["snapshot_files_present"] == 1
+    assert mle.manifest_revision(teacher_manifest(assets=(
+        Asset(kind=AssetKind.MODEL, relative_path="model.bin", sha256="x", size_bytes=1),
+    ))) == ""
+
+
+def test_a_manifest_naming_no_revision_at_all_is_refused(monkeypatch, tmp_path):
+    """A flat manifest beside an unpinned pass leaves nothing to pin the run to."""
+    hub(tmp_path, monkeypatch)
+    flat = teacher_manifest(assets=(
+        Asset(kind=AssetKind.MODEL, relative_path="model.bin", sha256=hashlib.sha256(BLOB).hexdigest(),
+              size_bytes=len(BLOB)),
+    ))
+    with pytest.raises(ConfigurationError) as exc:
+        mle.resolve_revision({"repo": "Systran/faster-whisper-large-v3", "revision": ""}, flat)
+    assert "names a revision" in str(exc.value)
+
+
+# --- where the resolved directory turned out to be ---------------------------------
+
+def test_the_route_this_tool_uses_refuses_a_cache_redirected_into_the_product_tree(monkeypatch, tmp_path):
+    """N1 seen from the evaluation side: nothing declared the product tree, the cache did.
+
+    The manifest declares no root and the tool passes no `asset_dir`, so the loader has
+    nothing to refuse and the pass resolves normally - until the engine turns the
+    environment's cache root into the directory it is about to open, and the same rule
+    stops it before a digest is read.
+    """
+    inside = hub(tmp_path, monkeypatch, inside_product_tree=True)
+    serving(monkeypatch, teacher_manifest())
+    engine, pin = mle.load_pass("large-v3-int8")
+    assert engine.manifest.asset_root == ""
+    assert str(inside) in pin["repository"]  # the tool really did resolve into the product tree
+    with pytest.raises(ConfigurationError) as exc:
+        engine._require_verified()
+    assert any("product scope's tree" in reason for reason in exc.value.details["reasons"])
+
+
+# --- what the artefact is allowed to say -------------------------------------------
+
+def test_the_record_names_the_model_and_revision_and_denies_being_the_product_path(monkeypatch, tmp_path):
+    """Output metadata, because a number without its provenance becomes a product claim."""
+    root = hub(tmp_path, monkeypatch)
+    serving(monkeypatch, teacher_manifest())
+    engine, pin = mle.load_pass("large-v3-int8")
+    record = mle.pass_record("large-v3-int8", engine, pin)
+    assert record["model_id"] == TEACHER
+    assert record["revision"] == PIN
+    assert record["snapshot_recorded"] == f"snapshots/{PIN}"
+    assert record["repository"] == str(root / "models--Systran--faster-whisper-large-v3")
+    assert record["hub_cache_root"] == str(root)
+    assert record["serve_scope"] == "measurement"
+    assert record["review_status"] == "unreviewed"
+    assert record["engine"] == "faster-whisper"
+    assert record["compute_type"] == "int8"
+    assert record["asset_root"] == ""
+    assert record["local_files_only"] is True
+    assert record["production_configuration"] is False
+    assert "measurement" in record["production_configuration_basis"]
+    assert record["snapshot_model_bin_bytes"] == len(BLOB)
+
+
+def test_no_pass_is_labelled_a_product_configuration(monkeypatch, tmp_path):
+    """The table no longer carries the flag that made a research run look shipped.
+
+    `base-default` used to record `production_configuration: true` while reading the same
+    cache any other pass did. Every record this tool writes is now a measurement, and the
+    settings it mirrors are said in a basis string instead of a boolean a reader trusts.
+    """
+    assert all("production" not in spec for spec in mle.PASSES.values())
+    hub(tmp_path, monkeypatch)
+    serving(monkeypatch, teacher_manifest())
+    engine, pin = mle.load_pass("large-v3-int8")
+    assert mle.pass_record("base-default", engine, pin)["production_configuration"] is False
+
+
+# --- the route itself, held statically ----------------------------------------------
+
+def test_the_tool_has_no_way_to_reach_the_runtime_except_through_the_manifest(monkeypatch):
+    """A fence, not a style preference: the bypass was the defect.
+
+    The source is read once and asked for the shapes that used to exist - a direct
+    backend import, a model constructor, the manifest-free adapter's `approved=True`, a
+    hardcoded cache root, and the directory scan that picked a snapshot by sort order.
+    The constructor is matched with its call parentheses, because the module docstring
+    names the thing it refuses to do.
+    """
+    source = (ROOT / "tools" / "multilingual_eval.py").read_text(encoding="utf-8")
+    for gone in ("import faster_whisper", "WhisperModel(", "approved=True", "FasterWhisperAdapter",
+                 ".cache", "locate_snapshot"):
+        assert gone not in source, gone
+    assert "measurement.load(" in source
+    assert "hf_hub_cache_root()" in source
+    assert "snapshot_files(" in source
+    assert not hasattr(mle, "locate_snapshot")
+    assert not hasattr(mle, "_float32")

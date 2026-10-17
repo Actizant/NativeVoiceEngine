@@ -1,7 +1,8 @@
 # Phase A — Research report: reference projects and the decisions they force
 
 Inspection date: 2026-10-12. Reference archives inspected read-only in place; working copies
-extracted to `../_refs/openwhispr-main/` and `../_refs/pocket-tts-main/`. The original ZIPs were
+extracted to a local research directory outside this repository (`openwhispr-main/`,
+`pocket-tts-main/`). The original ZIPs were
 not modified.
 
 Evidence classes used throughout, kept deliberately separate:
@@ -25,7 +26,7 @@ import, a public API and MCP server, and an Expo mobile app **[D]** `README.md:1
 
 Publisher is "Gizmo Labs Inc." **[C]** `electron-builder.json:188`, and "OpenWhispr Cloud" is a
 first-party hosted service, so cloud dependency is structural rather than incidental. This matters
-for ULTRON: the reference is a hybrid product, not a local-first reference, and its defaults reflect
+for this project: the reference is a hybrid product, not a local-first reference, and its defaults reflect
 that (`useLocalWhisper` default **false** **[C]** `src/stores/settingsStore.ts:1503-1506`).
 
 ### 1.1 Recognition engines actually present
@@ -84,7 +85,7 @@ online and **append** offline. Meeting streams emit `partial` / `final` / `retra
 pure reducer doing timestamp-sorted insert and exact-match retraction **[C]** `CLAUDE.md:769-770`.
 Segment ceilings: 15 s offline, 30 s Cohere (model max ~35 s), 600 s online **[C]** `parakeetServer.js:26-32`.
 
-### 1.5 Language handling — the gap that matters most to ULTRON
+### 1.5 Language handling — the gap that matters most here
 
 `src/config/languageRegistry.json` holds **61 entries: 60 languages + `auto`** **[C]**, with
 per-engine support flags: 59 whisper, 26 parakeet, 7 assemblyai.
@@ -240,7 +241,7 @@ voices are attributed to VCTK, EXPRESSO, EARS, Mozilla Common Voice, VoiceZero, 
 developer recording **[C]** `utils/utils.py:19-47`, with per-voice consent said to live on the Hugging Face
 page — **not disclosed in the repo**. Training data is HiFiTTS-2, NVIDIA research-licensed.
 
-**Consequence for ULTRON:** nothing in either archive can be shipped as an asset on the strength of what
+**Consequence for this project:** nothing in either archive can be shipped as an asset on the strength of what
 is written in it. Provenance review is a gate with teeth, and we implement it in code (§5 of
 `docs/architecture.md`), not in prose.
 
@@ -279,7 +280,7 @@ Doing differently, because these are the reference projects' actual gaps:
   provisional until a benchmark run on this machine produces numbers; `measured: bool` is part of the data.
 - **Benchmark receipts carry their own limits**, learned from their JSON artefacts — and unlike them, we
   record *local* RTF, because theirs contains no local model measurement at all.
-- **Missing models are reported as missing.** Where ULTRON has no approved asset, the interface exists,
+- **Missing models are reported as missing.** Where this project has no approved asset, the interface exists,
   the requirement is itemised, and the call raises rather than returning silence or a tone.
 
 ## 5. Unresolved questions

@@ -4,14 +4,45 @@
   "language": "en",
   "kind": "synthetic",
   "usable_for": [
-    "training",
-    "adaptation",
     "asr-domain-evaluation"
   ],
   "not_usable_for": [
     "human speech quality claims",
     "intelligibility scoring of real speech"
   ],
+  "training_quarantine": {
+    "status": "QUARANTINED",
+    "date": "2026-10-15",
+    "decision": "owner ruling of 2026-10-15: quarantine the entire batch from training and adaptation, preserve every sample and digest, retain asr-domain-evaluation as its permitted use",
+    "previous_usable_for": [
+      "training",
+      "adaptation",
+      "asr-domain-evaluation"
+    ],
+    "colliding_clips": [
+      "en_slot0_001.wav",
+      "en_slot0_002.wav",
+      "en_slot0_003.wav",
+      "en_slot0_006.wav"
+    ],
+    "colliding_audio_seconds": 11.2355,
+    "colliding_dropped_records": [
+      "en_slot0_000.wav",
+      "en_slot0_004.wav",
+      "en_slot0_005.wav",
+      "en_slot0_007.wav"
+    ],
+    "rule": "identical, or one word set containing the other, or word-set Jaccard >= 0.8, or at least 5 leading words in common, after case folding and punctuation-to-space normalisation",
+    "reason": "4 of the 8 kept clips repeat an English round-trip evaluation sentence from tools/evaluate.py: three by adding a clause, en_slot0_006.wav character for character. Training on this batch and then scoring it on that evaluation measures memorisation, not recognition.",
+    "audio_present": false,
+    "digests_verified": false,
+    "verification_limitation": "the clip audio was never tracked (.gitignore excludes artifacts/**/*.wav) and is absent from this machine, so the 8 recorded SHA-256 values cannot be recomputed from files; this manifest is the only surviving record of them",
+    "release_requires": [
+      "a batch forged by tools/corpus_forge.py from a training pool that reuses no sentence recorded here, whose manifest carries training_boundary with sentence_pools.collisions_found == 0",
+      "every clip digest recomputed from audio that exists on the machine doing the verifying"
+    ],
+    "evaluation_use": "unaffected: asr-domain-evaluation remains permitted, including the read-only probe recorded at docs/audit-register.md A41 phase 1"
+  },
   "synthetic": true,
   "licence_basis": "Audio derived from an Apache-2.0 pretrained checkpoint (Kokoro-82M) selected for local inference; transcripts authored for this project. No scraped audio, no donor recordings, no third-party dataset. Redistribution of derived models must respect the checkpoint's Apache-2.0 attribution and the bundled espeak-ng GPL-3.0 data terms.",
   "consent_basis": "not applicable: no human speaker contributed a recording to this corpus",

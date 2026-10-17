@@ -42,10 +42,12 @@ from nativevoice.audio.vad import (  # noqa: E402
     SegmenterConfig,
     UtteranceSegmenter,
 )
+from nativevoice.config import data_root  # noqa: E402
 from nativevoice.core.audio import AudioBuffer, AudioFormat  # noqa: E402
 from nativevoice.core.cancel import CancellationToken  # noqa: E402
 from nativevoice.core.errors import DeviceError  # noqa: E402
 from nativevoice.core.time import monotonic_ns  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import write_json  # noqa: E402
 from nativevoice.hardware import detect  # noqa: E402
 
 
@@ -168,6 +170,15 @@ def play(seconds: float, rate: int, cancel_after_s: float | None) -> dict:
     }
 
 
+def write_result(result: dict, path: Path) -> Path:
+    """Save the device run as committed evidence, with recording paths redacted.
+
+    `capture.recordings_written` names files under the data root, which sits inside the
+    account's own home directory on every platform this tool runs on.
+    """
+    return write_json(path, result)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--confirm-devices", action="store_true", help="required: acknowledge that the microphone is opened and sound is played")
@@ -212,7 +223,9 @@ def main(argv: list[str] | None = None) -> int:
             if args.record:
                 destination = None
                 if args.retention == "keep":
-                    destination = Path(args.recordings_dir) if args.recordings_dir else Path(__import__("ultron_voice.config", fromlist=["data_root"]).data_root()) / "hosts" / "selftest" / "recordings"
+                    # Retained captures live under the data root, not the repository: they are
+                    # audio, and audio is never a committed artefact.
+                    destination = Path(args.recordings_dir) if args.recordings_dir else data_root() / "hosts" / "selftest" / "recordings"
                 entry["capture"] = record(args.record, args.rate, stall_s=max(1.5, args.record), save_to=destination)
                 entry["retention"] = args.retention
             if args.play:
@@ -222,8 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         result["runs"].append(entry)
 
     path = Path(args.out)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    write_result(result, path)
     print(json.dumps(result, indent=2))
     print(f"artefact -> {path}")
     return 0

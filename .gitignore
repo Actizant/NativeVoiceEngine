@@ -17,6 +17,13 @@ htmlcov/
 /Python/
 pythoncore-*/
 
+# --- never a repository: a foreign machine cache, cause still unidentified ------
+# Windows shell-cache files appeared under a literal `%SystemDrive%/` directory inside the
+# working tree (PROGRESS.md entry 19). They are machine data, no tracked path uses them, and
+# nothing here deletes them. The root anchor keeps a nested directory of the same name out of
+# the pattern. This only stops an ordinary `git add -A`; an explicit force-add still gets in.
+/%SystemDrive%/
+
 # --- generated evidence ------------------------------------------------------
 # Machine-generated output. The JSON and Markdown are reports a run produced; the
 # audio is a byproduct of a synthesis or capture and can be re-generated, so it is

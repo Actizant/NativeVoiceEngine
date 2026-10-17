@@ -8,6 +8,7 @@ approved faster-whisper asset is resident. A skipped test is never a pass.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -24,7 +25,8 @@ from nativevoice.core.errors import (
 )
 from nativevoice.core.language import Capability, CapabilityStatus, LanguageTag, Task
 from nativevoice.config.paths import models_dir
-from nativevoice.models.api import ModelManifest, Provenance, ReviewStatus
+from nativevoice.models.api import Asset, AssetKind, AssetScope, ModelManifest, Provenance, ReviewStatus
+from nativevoice.models.approval import ApprovalGate
 from nativevoice.models.manifest_io import load_manifest
 from nativevoice.stt.adapters.faster_whisper_engine import (
     ENGINE_ID,
@@ -58,6 +60,44 @@ def _stt_manifest(**overrides) -> ModelManifest:
     )
     base.update(overrides)
     return ModelManifest(**base)
+
+
+BLOB = b"synthetic-ct2-bytes-not-a-real-model"
+
+
+def _manifest_with_asset(directory: Path, **overrides) -> ModelManifest:
+    """A manifest pinned to the synthetic bytes this test writes into ``directory``.
+
+    It records `asset_root` the way a provisioned manifest does, so the bytes the
+    test installs are the bytes integrity looks for: a refusal below can then only
+    be about scope, never about an accidentally missing or mismatched asset.
+    """
+    base = dict(
+        asset_root=str(directory),
+        assets=(
+            Asset(
+                kind=AssetKind.MODEL,
+                relative_path="model.bin",
+                sha256=hashlib.sha256(BLOB).hexdigest(),
+                size_bytes=len(BLOB),
+            ),
+        )
+    )
+    base.update(overrides)
+    return _stt_manifest(**base)
+
+
+def _install_asset(manifest: ModelManifest, directory: Path) -> Path:
+    """Put digest-correct bytes where the manifest says they belong.
+
+    Integrity then cannot be the accidental reason a load was refused: the only
+    variable left is which path the manifest is scoped to.
+    """
+    for asset in manifest.assets:
+        path = directory / asset.relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(BLOB)
+    return directory
 
 
 # --- contract + bookkeeping (no model) ---------------------------------------
@@ -120,6 +160,42 @@ def test_warm_unapproved_raises_model_not_approved():
     )
     with pytest.raises(ModelNotApproved):
         engine.warm()
+
+
+def test_a_measurement_scoped_manifest_never_reaches_the_weights(tmp_path):
+    """Scope is asked before approval, and an override does not answer it.
+
+    This is the route the research teacher would take if a manifest were ever written
+    for it: fully approved, digest-correct, and still refused, because being approved
+    and being allowed on the shipped path are two different permissions.
+    """
+    directory = tmp_path / "repo"
+    manifest = _manifest_with_asset(directory, use_scope=AssetScope.MEASUREMENT)
+    engine = FasterWhisperEngine(manifest, asset_dir=_install_asset(manifest, directory))
+
+    gate = ApprovalGate()
+    gate.override(manifest, model_id=manifest.model_id, reason="local measurement only")
+    gate.check(manifest)  # the approval axis is wide open here
+    with pytest.raises(ModelNotApproved) as exc:
+        engine.warm()
+    assert any("use scope" in reason for reason in exc.value.details["reasons"])
+    assert engine._model is None
+
+
+def test_an_approved_product_manifest_still_passes_both_guards(tmp_path):
+    """The control the refusal above depends on: nothing about a product asset changed.
+
+    Same synthetic bytes, same digest, only `use_scope` different - so the gate opens
+    and the run fails downstream for the reason it always did, which is the layout,
+    not the licence. No backend is imported and no weight is read either way.
+    """
+    directory = tmp_path / "repo"
+    manifest = _manifest_with_asset(directory)
+    engine = FasterWhisperEngine(manifest, asset_dir=_install_asset(manifest, directory))
+    engine._require_approved()  # approved and product-scoped: open exactly as before
+    with pytest.raises(ModelNotInstalled):
+        engine.warm()  # no CT2 snapshot directory inside the stub repo
+    assert engine._model is None
 
 
 def test_warm_missing_repo_raises_model_not_installed(tmp_path):

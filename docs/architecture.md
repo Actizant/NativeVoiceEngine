@@ -1,4 +1,4 @@
-# Architecture — ULTRON Native Voice
+# Architecture — NativeVoice
 
 Original, provider-independent, local-first. This document records the shape and the reasoning; the
 code is the authority on details.
@@ -19,7 +19,7 @@ code is the authority on details.
     └───┬────┴──────────┘
       session/ ──────────  turn state machine, barge-in, listening modes
         ▲
-      eval/  integration/  cli/                             measurement + the ULTRON seam
+      eval/  integration/  cli/                             measurement + the host seam
 ```
 
 The rule is mechanical: **a package imports `core` and the packages above it, never a peer below it,
@@ -123,7 +123,7 @@ device callback ─► RingBuffer(+PreRoll) ─► resample 16k mono ─► DC b
              └─► segment ─► LanguageRouter ──► TranscriptionService ─► partial/final/retract ─► session
                                     │                                          ▲
                                     └── ambiguous / unavailable ──► ask or report limitation
-  ULTRON answer text ─► LanguageRouter(TTS) ─► SpeechPipeline ─► normalise ─► chunk ─► engine.stream()
+  Host answer text ─► LanguageRouter(TTS) ─► SpeechPipeline ─► normalise ─► chunk ─► engine.stream()
         └─► SynthesisEvent(seq, audio) ─► AudioOutput.play(token)   [cancel ⇒ stop, no queued frames]
 ```
 
@@ -133,22 +133,35 @@ a routing decision rather than a code path that skips validation. Second, barge-
 playback token plus a discard of stale partials*, not a mute: the reducer knows a newer turn has begun, so a
 late final from the superseded request cannot be committed.
 
-## 5. Interfaces ULTRON will consume
+## 5. Interfaces a host consumes
 
 `integration/` exposes one façade — request in, typed events out — so the main repository never imports a
 subsystem:
 
 ```python
-voice = UltronVoice(settings)                     # hardware profile + registry + session
-voice.hear(request)         -> TranscriptionResult  # or LanguageUnsupported / EngineUnavailable
-voice.stream(request)       -> Iterator[TranscriptionEvent]
-voice.speak(answer)         -> Iterator[SynthesisEvent]
-voice.cancel(reason)                             # stops playback and discards stale work
-voice.capabilities(task)    -> {lang: Capability}   # honest per-language truth
-voice.diagnose()            -> report                                                      
+# signature sketch: these names are the arguments a host supplies, not live objects
+voice = VoiceInterface(transcriber, synthesizer, output, voices=voices, host=host, config=SessionConfig())
+voice.hear(audio, language)         -> TranscriptionResult           # raises; never returns a failure
+voice.stream_hearing(chunks)        -> Iterator[TranscriptionEvent]
+voice.speak(text, language, token)  -> Iterator[SynthesisEvent]      # raises EngineUnavailable if none
+voice.exchange(audio, host)         -> HostReply                     # one turn: hear, respond, speak
+voice.converse(capture, host)       -> Iterator[HostReply]           # segmented capture; barge-in here
+voice.cancel(reason)                -> bool                          # stops playback, discards stale work
+voice.capabilities(task)            -> dict[str, Capability]         # {} unless capability_source set
+voice.diagnose()                    -> dict                          # carries history_persisted: False
 ```
 
-The seam is deliberately narrow: ULTRON's reasoning never sees an engine, a model id, or a licence decision.
+`exchange()` and `converse()` are the paths a host actually calls: `tools/platform_demo.py` drives every
+turn through `exchange()`, and `converse()` segments a continuous capture with barge-in wired there; the
+per-stage methods sit underneath them rather than being the usual entry point.
+
+`capabilities()` returns an empty dict unless a `capability_source` is wired, which
+`tests/test_integration.py:252` pins — an unwired façade reports no capability rather than an invented one.
+Failures are raised, not returned: `LanguageUnsupported` and `EngineUnavailable` propagate out of the
+recognition and synthesis paths, `exchange()` records a voice-selection refusal in `voice_refusal` instead
+of raising, and `converse()` converts a `VoiceError` into a silenced `HostReply`.
+
+The seam is deliberately narrow: a host's reasoning never sees an engine, a model id, or a licence decision.
 Adopting this system later means satisfying its `ModelManifest` requirements, not editing its core.
 Wake-word detection and continuous listening have interfaces and no implementation; §9 says explicitly not
 to report them as implemented because an interface exists, and neither is counted in the capability matrix.

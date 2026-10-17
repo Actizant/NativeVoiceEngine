@@ -21,6 +21,7 @@ from pathlib import Path
 from ..config import data_root
 from ..core.errors import ConfigurationError, LanguageUnsupported, StorageError
 from ..core.language import CapabilityStatus, LanguageTag, Task
+from ..diagnostics import evidence_paths
 from .identity import (
     SCHEMA_VERSION,
     Compatibility,
@@ -41,7 +42,17 @@ def _status(value) -> CapabilityStatus:
         return CapabilityStatus.NO_MODEL
 
 
-def identity_to_json(identity: VoiceIdentity) -> str:
+def identity_to_json(identity: VoiceIdentity, *, committed: bool = False) -> str:
+    """Serialize one identity package.
+
+    ``committed`` marks a copy destined for the repository. An identity names the asset
+    root it was installed from and the evidence file that earned its capability, both as
+    absolute paths, so a published package carries this machine's home directory unless it
+    goes through the redaction boundary. A live package does not: the platform reads that
+    file back to install the voice, and the paths in it have to address what exists.
+    """
+    if committed:
+        return evidence_paths.dumps(identity.as_dict())
     return json.dumps(identity.as_dict(), indent=2, ensure_ascii=False)
 
 
@@ -124,9 +135,15 @@ def identity_from_json(payload) -> VoiceIdentity:
 
 @dataclass(slots=True)
 class VoiceRegistry:
-    """The shared catalogue of installed voice identities."""
+    """The shared catalogue of installed voice identities.
+
+    ``committed`` declares where the catalogue lives: a root inside the repository is
+    published evidence, so every package written to it is redacted on the way out. The
+    default is the data root, which is runtime state and keeps its real paths.
+    """
 
     root: Path = field(default_factory=lambda: Path(data_root()) / "voices")
+    committed: bool = False
     unreadable: dict = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
@@ -156,7 +173,7 @@ class VoiceRegistry:
     def save(self, identity: VoiceIdentity) -> Path:
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.root / f"{identity.voice_id}.json"
-        path.write_text(identity_to_json(identity), encoding="utf-8")
+        path.write_text(identity_to_json(identity, committed=self.committed), encoding="utf-8")
         return path
 
     def remove(self, voice_id: str) -> bool:

@@ -30,6 +30,7 @@ from nativevoice.audio.io import CapturingOutput  # noqa: E402
 from nativevoice.config import models_dir  # noqa: E402
 from nativevoice.core.cancel import CancellationToken  # noqa: E402
 from nativevoice.core.language import CapabilityStatus, LanguageTag, Task  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import write_json  # noqa: E402
 from nativevoice.diagnostics.offline import OfflineGuard  # noqa: E402
 from nativevoice.eval.transcription import score as score_pair  # noqa: E402
 from nativevoice.integration import VoiceInterface  # noqa: E402
@@ -50,6 +51,8 @@ from nativevoice.voices.registry import PLATFORM_DEFAULT, HostProfile, VoiceRegi
 PASS_WER = 0.15
 PROBE = "The voice platform serves several applications from one engine."
 INPUT_SENTENCE = "Please tell me what the weather will do this afternoon."
+#: The tracked evidence directory: a run with no ``--out`` writes its artefacts into the repository.
+DEFAULT_OUT = ROOT / "artifacts" / "platform"
 
 
 def engines(registry: ModelRegistry, threads: int):
@@ -137,18 +140,39 @@ class _Answer:
         return self.reply
 
 
+def write_run(report: dict, target: Path) -> Path:
+    """Serialize the run record as committed evidence, host directories redacted.
+
+    The report keeps its real paths in memory: the verdict above compares the two hosts'
+    data roots for distinctness, and that comparison has to run on the paths the hosts
+    actually resolved to, not on a placeholder that would make them look identical.
+    """
+    return write_json(target, report)
+
+
+def voice_registry(voices_root: Path) -> VoiceRegistry:
+    """Build the catalogue for this run, marking it as evidence when the root is tracked.
+
+    The default output directory is inside the repository, so the identities a routine
+    demonstration writes are published files and go out redacted. Resolved, because
+    ``--out`` may name the tracked directory relatively; the registry still writes to the
+    root it was given.
+    """
+    return VoiceRegistry(voices_root, committed=Path(voices_root).resolve().is_relative_to(ROOT))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--slot-b", type=int, default=7, help="speaker slot for the second host")
     parser.add_argument("--threads", type=int, default=4)
-    parser.add_argument("--out", default=str(ROOT / "artifacts" / "platform"))
+    parser.add_argument("--out", default=str(DEFAULT_OUT))
     args = parser.parse_args(argv)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     voices_root = out / "voices"
     registry = ModelRegistry(models_dir())
-    voices = VoiceRegistry(voices_root)
+    voices = voice_registry(voices_root)
     report: dict = {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"), "hosts": {}, "measurements": {}}
 
     guard = OfflineGuard()
@@ -267,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
     distinct = report["hosts"]["ultron"]["data_root"] != report["hosts"]["fieldmind"]["data_root"]
     report["verdict"] = "PASS" if both_spoke and distinct and not guard.attempts else "FAIL"
     target = out / "platform-run.json"
-    target.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_run(report, target)
     print(json.dumps(report, indent=2, ensure_ascii=False))
     print(f"artefact -> {target}")
     return 0 if report["verdict"] == "PASS" else 1

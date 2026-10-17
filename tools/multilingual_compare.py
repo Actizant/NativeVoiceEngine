@@ -15,6 +15,10 @@ refuses to do:
 
 Failure kinds are reported apart - decoding, preprocessing, segmentation structure, empty output, repeated
 output, script mismatch and language assertion - because they have different owners and different fixes.
+
+The pass records it reads come in two schemas, and the difference is named rather than smoothed over: the
+timing field was `model_load_seconds` before the measurement-seam correction and is `engine_warm_seconds`
+after it, and the two spans are not the same measurement.
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
+from nativevoice.core.errors import ConfigurationError, VoiceError  # noqa: E402
 from multilingual_eval import (  # noqa: E402
     PASSES,
     _guard_console,
@@ -39,6 +44,60 @@ from multilingual_eval import (  # noqa: E402
 
 EVAL = ROOT / "artifacts" / "evaluation"
 PASSES_IN_ORDER = ("base-default", "base-int8", "large-v3-int8")
+
+# The timing field's two names, kept apart because the spans they time are not the same
+# measurement. `model_load_seconds` started the clock immediately before the model
+# constructor, so it never covered the approval gate, the digest walk or the backend
+# import; `engine_warm_seconds` times `engine.warm()`, which is all four together. A
+# legacy figure relabelled as the current one would read as a verified warm-up that
+# verified nothing, so each is reported under its own key with the basis that says which
+# span it is, and the two are only ever compared against their own kind.
+ENGINE_WARM_FIELD = "engine_warm_seconds"
+LEGACY_LOAD_FIELD = "model_load_seconds"
+TIMING_BASIS = {
+    ENGINE_WARM_FIELD: (
+        "engine.warm() as one span: approval and scope checks, integrity digest verification, the backend "
+        "import and the model constructor together"
+    ),
+    LEGACY_LOAD_FIELD: (
+        "legacy record: the model constructor alone, taken before the measurement seam existed, so no "
+        "approval, digest or import time is inside it and it is not comparable with engine_warm_seconds"
+    ),
+}
+
+# Fields every finished pass record carries under either schema. A record missing one is
+# an unfinished run, not a shape this tool should print a guess about.
+CONFIGURATION_FIELDS = ("repo", "compute_type", "beam_size", "cpu_threads", "vad_filter",
+                        "peak_rss_mib_whole_pass", "network_attempts", "production_configuration")
+
+
+def pass_configuration(name: str, record: dict) -> dict:
+    """One pass's configuration block, read from the schema this artefact actually carries.
+
+    Refuses with the artefact named and every missing field listed at once, rather than
+    letting a rename surface as a bare `KeyError` three frames deep.
+    """
+    artefact = str(EVAL / f"multilingual-{name}.json")
+    missing = [field for field in CONFIGURATION_FIELDS if field not in record]
+    warm = record.get(ENGINE_WARM_FIELD)
+    legacy = record.get(LEGACY_LOAD_FIELD)
+    if warm is None and legacy is None:
+        missing.append(f"{ENGINE_WARM_FIELD} (current) or {LEGACY_LOAD_FIELD} (legacy)")
+    if missing:
+        raise ConfigurationError(
+            "pass record is not a finished record",
+            artefact=artefact,
+            missing=missing,
+            remedy="re-run the pass; a record written part-way through a run carries no whole-pass peak or "
+                   "timing until the pass ends",
+        )
+    config = {field: record[field] for field in CONFIGURATION_FIELDS}
+    config.update({
+        ENGINE_WARM_FIELD: warm,
+        "legacy_model_load_seconds": legacy,
+        "timing_basis": TIMING_BASIS[ENGINE_WARM_FIELD if warm is not None else LEGACY_LOAD_FIELD],
+    })
+    return config
 
 
 def script_of(text: str) -> str:
@@ -82,6 +141,14 @@ def main() -> int:
 
     passes = {name: load(name) for name in PASSES_IN_ORDER}
     missing = [name for name, data in passes.items() if data is None]
+    try:
+        configurations = {name: pass_configuration(name, data)
+                          for name, data in passes.items() if data is not None}
+    except VoiceError as error:
+        emit(f"REFUSED: {error}")
+        emit("no comparison written: a configuration block cannot be assembled from an incomplete record")
+        return 1
+    stale_product_claims = sorted(n for n, c in configurations.items() if c["production_configuration"] is True)
     rows = []
     for sample, cue in cues.items():
         row = {
@@ -120,14 +187,11 @@ def main() -> int:
             }
         rows.append(row)
 
-    summary = {"generated": json.loads((EVAL / "multilingual-inventory.json").read_text(encoding="utf-8"))["generated"],
+    summary = {"generated": inventory["generated"],
                "passes_available": [n for n in PASSES_IN_ORDER if passes[n] is not None],
                "passes_missing": missing,
-               "configurations": {name: {k: passes[name][k] for k in
-                                         ("repo", "compute_type", "beam_size", "cpu_threads", "vad_filter",
-                                          "model_load_seconds", "peak_rss_mib_whole_pass", "network_attempts",
-                                          "production_configuration")}
-                                  for name in PASSES_IN_ORDER if passes[name] is not None},
+               "configurations": {name: configurations[name] for name in PASSES_IN_ORDER
+                                  if name in configurations},
                "samples": rows,
                "caveats": [
                    "no verified reference transcript exists for any sample, so no WER or CER is reported",
@@ -136,7 +200,18 @@ def main() -> int:
                    "large-v3 ran while physical free RAM was below its resident size; check the memory note",
                    "cue_char_recall is a longest-common-subsequence check against a truncated filename "
                    "quote: it detects gross error and script choice, and is not a word or character error rate",
+                   "timing is reported per schema: a legacy_model_load_seconds times the model constructor "
+                   "alone and is never comparable with an engine_warm_seconds span",
                ]}
+    if stale_product_claims:
+        # Carried through verbatim, because this tool does not get to rewrite what a run
+        # claimed about itself - but a comparison that printed the flag silently would lend
+        # it the credibility of a fresh document, so the names are said out loud.
+        summary["caveats"].append(
+            f"these records claim production_configuration true: {stale_product_claims}; the current "
+            "evaluation tool writes false for every pass, so the claim is the record's own and predates "
+            "the measurement-seam routing"
+        )
     out = EVAL / "multilingual-comparison.json"
     out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     emit(f"comparison -> {out}")
