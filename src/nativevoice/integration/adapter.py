@@ -6,7 +6,7 @@ wants a different engine swaps the object; nothing in here knows which model is
 answering, and nothing in here writes to disk.
 
 The conversation window is bounded and **in-memory only**. Persistent memory
-belongs to the host: ULTRON has its own store and FieldMind has its own, and a
+belongs to the host: one host has its own store and another has its own, and a
 voice layer keeping a second, silently-diverging transcript history is how a
 system ends up with two truths. `history` exists so a caller can read back the
 turns of the current conversation, and `max_history` caps it.

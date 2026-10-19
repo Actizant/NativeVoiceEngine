@@ -71,9 +71,9 @@ class FakeTts:
 
 
 class MockHost:
-    """The only thing a host has to provide. Nothing else about ULTRON exists here."""
+    """The only thing a host has to provide. Nothing else about the host application exists here."""
 
-    def __init__(self, prefix="ULTRON: "):
+    def __init__(self, prefix="HOST: "):
         self.seen = []
         self.prefix = prefix
 
@@ -97,7 +97,7 @@ class TestEndToEndExchange:
         reply = voice.exchange(sine(seconds=0.3), host)
         assert isinstance(reply, HostReply)
         assert reply.utterance == "switch to hindi please"
-        assert reply.reply == "ULTRON: switch to hindi please"
+        assert reply.reply == "HOST: switch to hindi please"
         assert reply.spoken is True and reply.silenced is False
         assert out.frames_written == 4 * 480
         assert host.seen == [("switch to hindi please", "hi")]
@@ -112,7 +112,7 @@ class TestEndToEndExchange:
         out = CapturingOutput()
         voice = interface(output=out, config=SessionConfig(voice_output_enabled=False))
         reply = voice.exchange(sine(seconds=0.2), MockHost())
-        assert reply.reply.startswith("ULTRON:")
+        assert reply.reply.startswith("HOST:")
         assert reply.spoken is False and reply.silenced is True
         assert out.frames_written == 0
 

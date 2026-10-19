@@ -1,6 +1,6 @@
 """End-to-end platform run: two hosts, two voices, one engine, offline.
 
-This is the product claim made visible. ULTRON and FieldMind are represented here
+This is the product claim made visible. Two independent hosts are represented here
 as two `HostProfile` objects driving the *same* compiled engines through the same
 `VoiceInterface`, each with its own answer function, its own output sink and its
 own data root. Nothing in the synthesis path knows which host is talking.

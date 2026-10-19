@@ -41,7 +41,7 @@ from nativevoice.models.manifest_io import from_dict, load_manifest, save_manife
 from nativevoice.models.registry import ModelRegistry
 
 COMPLETE = Provenance(source="upstream", licence_spdx="MIT", redistributable=True)
-BLOB = b"ultron-weight-bytes-0123456789"
+BLOB = b"nativevoice-weight-bytes-01234"
 
 
 def sha(data: bytes) -> str:

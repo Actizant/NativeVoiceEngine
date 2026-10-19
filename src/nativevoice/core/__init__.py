@@ -1,4 +1,4 @@
-"""Shared, dependency-free contracts used by every ULTRON voice subsystem.
+"""Shared, dependency-free contracts used by every voice subsystem here.
 
 Nothing in `core` imports from a sibling subsystem; the dependency direction is
 always `subsystem -> core`.

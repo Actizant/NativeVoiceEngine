@@ -205,7 +205,7 @@ def summarise(entries: Sequence[tuple[str, Capability]]) -> str:
 
 def build_report(entries, paths, *, max_wer, max_first_audio_ms, capability_error: str, command_line: str) -> AcceptanceReport:
     report = AcceptanceReport(
-        title="ULTRON Native Voice - diagnose",
+        title="NativeVoice - diagnose",
         generated_at=Evidence.capture(command_line).captured_at,
         host=host_summary(),
     )
@@ -240,7 +240,7 @@ def main(argv: Sequence[str] | None = None, stream=None) -> int:
     if args.version:
         from .. import __version__
 
-        print(f"ultron-native-voice {__version__}", file=out)
+        print(f"nativevoice {__version__}", file=out)
         return 0
 
     paths = [package_source_root(), *args.scan_path]

@@ -94,7 +94,7 @@ class TranscriptionEngine(Protocol):
 
 
 class Transcriber(Protocol):
-    """What ULTRON consumes: something that turns audio into text, whichever engine answers."""
+    """What a host consumes: something that turns audio into text, whichever engine answers."""
 
     def transcribe(self, request: TranscriptionRequest) -> TranscriptionResult: ...
 

@@ -1,6 +1,6 @@
 """The voice session: capture, hearing, answering, barge-in, recovery.
 
-Everything a user experiences as "talking to ULTRON" is sequenced here, and the
+Everything a user experiences as "talking to a host" is sequenced here, and the
 sequencing is deliberately synchronous-per-stage with generators between stages.
 Real-time voice code usually fails in the seams where a thread decides what
 happens next, so the only concurrency a caller must reason about is the capture

@@ -1,4 +1,4 @@
-"""ULTRON Native Voice - original, local-first voice infrastructure.
+"""NativeVoice - provider-independent, local-first voice infrastructure.
 
 The `core`, `audio`, `language`, `models`, `hardware` and `session` layers are
 standard-library only by design: the control path of a local-first system must

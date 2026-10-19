@@ -1,6 +1,6 @@
 """Transcription orchestration: route, resample, stream, reduce, time, cancel.
 
-``TranscriptionService`` is the thing ULTRON talks to. It never invokes an engine
+``TranscriptionService`` is the thing a host talks to. It never invokes an engine
 before the router has approved the language, resamples audio into the selected
 engine's declared format, folds the engine's revision-shaped partial/final/retract
 events into one growing transcript, attaches measured ``Timings``, honours the

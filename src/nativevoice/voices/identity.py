@@ -8,8 +8,8 @@ trusting it. An identity package is the thing a host selects: a stable id, the
 engine and slot it maps to, what it has actually been measured to speak, and the
 permissions under which it may be used.
 
-The consequence for the platform is the point. ULTRON can select one identity,
-FieldMind another, and a third-party host a third - all against the same
+The consequence for the platform is the point. One host can select one
+identity, another a second, and a third host a third - all against the same
 compiled engine, with no voice name, no application identity and no host default
 baked into the synthesis path. Per-language capability lives here too, because a
 voice that speaks English well and Mandarin badly is not one "multilingual" flag.

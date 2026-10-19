@@ -50,7 +50,7 @@ def exported(tmp_path: Path, source: VoiceProfileStore) -> tuple[VoiceProfileSto
     profile = source.create(
         "Aparna", speech_like(rate=16000), consent(), languages=("bn",), model_compatibility=("pocket-class",)
     )
-    path = tmp_path / "aparna.ultronvoice"
+    path = tmp_path / "aparna.nativevoice"
     export_profile(source, profile.id, path)
     return source, VoiceProfileStore(tmp_path / "target"), profile.id, path
 
@@ -183,7 +183,7 @@ class TestExchange:
         payload[-10] ^= 0xFF
         wav.write_bytes(bytes(payload))
         with pytest.raises(Exception):
-            export_profile(source, profile.id, tmp_path / "bad.ultronvoice")
+            export_profile(source, profile.id, tmp_path / "bad.nativevoice")
 
     def test_imported_profile_is_readable_from_the_new_store(self, exported):
         _, target_store, profile_id, path = exported

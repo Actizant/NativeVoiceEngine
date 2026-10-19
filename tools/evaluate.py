@@ -469,7 +469,7 @@ def run(languages, keep_wav=True):
     final_read = read_memory()
 
     report = {
-        "title": "ULTRON Native Voice - round-trip intelligibility evaluation",
+        "title": "NativeVoice - round-trip intelligibility evaluation",
         "generated_on": stamp,
         "provenance": PAIR_NOTE,
         "self_check": {

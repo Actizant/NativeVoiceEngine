@@ -147,7 +147,7 @@ def test_first_audio_threshold_is_a_separate_criterion(tmp_path):
 def test_version_flag_short_circuits():
     result = run("--version")
     assert result.returncode == 0
-    assert "ultron-native-voice" in result.stdout
+    assert result.stdout.startswith("nativevoice ")
 
 
 def test_help_lists_the_capability_flag():

@@ -122,7 +122,7 @@ def build(manifest, artifact: dict, slot: int, host_summary: str, evidence: str 
         ),
         provenance=VoiceProvenance(
             creator=manifest.provenance.upstream_project or "unknown",
-            training_method="third-party pretrained checkpoint; no ULTRON-trained voice model exists yet",
+            training_method="third-party pretrained checkpoint; no voice model trained by this project exists yet",
             licence_spdx=manifest.provenance.licence_spdx,
             permissions=(
                 "local use approved; redistribution requires the espeak-ng GPL-3.0 pass and per-voice "

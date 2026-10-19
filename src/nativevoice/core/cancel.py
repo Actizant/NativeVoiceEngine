@@ -1,7 +1,7 @@
 """Cancellation primitives.
 
 Streaming speech work is long-running and externally interruptible: the user
-speaks over ULTRON, or a newer answer supersedes an older one. A bare boolean
+speaks over a host, or a newer answer supersedes an older one. A bare boolean
 is not enough for that, because queued audio can still reach the DAC after the
 flag flips. Two rules are enforced here:
 

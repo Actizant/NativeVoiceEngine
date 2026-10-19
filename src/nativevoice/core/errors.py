@@ -1,7 +1,7 @@
 """Error taxonomy.
 
 Every failure the voice stack can report is a member of this tree so that
-callers (and the ULTRON integration adapter) can branch on category rather than
+callers (and the host integration adapter) can branch on category rather than
 on message text. Errors carry structured fields, not prose-only payloads.
 """
 

@@ -2,8 +2,8 @@
 
 Two things are kept apart deliberately. The *catalogue* of identities is shared -
 every host reads the same installed voices - while each host's selection and data
-live in its own root, so ULTRON's chosen voice, its recordings and its logs are
-never FieldMind's, and neither host can corrupt the other by writing to a shared
+live in its own root, so one host's chosen voice, its recordings and its logs are
+never another's, and neither host can corrupt the other by writing to a shared
 default.
 
 Selection resolves in a fixed order: explicit request, then host default, then

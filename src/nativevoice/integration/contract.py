@@ -3,9 +3,9 @@
 This file exists to make the boundary explicit and auditable in both directions:
 
 * the host provides an answer for an utterance and may persist that conversation
-  however it likes. ULTRON Native Voice holds **no persistent memory of its
-  own** - not transcripts, not answers, not embeddings - because ULTRON already
-  owns persistent memory and FieldMind owns its own. A second store inside the
+  however it likes. The engine holds **no persistent memory of its own** - not
+  transcripts, not answers, not embeddings - because the host already owns
+  persistent memory and a second host owns its own. A second store inside the
   voice layer would be a second source of truth, and those diverge silently.
 * the engine provides typed events, capability truth and cancellation. The host
   never imports an engine, a model id, a licence decision or a file path.

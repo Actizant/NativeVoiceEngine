@@ -349,7 +349,7 @@ class Sampler:
             self._samples = []
         self._stop.clear()
         first = read_cpu_time()
-        self._thread = threading.Thread(target=self._poll, name="ultron-resource-sampler", daemon=True)
+        self._thread = threading.Thread(target=self._poll, name="nativevoice-resource-sampler", daemon=True)
         self._thread.start()
         started = time.monotonic()
         try:
