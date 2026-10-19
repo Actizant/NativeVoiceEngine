@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nativevoice"
 version = "0.1.0"
-description = "NativeVoice - original, local-first, hardware-adaptive voice infrastructure"
+description = "NativeVoice - provider-independent, local-first, hardware-adaptive voice infrastructure"
 requires-python = ">=3.11"
 dependencies = []
 

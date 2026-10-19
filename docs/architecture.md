@@ -1,7 +1,7 @@
 # Architecture — NativeVoice
 
-Original, provider-independent, local-first. This document records the shape and the reasoning; the
-code is the authority on details.
+Provider-independent, local-first, with a modular, hardware-adaptive architecture. This document records
+the shape and the reasoning; the code is the authority on details.
 
 ## 1. Package map and dependency direction
 

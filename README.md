@@ -1,74 +1,253 @@
-# NativeVoice
+# Bodhva Voice Engine
 
-**Local-first speech infrastructure by Actizant — recognition and synthesis that run on the machine the
-user already owns.**
+### Independent voice technology. Built for developers.
 
-NativeVoice is an engine, not an assistant. It listens, transcribes and speaks on the host machine, and
-it treats *voice identity* as an installable, versioned package instead of a name baked into the
-synthesis path. One engine can serve several independent applications: each host contributes a single
-function — utterance in, reply text out — and keeps its own state, memory, permissions and UI. Nothing
-in the recognition or synthesis path knows which application is calling. See `docs/platform.md`.
+Bodhva Voice Engine is an independent speech-technology project building toward a developer-first platform
+for integrating voice capabilities into applications through a unified API.
 
-**Status: engineering preview.** The control plane, the asset gates and the measurement harness are
-built and tested, English speech works end to end on this code, and most other languages are an explicit
-refusal that names what is missing. Nothing here has had a production hardening pass, and no
-fine-tuned or proprietary model has been trained yet. "What is planned, not built" below says what is
-actually next.
+Our long-term vision is to make powerful speech technology accessible to developers and businesses through
+reliable interfaces, measurable performance, expanding language support, and flexible deployment options.
 
-## What works today
+**Status today: engineering preview, not a production service.** The engine, its asset gates and its
+measurement harness are implemented and tested; the hosted API, usage billing and any commercially cleared
+distribution described below are **planned, not built**. Every claim in this file is labelled with the tier
+it actually belongs to, and the repository's own audit register lists what is still open.
 
-| Capability | State | What that is based on |
+**Naming.** **Bodhva** is the intended product brand. **NativeVoiceEngine** is the name of this repository and
+of the implementation inside it, and the installed Python package is `nativevoice` (version `0.1.0`,
+`pyproject.toml`). The on-disk data root still uses the directory name the engine inherited (`ultron-voice`).
+These are four names for one thing at four different layers, and they are being kept that way on purpose: the
+brand is a product decision, the repository and package names are what code and verified assets are pinned to,
+and no identifier, path or environment variable has been renamed here. Where this file says "the engine", it
+means the code in this repository.
+
+## 1. What the project is
+
+Bodhva Voice Engine is a speech engine, not an assistant. It recognises speech, synthesises speech, and
+reports per-language capability as a measured status rather than a boolean. It is designed so that a host
+application contributes one function — utterance in, reply text out — and keeps its own state, memory,
+permissions and interface; nothing in the recognition or synthesis path knows which application is calling.
+Voice identity is treated as an installable, versioned package rather than a name baked into the synthesis
+path. See `docs/platform.md` and `docs/architecture.md`.
+
+Two properties make it usable as a component rather than only as an app:
+
+- **One narrow integration seam.** `VoiceHost` is an in-process protocol (`integration/contract.py:29`)
+  consumed by `VoiceInterface` (`integration/adapter.py:37`). No engine module imports a host application.
+- **No hidden state.** The engine writes no conversation store; the integration contract states that it holds
+  no persistent memory of its own — not transcripts, not answers, not embeddings — and the host boundary
+  reports `history_persisted: false` (`integration/contract.py:5-8`, `integration/adapter.py:209`).
+
+## 2. Vision and key capabilities
+
+The direction is a platform on which developers integrate recognition, synthesis and language coverage
+through a stable interface, with deployment flexibility and usage-based commercial terms.
+
+| Capability | Tier | What that tier means here |
 |---|---|---|
-| English recognition | `MEASURED` | faster-whisper (MIT) transcribes audio this engine synthesised; the measured path is `tools/evaluate.py`, round-trip WER/CER |
-| English synthesis | `MEASURED` | Kokoro-82M through sherpa-onnx, int8 quantized, CPU execution |
-| Voice identity as a package | built | speaker slots resolve to installable identities; consent applies to recorded human voices, not to anonymous model slots |
-| Hardware-adaptive profiles | built, thresholds provisional | Lite / Balanced / Performance are derived from measurement; unmeasured thresholds carry `measured: false` rather than an asserted number |
-| Offline operation | built | an offline-compliance proof runs against the real engines, not against the test suite |
+| Speech recognition on a developer machine | `MEASURED` (English only) | faster-whisper / CTranslate2 adapters run in this tree and were scored on audio this engine synthesised (`tools/evaluate.py`) |
+| Speech synthesis on a developer machine | `MEASURED` (English only) | Kokoro-82M through sherpa-onnx, int8, CPU |
+| Multilingual coverage | `partial` in the tier sense, and mostly absent | 61 languages are registered; only 4 carry any recorded status, and no language reports `CapabilityStatus.PARTIAL`. See §3 |
+| Voice identity as an installable package | `BUILT` | registry, consent fields and install states are implemented and tested |
+| Reproducible measurement and refusal paths | `BUILT` | harness, capability statuses, offline proof, asset gates |
+| A hosted, documented developer **API** | `PLANNED — does not exist` | there is **no** HTTP service, server, SDK or REST surface anywhere in this repository |
+| **Usage-based billing** and a pricing model | `PLANNED — does not exist` | no metering, accounts, keys or payment code is present |
+| Hosted, private and on-premises **deployment options** | `PLANNED` | today the engine runs only where the code is installed |
+| **Independently trained** speech models | `PLANNED — not started` | every model in use is a third-party pretrained asset loaded through an adapter; nothing has been trained or fine-tuned in this project |
+| Voice cloning | `REFUSED, not a feature` | every zero-shot asset surveyed is non-commercial or unlicensed (`docs/provenance.md`) |
 
-Statuses come from `core/language.py:CapabilityStatus` and mean what they say: `MEASURED` — evaluated
-here, with a reported metric, and the only status acceptance may cite; `MEASURED_FAILED` — attempted,
-measured, and the number did not clear the bar; `DECLARED` — an upstream model card claims it and nobody
-here verified it; `PARTIAL` — works with named gaps; `UNSUPPORTED` — the installed engine cannot do the
-task; `NO_MODEL` — the infrastructure exists but no approved asset is installed.
-`MEASURED_FAILED` is kept distinct from `UNSUPPORTED` on purpose: collapsing them destroys the number
-that tells an engineer whether the gap is a *missing* asset or a *bad* one.
+Distinguishing these tiers is the point of the table. The engine's own vocabulary is stricter than a typical
+feature list: capability is a status, never a checkbox.
 
-## What does not work, stated plainly
+## 3. Current implementation status, from repository evidence
 
-- **Chinese synthesis** — `MEASURED_FAILED`: measured at round-trip CER 0.463 and it did not clear the
-  bar, partly a simplified-vs-traditional mismatch with no approved converter available. The front-end
-  is present; the number is the problem.
-- **Hindi and Bengali synthesis** — `UNSUPPORTED`. The approved asset ships front-ends for `en-us`,
-  `en-gb` and `zh` only, and the adapter refuses rather than emitting romanised audio and calling it
-  speech.
-- **Hindi and Bengali recognition** — `DECLARED` only. Whisper's model card claims them; nothing here
-  measured them, and an unmeasured claim cannot satisfy a routing decision.
-- **Every other language** — the registry carries roughly sixty of them with a per-language capability
-  status, and most (task, language) pairs are `NO_MODEL`: infrastructure present, approved asset absent.
-- **Voice cloning** — not a feature. Every zero-shot asset surveyed is non-commercial or unlicensed
-  (`docs/provenance.md`).
-- **ASR adaptation / training** — not started. The training-boundary gates exist and are tested; no
-  trainer in this tree consults them, because no trainer exists in this tree yet.
+Language coverage is the honest boundary. `core/language.py:CapabilityStatus` defines six values, and they
+mean what they say: `MEASURED` — evaluated here with a reported metric, and the only status acceptance may
+cite; `MEASURED_FAILED` — attempted, measured, and the number did not clear the bar; `DECLARED` — an upstream
+model card claims it and nobody here verified it; `PARTIAL` — works with named gaps; `UNSUPPORTED` — the
+installed engine cannot do the task; `NO_MODEL` — the infrastructure exists but no approved asset is
+installed. `MEASURED_FAILED` is kept distinct from `UNSUPPORTED` on purpose: collapsing them destroys the
+number that tells an engineer whether the gap is a *missing* asset or a *bad* one.
 
-## Setup
+The registry carries **exactly 61 languages** (`language/registry.py:31-96`). Recorded statuses exist for
+four of them (`docs/capability-matrix.md`, generated 2026-10-12 from
+`artifacts/evaluation/roundtrip-2026-10-12.json`):
 
-```bash
-python -V                              # pyproject requires >= 3.11; the last recorded run here used 3.13.14
-python -m venv .venv
-.venv\Scripts\activate                 # Windows  (source .venv/bin/activate elsewhere)
-pip install -e ".[dev]"
-python -m pytest -q
-```
+| Language | Recognition | Synthesis |
+|---|---|---|
+| English | `MEASURED` — round-trip WER 0.0494, CER 0.0242 | `MEASURED` |
+| Chinese | `DECLARED` only (vendor model card) | `MEASURED_FAILED` — CER 0.463 against a 0.10 bar |
+| Hindi | `DECLARED` only | `UNSUPPORTED` — no front-end in the approved asset |
+| Bengali | `DECLARED` only | `UNSUPPORTED` — no front-end in the approved asset |
+| the other 57 languages | `NO_MODEL` | `NO_MODEL` |
 
-The control path imports the **standard library only**. `audioop` was removed from the standard library
-in Python 3.13, so RMS, peak, DC blocking, fades, crossfade and the WAVE container are implemented
-directly in `audio/pcm.py`. Heavy runtimes appear only inside `stt/adapters/` and `tts/adapters/`, are
-imported lazily, and are declared as optional extras (`mic`, `onnx`) rather than as install-time
-dependencies: `pyproject.toml` declares `dependencies = []`. Installing the package downloads no model.
+Concretely, in this tree:
 
-`python -m pytest -q` needs no model, no network and no approved asset. A small number of modules probe
-the local machine — `nvidia-smi`, the audio-device list, a loopback socket, `git ls-files` and a
-diagnostic subprocess. To run the suite without touching any of them:
+- **Recognition** runs through `faster-whisper` (MIT, CTranslate2) adapters
+  (`stt/adapters/faster_whisper.py:50`, `stt/adapters/faster_whisper_engine.py:136`), loaded with
+  `local_files_only=True` — the engine never downloads a model at runtime. Variants wired into
+  provenance are `faster-whisper-base`, `-small` and `-large-v3` (`src/nativevoice/provenance.py:14-35`);
+  the measured product path uses `faster-whisper-base` (`tools/evaluate.py:57`). **These are third-party
+  pretrained weights, not models produced by this project.** Live capture (`audio/io.py:91`) needs the
+  optional `mic` extra and refuses cleanly without it (`audio/io.py:114`).
+- **Synthesis** runs Kokoro-82M through sherpa-onnx `OfflineTts`, int8-quantized on CPU
+  (`tts/adapters/sherpa_kokoro.py:53,265-268`) — again a third-party Apache-2.0 asset
+  (`hexgrad/Kokoro-82M`, packaged by k2-fsa; `src/nativevoice/provenance.py:95-96`). The approved asset ships
+  front-ends for `en-us`, `en-gb` and `zh` only, and the adapter **refuses** rather than emitting romanised
+  audio and calling it speech (`sherpa_kokoro.py:60-65`). The same adapter raises `"Kokoro is a fixed
+  multi-speaker model, not a zero-shot voice cloner"` (`sherpa_kokoro.py:343-344`).
+- **Voice identity** is functional code, not a stub: provenance with `consent_basis` and `redistributable`
+  fields, install states, slot binding and per-host registries (`voices/identity.py:64-122`,
+  `voices/registry.py:137-265`), covered by 22 tests in `tests/test_voice_identity.py`. Consent applies to
+  recorded human voices, not to anonymous model slots.
+- **Hardware-adaptive profiles** (Lite / Balanced / Performance) are derived from measurement, and every
+  profile currently carries `measured=False` (`hardware/profiles.py:6-7`) — unmeasured thresholds are reported
+  as unmeasured instead of being asserted.
+- **There is no API surface.** No web framework, HTTP server, client, SDK or API key exists in `src/`. Within
+  the installed package the offline guard module is the only socket importer — a tested invariant
+  (`tests/test_diagnostics_offline.py:210`) — and it monkeypatches `socket.socket`, `create_connection` and
+  `getaddrinfo` to prove nothing leaves the machine (`diagnostics/offline.py:143-194`). There is no
+  `[project.scripts]` entry point, so there is no
+  `nativevoice` console command, and no `.github/` directory, so no CI is configured.
+- **Packaging is deliberately minimal.** `requires-python >= 3.11`, `dependencies = []`, and optional extras
+  `mic`, `onnx`, `dev` (`pyproject.toml:9-15`). The control path imports the standard library only: `audioop`
+  was removed from the standard library in Python 3.13, so RMS, peak, DC blocking, fades, crossfade and the
+  WAVE container are implemented directly in `audio/pcm.py`. Installing this package downloads no model.
+
+Performance is reported as measured, on one machine, and synthesis is slower than real time there at every
+profile. `docs/baseline.md` records the environment and `artifacts/benchmarks/profiles.json` the runs, which
+are single-repeat observations taken under memory pressure; that same baseline states that latency and
+real-time-factor figures taken while the machine is in that state are invalid, so this file quotes no headline
+number for speed. Two facts shape expectations anywhere: ctranslate2 behind faster-whisper can use CUDA, while
+onnxruntime CPU-only builds cannot accelerate an ONNX model on the same machine — accelerator support is a
+per-engine fact in the hardware layer, not a boolean called `has_gpu`.
+
+## 4. Architecture and supported technologies
+
+Confirmed by the code in this repository:
+
+| Layer | Package | What is there |
+|---|---|---|
+| Capability and status model | `core/`, `language/` | `CapabilityStatus`, the 61-language registry, routing that refuses to cite an unmeasured status |
+| Audio | `audio/` | PCM, fades, RMS/peak, WAVE container, device capture behind the `mic` extra |
+| Recognition | `stt/adapters/` | faster-whisper / CTranslate2 adapters, self-test echo engine, provenance gate at load |
+| Synthesis | `tts/adapters/` | sherpa-onnx Kokoro adapter, scripted/plumbing engines, refusal-only reference adapter |
+| Voice identities | `voices/` | installable versioned identities, consent and redistribution fields, per-host registry |
+| Models and roots | `models/`, `config/` | default-deny asset gate, isolated measurement root, data-root confinement |
+| Hardware | `hardware/` | profiles and per-engine accelerator facts, with `measured` flags |
+| Integration | `integration/` | the `VoiceHost` protocol and adapter — the seam a developer writes against today |
+| Diagnostics | `diagnostics/`, `cli/` | capability reports, offline scan, strict acceptance exits |
+| Evaluation | `eval/`, `tools/` | round-trip scoring, benchmarks, corpus tooling, asset-status auditor |
+
+Runtime technologies actually used: **faster-whisper** with **CTranslate2** for recognition, **sherpa-onnx**
+with **ONNX Runtime** for synthesis, **espeak-ng** front-end data shipped inside the approved Kokoro asset,
+and `sounddevice` for live capture when the `mic` extra is installed. Heavy runtimes appear only inside
+`stt/adapters/` and `tts/adapters/`, are imported lazily, and are declared as optional extras rather than
+install-time dependencies; they are provisioned out of band by `tools/provision.py`, which is the seam
+the project deliberately keeps separate — "initial asset acquisition may use the network, ordinary
+runtime may not" (`tools/provision.py:3-5`), and no module under `nativevoice/` imports it.
+
+On-disk layout: engine data root `%LOCALAPPDATA%\ultron-voice` on Windows and `$XDG_DATA_HOME/ultron-voice`
+elsewhere, overridable with `NATIVEVOICE_HOME` (`config/paths.py:25-42`); inside it `models/`, `voices/`,
+`cache/`, `logs/`. Measurement-only assets live in a deliberately separate sibling tree,
+`<root>-measurement`, not behind a flag inside one tree. That layer confines itself: `subpath()` rejects an
+unknown subdirectory name and `_ensure_within_root()` raises before any `mkdir` outside the root
+(`config/paths.py:45-74`). The guard covers directory creation under the data root, not every write in the
+tree — a caller that names an explicit destination (settings save, evidence export, `--out`) gets that path.
+
+## 5. Existing foundations and target architecture
+
+This section describes where the platform is heading, and each row carries the tier it deserves. Code cited
+inside a row describes what exists today, not the finished component the row names. `PARTLY BUILT` means
+code and tests exist in this tree.
+`CANDIDATE` means the project surveyed the approach and recorded why it is not usable here yet. `PROPOSED`
+means the row's component is not available as a feature anywhere in this build; a proposal may still be
+discussed in `docs/`. Where a `PROPOSED` row cites code, that code is adjacent machinery, not the component.
+
+| Component | Tier | What this repository actually contains |
+|---|---|---|
+| Provider-independent orchestration | `PARTLY BUILT` | engine registry and per-task orchestrators (`stt/orchestrator.py`, `session/orchestrator.py`); adapters lazy, behind optional extras; `dependencies = []` |
+| Direct speech-to-speech (STS) | `PROPOSED` | `hear()` and `speak()` sit on one object (`integration/adapter.py:84,104`); a turn loop exists and is tested on scripted engines (`:131-159`, `:161-186`; `tests/test_integration.py:93-103,159,175`), but every turn passes through text, so **direct** audio-to-audio STS does not exist |
+| Conformer-TDT-class recognition | `CANDIDATE` | no Conformer-class model is installed or wired here; the word occurs only on this line. Nearest survey: the sherpa-onnx TDT-class families recorded there, **ABSENT, not requested** (`docs/provenance.md:51`, `docs/research-report.md:39`) |
+| Flow-matching TTS | `CANDIDATE` | architecture read out of a third-party project and recorded with claim tiers (`docs/research-report.md:146-153`); no such model exists here |
+| Safeguarded voice cloning | `PROPOSED`, rights-gated | consent and refusal machinery is built (`voices/identity.py:64-85`, `profiles/conditioning.py:55-68`, `tts/adapters/sherpa_kokoro.py:343-344`); no approved asset exists |
+| Hosted API, tenancy, quotas, metering | `PROPOSED` | nothing — no server, client library, account model or usage counter anywhere in `src/` |
+| This project's own trained weights | `PROPOSED` | **NONE EXIST YET** (`docs/provenance.md:56`); "there is not a single approved speech weight in this project" (`:58`) |
+
+**Orchestration is the honest row.** The host-facing contract already forbids a host from importing "an
+engine, a model id, a licence decision or a file path" (`integration/contract.py:10-11`), and the seam is
+deliberately text-in/text-out (`integration/contract.py:13-14`). What does **not** exist is anything above a
+single process: cross-machine routing, tenancy, quotas or metering. Orchestration here means one engine
+registry per task on one machine, which is what the code does today.
+
+Two constraints shape every row above, and both were documented before this section was written rather than
+discovered while writing it.
+
+**Rights.** Recognition and synthesis currently run on third-party pretrained assets, and the project's own
+provenance table records refusals rather than assumptions: Kyutai Pocket TTS weights are marked **do not
+fetch**, its 26 preset voices are **PROHIBITED pending review** because per-voice consent is not disclosed,
+HiFiTTS-2 is **PROHIBITED in product**, and Silero / pyannote and the rest of the surveyed research assets are
+**do not adopt** with no licence recorded (`docs/provenance.md:52-55`). Every zero-shot cloning candidate
+examined so far is non-commercial — XTTS `license: other`, F5-TTS and ChatTTS `cc-by-nc-4.0`, fish-speech
+`cc-by-nc-sa-4.0` (`docs/audit-register.md` A21), which is the same row that records cloning as "out of the
+feature set until an asset is separately approved". So the cloning row is a *gated* path, not a roadmap
+promise: the consent, provenance and install-state machinery exists, the model that would need it does not.
+
+**Compute.** The flow-matching reading is useful here as a boundary, not as a plan. That project's own
+training path requires Linux plus an NVIDIA GPU at roughly a 56 GB batch default (about 16 GB with gradient
+accumulation) and its evaluation requires CUDA (`docs/research-report.md:203-205`), while this project's
+recorded baseline shows `onnxruntime` exposing only `AzureExecutionProvider` and `CPUExecutionProvider`, so
+synthesis cannot use a GPU at all on the measured machine (`docs/tts-options.md:20`, `docs/baseline.md:84`).
+A move to a larger or GPU-bound architecture has to be cleared by measurement on the target hardware, not by a
+vendor claim — which is exactly the rule `CapabilityStatus` already enforces for languages today.
+
+**Turn-taking, if STS is ever built, starts from real ground.** The session layer already has its own tests
+behind it: turn model, partial/final/retract reducer, barge-in, stale-answer discard,
+listening modes, device recovery and disabled-voice routing live in `session/state.py` and
+`session/orchestrator.py`, recorded as 25 tests in `tests/test_session.py` (`PROGRESS.md:15`, 2026-10-12).
+That is turn-taking plumbing, not a speech-to-speech model, and this file does not claim otherwise.
+
+The sequence in which any of this gets built is §6. Until a component moves out of this section it is not a
+feature, and no interface described here should be treated as available.
+
+## 6. Roadmap
+
+**Current work — in this repository, with gates and tests already in place:**
+
+1. **Recognition quality from real speech.** The evaluation protocol exists (`docs/real-speech-protocol.md`);
+   human-quality claims do not, because synthetic fixtures are refused in a quality path by design.
+2. **Adapting a compact recognition model against a teacher**, on data that clears the boundary register.
+   Blocked on an approved training corpus, on a training stack this project has not declared yet (`torch` is
+   in no dependency list and no trainer module exists in this tree), and on a GPU validation run that has been
+   proposed but not executed.
+3. **Indic synthesis.** Hindi and Bengali need a front-end the approved asset does not have: new assets and a
+   rights decision before code.
+4. **Closing the open licence and provenance findings** listed in `docs/audit-register.md`, which gate
+   anything shipped.
+
+**Future plans — explicitly not built, and not claimed by this repository:**
+
+5. **A documented developer API.** No service exists. Designing one is a separate piece of work, not a flag in
+   this engine.
+6. **Usage-based pricing, accounts, keys and metering.** Nothing of it is implemented.
+7. **Deployment options** — hosted, private and on-premises — beyond running the engine where it is installed.
+8. **Independently trained models** so that the platform's core capability is its own rather than adapted from
+   third-party weights.
+9. **Language expansion** — moving registered languages out of `NO_MODEL` by earning `MEASURED` status, one
+   measured evaluation at a time.
+10. **A separate public Client SDK.** Not started and not part of this repository; shipping any derived asset
+    is gated on the licence blockers in §8.
+
+## 7. Testing and evaluation
+
+The repository's default position is that a number either comes from measurement or says it does not.
+
+**What is in the tree (static counts, `tests/`):** 43 test files, 1,004 `def test_` functions. Pytest declares
+four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
+
+**Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
+modules probe the local machine — `nvidia-smi`, the audio-device list, a loopback socket, `git ls-files`, a
+diagnostic subprocess — so the recorded release figure was taken with those excluded:
 
 ```bash
 python -m pytest -q \
@@ -79,150 +258,113 @@ python -m pytest -q \
   --deselect tests/test_audio.py::test_device_enumeration_never_raises
 ```
 
-Recorded result of that command in this tree: **1,071 passed, 7 skipped, 1 deselected, 86 excluded**
-(2026-10-17, at `6056f0e` with this release snapshot staged). Asset-gated tests are skipped
-unless a named human has approved the asset *and* `--run-approved-assets` is passed; approval is a
-per-asset decision, not a build flag.
+Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
+release snapshot staged; reconciled in `docs/audit-register.md`). That is a recorded figure against a named
+commit, **not** a claim that it was re-run for this README.
 
-## Where things live on disk
+**Asset-gated tests** are skipped unless a named human has approved the asset *and*
+`--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven
+gated nodes across `test_stt.py`, `test_stt_real.py` and `test_tts_sherpa.py`. Approval is a per-asset
+decision, not a build flag.
 
-| What | Where |
-|---|---|
-| Engine data root | `%LOCALAPPDATA%\ultron-voice` on Windows, `$XDG_DATA_HOME/ultron-voice` elsewhere; override with `NATIVEVOICE_HOME` |
-| Inside the root | `models/`, `voices/`, `cache/`, `logs/` |
-| Measurement-only assets | a sibling tree, `<root>-measurement` — deliberately separate, not a flag inside one tree |
-| Hugging Face hub cache | `HF_HUB_CACHE`, else `$HF_HOME/hub`, else `~/.cache/huggingface/hub` |
+**Measurement harness.** `tools/evaluate.py` scores forced and automatic WER/CER, TTS real-time factor, TTS
+first-audio latency and STT real-time factor against ceilings of WER 0.15 and CER 0.10 (`:106-107,194-218`).
+Its audio is **project-synthesized round-trip speech, not human recordings** — the module says so in its own
+docstring (`:59-62`) — which is why English clears the bar and Chinese is recorded as `MEASURED_FAILED`.
+`tools/multilingual_eval.py` does run 13 real human clips, and deliberately reports **no WER/CER** for them
+(`docs/multilingual-eval-2026-10-13.md`); it changes no capability status.
 
-The engine writes no conversation store: the integration contract states that it holds no persistent
-memory of its own — not transcripts, not answers, not embeddings — and the host boundary reports
-`history_persisted: false` (`integration/contract.py:5-8`, `integration/adapter.py:202`). Everything
-the data-root layer creates lives under one root so a user can find it, back it up or delete it as a
-unit, and that layer confines itself: `subpath()` rejects an unknown subdirectory name and
-`_ensure_within_root()` raises before any `mkdir` of a path outside the root (`config/paths.py:45-74`).
-That guard covers directory creation under the data root, not every write in the tree — a caller that
-names an explicit destination (settings save, evidence export, profile export, a `--out` flag) gets
-that path. The directory is still named `ultron-voice` (`config/paths.py:26`): the data path the
-`nativevoice` namespace inherited, kept because renaming it would strand verified assets, model
-manifests and installed voice identities (`DECISIONS.md` N6). No engine module imports or requires any
-host application, though the inherited `ultron-voice` directory name and older labels and docstrings
-remain in the tree. The data root resolves from `NATIVEVOICE_HOME` when that variable is set, and
-otherwise from the OS-standard location: `LOCALAPPDATA` on Windows, `XDG_DATA_HOME` elsewhere
-(`config/paths.py:25,30-42`).
+**Reproducibility instruments**, all operator-run and none of them a runtime dependency:
+`python -m nativevoice.cli.diagnose` reports a host summary, real per-language status and offline scan
+findings, with `--max-wer` / `--max-first-audio-ms` turning measured figures into an exit code and `--strict`
+treating a criterion that was never run as a failure rather than a pass; `tools/audit.py` runs mechanical checks
+and reports NOT RUN separately from FAIL; `tools/offline_proof.py` runs the real
+synthesis-then-recognition pair under an offline guard (`artifacts/audit/offline-proof.json`, verdict PASS,
+zero connection attempts, single run) — evidence of network silence only, not of ownership or
+licensing rights. Separately, `tests/test_no_personal_paths.py` blocks personal filesystem paths from
+re-entering the tree.
 
-## Model assets are gated, and approval is not clearance
+**Model assets are gated at load time, default-deny:** no SHA-256 digest, no run; no named human approver in
+the record, no run; an unknown or missing licence field, no run. No environment variable bypasses that gate.
+Approving an asset for *use* does not establish a right to *redistribute* it, and the registry keeps those two
+questions separate.
 
-No asset loads without a manifest that passes the registry, and the gate is default-deny:
+**The training boundary.** Any corpus that may move weights is checked against a register before use, so
+a batch cannot authorise itself: `artifacts/corpus/legacy-batches.json` pins reviewed sentence pools and
+legacy batches by SHA-256; `artifacts/corpus/en-synthetic-01/manifest.json` is **QUARANTINED from training**
+because 4 of its 8 kept clips repeat an English evaluation sentence, so training on it and scoring against
+that evaluation would measure memorisation; a replacement batch clears the gate only when the sentence
+pools behind it match a `pool_set_sha256` recorded in that register, which
+`tests/test_corpus_forge_boundary.py` pins. This is a documented contract, not
+production enforcement: no trainer in this tree consults it, because no trainer exists here yet. The register
+is reviewable provenance, not attestation — a digest proves byte identity and says nothing about licence,
+consent or authorship.
 
-- no SHA-256 digest, no run;
-- no named human approver in the record, no run;
-- an unknown or missing licence field, no run;
-- there is no environment variable that bypasses it, and enforcement happens at load time.
+## 8. Licensing and third-party assets — read before commercial use
 
-Approving an asset for *local use* does not establish a right to *redistribute* it, and the registry
-keeps those two questions separate. Two consequences a distributor has to solve before shipping:
-Kokoro-82M's Apache-2.0 text is verified from the licence shipped inside the asset, yet the asset is
-recorded as not redistributable; and espeak-ng GPL-3.0 data is bundled by the front-end, which is an
-open pre-distribution blocker (`docs/audit-register.md`, `docs/provenance.md`). Faster-whisper's base and
-small checkpoints carry a `license:mit` tag with no licence text shipped, so their terms are recorded as
-unreviewed rather than assumed.
+**No licence is granted by this repository.** There is no `LICENSE`, `NOTICE` or third-party-notices file, no
+SPDX field in `pyproject.toml`, and no licence is implied by reading the code. Ownership is addressed at
+§9, where none is asserted.
 
-## The training boundary
+This is a commercial direction, so the open items are stated rather than summarised away. Recorded in
+`docs/audit-register.md` and `docs/provenance.md`:
 
-Any corpus that may move weights is checked against a boundary register before it is used, so a batch
-cannot authorise itself:
+- **espeak-ng GPL-3.0 data** is bundled by the synthesis front-end. This is an **open pre-distribution
+  blocker** for anything shipped to a third party.
+- **Kokoro-82M**: the Apache-2.0 text is verified from the licence shipped inside the asset, yet the asset is
+  recorded as **not redistributable**.
+- **faster-whisper base and small** checkpoints carry a `license:mit` hub tag with **no licence text archived
+  locally**, so their terms are recorded as unreviewed rather than assumed.
+- **faster-whisper large-v3**: recorded licence status `NOASSERTION`; redistribution not established.
+- **HiFiTTS-2** is recorded as **prohibited in product**. **Silero** and **pyannote** have **no licence
+  recorded** and are marked do-not-adopt. **Pocket TTS** has MIT text present with **no
+  copyright-holder line**.
+- **en-synthetic-01** remains `QUARANTINED` from training, an open finding, not a closed one.
+- Third-party model weights, checkpoints, voice embeddings, espeak-ng data files, datasets, Python
+  dependencies and generated measurement artefacts remain under their own terms, and several are recorded
+  here as *not* redistributable even though local use is approved. **Teacher weights are not in this
+  repository** — only digest and size evidence is.
+Nothing here has had a production hardening pass, and no claim of licence clearance, regulatory compliance,
+fitness for distribution or production readiness is made anywhere in this project.
 
-- `artifacts/corpus/legacy-batches.json` — the tracked register of reviewed sentence pools and legacy
-  batches, with each batch's manifest pinned by SHA-256;
-- `artifacts/corpus/en-synthetic-01/manifest.json` — a batch **QUARANTINED from training** on
-  2026-10-15, because 4 of its 8 kept clips repeat an English evaluation sentence, so training on it and
-  scoring against that evaluation would measure memorisation. It remains permitted for
-  `asr-domain-evaluation`;
-- `tools/corpus_forge.py` refuses to produce a training-eligible batch that collides with a registered
-  pool, and `tests/test_corpus_forge_boundary.py` pins the rule.
+## 9. Ownership, contribution and contact
 
-The register is reviewable provenance, not attestation: a digest proves byte identity and says nothing
-about licence, consent or authorship. The control is that the register is a tracked file, so every change
-to it is a diff someone sees.
+**No copyright holder is asserted in this file.** No name — person, company or project — is claimed here
+as the owner of the source, tests, tooling or documentation in this repository, and no rights are granted over
+any of them. Third-party assets remain under their own terms, as recorded above and in `docs/provenance.md`.
 
-## Performance as measured, on one machine
+**Contribution.** There is no `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue template or CLA in
+this repository, and no formal contribution policy is claimed. Nothing in this file commits this project to a
+response time, a review process or a support channel.
+In practice, the work that has to happen first is the audit-register findings in §8 — a contribution that
+touches a capability claim should come with the measurement that justifies it, or it should say that it has
+none.
 
-Synthesis is slower than real time on the one machine measured here, at every profile. See
-`docs/baseline.md` for the environment and `artifacts/benchmarks/profiles.json` for the recorded runs,
-which are single-repeat observations taken under memory pressure.
+**Contact.** No support address, maintainer handle, discussion forum or other channel is defined anywhere in
+this repository, and none is implied by any name that appears in the code. Commercial and API enquiries are
+listed as `PLANNED` in §2 precisely because no route for them exists yet; when one does it will be stated
+here rather than inferred from a username in the source.
 
-Two hardware facts that shape expectations on any laptop: ctranslate2 behind faster-whisper can use CUDA,
-while onnxruntime 1.30 CPU-only builds cannot accelerate an ONNX model on the same machine. So
-accelerator support is a per-engine fact in the hardware layer, not a boolean called `has_gpu`, and a
-GPU is never assumed to be faster. Profile thresholds seeded against a memory-starved baseline stay
-`measured: false` until the harness is re-run on an idle machine.
+**Reading order:** `docs/platform.md` (the host and identity model) → `docs/architecture.md` →
+`docs/capability-matrix.md` → `docs/baseline.md` (the measured environment) → `docs/provenance.md` and
+`docs/audit-register.md` (what may be shipped, and what is still open) → `docs/research-report.md`.
+`DECISIONS.md` holds the rulings that gate measured speech quality; `PROGRESS.md` is the dated working record.
 
-## Run the diagnostics
+## 10. What this is not
 
-```bash
-python -m nativevoice.cli.diagnose --capabilities capabilities.json
-python -m nativevoice.cli.diagnose --scan-path <tree> --strict --json
-```
+Not a cloud service today, and not a wrapper around one — the hosted API in §6 is a plan, not a running thing.
+Not a chatbot, and not the voice layer of any other application. Not an integration of another voice product
+or assistant: the research archives read here were reference-only, are held outside this repository, no file
+from them is imported, vendored, ported or renamed — a tested fence over the whole package says so
+(`tests/test_integration.py:224-232`) — and their licence terms were not reviewed for redistribution. Design
+reasoning is in `docs/research-report.md`.
 
-`diagnose` reports a host summary, real per-language capability status and offline scan findings. Use
-`--max-wer` and `--max-first-audio-ms` to turn measured figures into an exit code, and `--strict` to
-treat a criterion that was never run as a failure instead of a pass. There is no `nativevoice` console
-command: the package ships no `[project.scripts]` entry point.
+Three invariants worth knowing before reading the code:
 
-The `tools/` directory holds the measurement instruments — `provision`, `evaluate`,
-`benchmark_profiles`, `offline_proof`, `platform_demo`, `corpus_forge`, `seed_voices`, the TTS labs and
-the asset-status auditor. They are operator tools, not runtime dependencies, and several of them run
-real inference against approved assets.
-
-## What is planned, not built
-
-1. **ASR first.** Adapt a compact recognition model against a teacher, on data that clears the boundary
-   register, and evaluate on real speech rather than synthetic round-trips. Blocked on an approved
-   training corpus, on a training stack that this project has not declared yet (`torch` is in no
-   dependency list and no trainer module exists in this tree), and on a GPU validation run that has
-   been proposed but not executed.
-2. **Indic synthesis.** Hindi and Bengali need a front-end the approved asset does not have, which means
-   new assets and a rights decision before code.
-3. **Real-speech evaluation.** The protocol exists (`docs/real-speech-protocol.md`); human-quality claims
-   do not, because synthetic fixtures are refused in a quality path by design.
-4. **A separate public Client SDK.** Not started and not part of this repository. Shipping any derived
-   asset is gated on the licence blockers above.
-
-## Reading order
-
-`docs/platform.md` (the host/identity model) → `docs/architecture.md` → `docs/capability-matrix.md` →
-`docs/baseline.md` (the measured environment) → `docs/provenance.md` and `docs/audit-register.md`
-(what may be shipped, and what is still open) → `docs/research-report.md`. `DECISIONS.md` holds the
-rulings that gate measured speech quality; `PROGRESS.md` is the dated working record.
-
-## Three invariants worth knowing before reading the code
-
-1. **Capability is a status, not a boolean** — the six `CapabilityStatus` values above. A vendor's claim
+1. **Capability is a status, not a boolean** — the six `CapabilityStatus` values in §3. A vendor's claim
    cannot satisfy a strict routing decision, and a missing model is a normal state rather than a gap to
    paper over.
-2. **Approval is enforced at load time, default-deny** — no digest, no run; no named approver, no run;
-   unknown licence field, no run.
+2. **Approval is enforced at load time, default-deny** — no digest, no run; no named approver, no run; unknown
+   licence field, no run.
 3. **Numbers come from measurement or say they don't** — thresholds and resource requirements carry a
    `measured: bool`, and anything unmeasured is reported as unmeasured instead of asserted.
-
-## What this is not
-
-Not an integration of OpenWhispr or Pocket TTS. Those archives were read as research references and are
-held outside this repository; no file from either is imported, vendored, ported or renamed, and their
-licence terms were not reviewed for redistribution. Design reasoning is in `docs/research-report.md`.
-
-Not a cloud service, and not a wrapper around one. Not a chatbot, and not the voice layer of any other
-application: hosts plug in through one narrow seam, and nothing in the engine imports a host.
-
-## Ownership
-
-Copyright © 2026 Actizant
-
-This notice covers the original NativeVoice source, tests, tooling and documentation in this
-repository. It claims nothing over anything the project did not author: third-party model weights and
-checkpoints, voice embeddings, espeak-ng data files, datasets, Python dependencies and any generated
-measurement artefact remain under their own terms, and several are recorded here as *not* redistributable
-even though local use is approved.
-
-No licence is granted by this repository. There is no `LICENSE` file at the root and none is implied by
-reading the code; the asset licence blockers that gate any distribution are recorded in
-`docs/audit-register.md` and `docs/provenance.md`.
