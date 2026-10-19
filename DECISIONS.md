@@ -37,6 +37,22 @@ this paragraph describes, and rewriting the history to make it cheap again is no
 the project directory during the session - not created by any command here, and deliberately **not** deleted.
 It is git-ignored; removing it is yours to decide.
 
+**N11 - ownership is now a named intent, still not a verified record.** The README says Actizant develops
+Bodhva Voice Engine and is the intended owner of the product and of this repository; it carries no
+`Copyright ©` notice, because nothing in the tree yet ties every contribution to the company — no `LICENSE`,
+`AUTHORS` or `CONTRIBUTORS` file, no assignment or contributor agreement, no `authors` field in
+`pyproject.toml`, and no ownership ruling in this file (S4 rules on the working directory, and N7 records the
+AI `Co-Authored-By` trailer in the first commit). The page states the inference it refuses to draw: an entity
+name on the account that hosts the repository evidences control of the account, not authorship of its
+contents. Closing the question needs evidence rather than wording: an entity record, and an assignment or
+authorship record for anything written outside it. The same section separates what the engine actually loads —
+the Kokoro package, the espeak-ng data bundled inside it, and the faster-whisper checkpoints — from what was
+only examined: Pocket TTS, HiFiTTS-2, Silero and pyannote. The line-level anchors for that split are held in
+`docs/audit-register.md` rather than on the public page, and none of the §8 blockers the page names is
+cleared: A21's espeak-ng GPL-3.0 item, the Kokoro non-redistributable record, the faster-whisper MIT-text and
+large-v3 `NOASSERTION` items, HiFiTTS-2 prohibited in product, Silero and pyannote with no licence recorded and
+`en-synthetic-01` quarantined from training all stay open.
+
 ---
 
 # Original decision text (2026-10-12)

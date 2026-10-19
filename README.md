@@ -303,8 +303,8 @@ consent or authorship.
 ## 8. Licensing and third-party assets — read before commercial use
 
 **No licence is granted by this repository.** There is no `LICENSE`, `NOTICE` or third-party-notices file, no
-SPDX field in `pyproject.toml`, and no licence is implied by reading the code. Ownership is addressed at
-§9, where none is asserted.
+SPDX field in `pyproject.toml`, and no licence is implied by reading the code. Ownership is addressed at §9,
+which separates the project's intended ownership from third-party materials under their own terms.
 
 This is a commercial direction, so the open items are stated rather than summarised away. Recorded in
 `docs/audit-register.md` and `docs/provenance.md`:
@@ -329,9 +329,31 @@ fitness for distribution or production readiness is made anywhere in this projec
 
 ## 9. Ownership, contribution and contact
 
-**No copyright holder is asserted in this file.** No name — person, company or project — is claimed here
-as the owner of the source, tests, tooling or documentation in this repository, and no rights are granted over
-any of them. Third-party assets remain under their own terms, as recorded above and in `docs/provenance.md`.
+**Actizant is the company developing Bodhva Voice Engine, and the intended owner of the product and of
+this repository.** "Intended" is load-bearing: it names who builds this and who the business expects to
+hold it. It is not a verified record of legal ownership of every contribution here, and it claims nothing
+about the copyright position of any individual file.
+
+**No `Copyright ©` notice is asserted over the tree**, because nothing in it ties each contribution to that
+entity: no `LICENSE`, `NOTICE`, `AUTHORS` or `CONTRIBUTORS` file, no assignment or contributor agreement, no
+`authors` field in `pyproject.toml`, and no ownership ruling in `DECISIONS.md`. The commit history names
+individual accounts and its first commit carries a `Co-Authored-By` trailer for an AI model. An entity name
+on the account that hosts this repository evidences control of the account, not authorship of its contents
+and not a legal ownership position over every contribution in it, and no such inference is drawn here. The
+full evidence behind this section — file-level anchors, adapter behaviour and the asset register — is held
+in `docs/audit-register.md` and `docs/provenance.md`, not summarised on this page.
+
+**Third-party materials are not Actizant's, and two groups must not be conflated.** What the engine's code
+paths load — only through the default-deny asset gate, and only where an approved asset sits locally — is
+the Kokoro package behind `tts/adapters/sherpa_kokoro.py`, including the espeak-ng data files bundled
+inside it, which is why §8's GPL-3.0 item is a live blocker rather than a hypothetical, and the
+faster-whisper checkpoints behind `stt/adapters/faster_whisper.py`. Everything else §8 names is **examined
+but not adopted**: Kyutai Pocket TTS, HiFiTTS-2, Silero and pyannote. The warnings §8 records about them
+are licence findings, not dependencies — what this tree holds of Pocket TTS is a reference adapter that
+documents the target architecture, declares no usable capability and synthesises nothing.
+
+**Nothing here grants a licence, transfers any third-party material to Actizant, or states that commercial
+redistribution has been cleared.**
 
 **Contribution.** There is no `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue template or CLA in
 this repository, and no formal contribution policy is claimed. Nothing in this file commits this project to a
