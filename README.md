@@ -337,8 +337,8 @@ about the copyright position of any individual file.
 **No `Copyright ©` notice is asserted over the tree**, because nothing in it ties each contribution to that
 entity: no `LICENSE`, `NOTICE`, `AUTHORS` or `CONTRIBUTORS` file, no assignment or contributor agreement, no
 `authors` field in `pyproject.toml`, and no ownership ruling in `DECISIONS.md`. The commit history names
-individual accounts and its first commit carries a `Co-Authored-By` trailer for an AI model. An entity name
-on the account that hosts this repository evidences control of the account, not authorship of its contents
+individual accounts, and the unsupported AI co-author trailer on its first commit is removed in this chain. An
+entity name evidences control of the account that hosts this repository, not authorship of its contents
 and not a legal ownership position over every contribution in it, and no such inference is drawn here. The
 full evidence behind this section — file-level anchors, adapter behaviour and the asset register — is held
 in `docs/audit-register.md` and `docs/provenance.md`, not summarised on this page.

@@ -18,9 +18,19 @@
 strand the verified assets, the model manifests and the installed voice identities, so it was left alone.
 Say the word and I move it and re-verify every digest; nothing else in the code depends on the old name.
 
-**N7 - commit author line.** The initial commit carries a `Co-Authored-By:` trailer naming an AI model. It is
-local and unpushed, so removing it is one `git commit --amend` whenever you want it gone. I did not rewrite
-history on my own initiative.
+**N7 - commit author line.** Written 2026-10-13, when this history was two commits deep and unpushed - the note's own
+dating, not a measurement: the commit that wrote it is 4 deep in that chain. Both of those facts changed later.
+
+**Resolved 2026-10-20.** The `Co-Authored-By:` trailer naming an AI model is removed from the initial commit
+of the locally rewritten chain, by a message-only rewrite of all 34 historical commits. The remote still
+serves the original chain, so nothing on the hosting service has changed; the owner rules on a push separately.
+Each commit was re-created with its own tree, its own parents, and its original author and committer names,
+timestamps and offsets; the only bytes that changed are the one trailer line and the parent pointers it forced.
+Trees, blobs, file contents, identities and timestamps are unchanged; the old→new map is in Addendum 28.
+
+**What this does not decide.** The owner states the attribution was unsupported. Nothing in the Git metadata
+corroborates or refutes who typed the line when it was written, and this file records that limit rather than
+glossing it: removing an unsupported trailer is a correction of the record, not a finding about authorship.
 
 **N8 - TTS replacement proposal.** Real-time synthesis is not reachable with the current asset: best measured
 RTF is 1.59 and first audio 5.06 s after the chunk-budget fix. The options are a different approved asset
@@ -33,6 +43,12 @@ path and the history was two commits deep. The tree has since moved to a named f
 28 commits deep, so both figures here are the 2026-10-13 facts: moving the working copy is now costlier than
 this paragraph describes, and rewriting the history to make it cheap again is not on the table.
 
+**Superseded in part 2026-10-20.** A rewrite was ruled on and executed for one reason that this paragraph did
+not contemplate: an unsupported AI co-author trailer on the initial commit. It is a message-only rewrite, which
+changes no tree and no blob, so it does not touch the argument above — relocating the working copy remains as
+costly as it says, and this change does not decide it. The cost comparison is what this entry ruled on, and it
+stands; only the blanket "not on the table" is narrowed.
+
 **N10 - a stray interpreter in the working tree.** `Python/pythoncore-3.15-64` (45 MB) materialised inside
 the project directory during the session - not created by any command here, and deliberately **not** deleted.
 It is git-ignored; removing it is yours to decide.
@@ -42,9 +58,9 @@ Bodhva Voice Engine and is the intended owner of the product and of this reposit
 `Copyright ©` notice, because nothing in the tree yet ties every contribution to the company — no `LICENSE`,
 `AUTHORS` or `CONTRIBUTORS` file, no assignment or contributor agreement, no `authors` field in
 `pyproject.toml`, and no ownership ruling in this file (S4 rules on the working directory, and N7 records the
-AI `Co-Authored-By` trailer in the first commit). The page states the inference it refuses to draw: an entity
-name on the account that hosts the repository evidences control of the account, not authorship of its
-contents. Closing the question needs evidence rather than wording: an entity record, and an assignment or
+`Co-Authored-By:` AI trailer and its removal, so far local and unpushed, from the rewritten chain). The page
+refuses to draw: an entity name on the account that hosts the repository evidences control of the account, not
+authorship of its contents. Closing the question needs evidence rather than wording: an entity record, and an
 authorship record for anything written outside it. The same section separates what the engine actually loads —
 the Kokoro package, the espeak-ng data bundled inside it, and the faster-whisper checkpoints — from what was
 only examined: Pocket TTS, HiFiTTS-2, Silero and pyannote. The line-level anchors for that split are held in

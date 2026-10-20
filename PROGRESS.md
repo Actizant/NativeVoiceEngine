@@ -1493,3 +1493,52 @@ contradicted. Fixing that is a separate authorised decision. **Nothing in the re
 no trainer, no dataloader, no tokenizer, no checkpoint, `torch` in no dependency list, and Qwen3-TTS and
 EmbeddingGemma 2 have no manifest, provenance row or approval entry — they are now named in tracked files for
 the first time, and named as decisions only.
+
+# Progress ledger — entry 20 (2026-10-20, the unsupported AI co-author trailer is removed locally; remote unchanged)
+
+**What this entry reverses, and what it does not.** Entry 17 recorded that history was preserved as it stands and
+listed the AI co-author trailer on the initial commit among the facts that stayed. That part has now been ruled on
+differently — locally: the trailer is gone from the rewritten chain, and it is still on the remote's chain, which
+this entry does not touch. Everything else that entry undertook to preserve is preserved — every tree, every blob,
+every file content, every author and committer identity, every timestamp, UTC offset, and the other 33 messages byte
+for byte. The correction is narrow on purpose: it removes one line of message text, adds and deletes no code, and does
+not touch any commit whose message did not end with that exact line. `docs/audit-register.md` Addendum 28 carries the
+full 34-row old→new map, the local/remote split, and the reasoning.
+
+**The authorship question stays open, deliberately.** The owner states Claude was not used. Git metadata cannot
+corroborate or refute that: the trailer is message text, no identity field names an AI model, and the hosting
+service's contributor line is a rendering of that one line. Removing an unsupported trailer fixes the record; it is
+not a finding about who typed anything, and nothing here should be read as one.
+
+**Method, so the result is reproducible rather than merely asserted.** Plumbing, not rebasing: `git commit-tree`
+per commit, oldest first, feeding each its original tree, its remapped parents and its original author and committer
+name, email, timestamp and offset via `GIT_AUTHOR_*` / `GIT_COMMITTER_*`. A rebase would have re-stamped the
+committer of every replayed commit with this machine's identity and changed 29 commits' attribution — a worse
+attribution defect than the one being fixed. The tool ran with an explicit expected-changed commit and expected
+chain length, verified each recreated commit against its original field by field, and moved the branch only with a
+compare-and-set that fails if anything else moved the reference first. Two dry runs that moved no reference produced
+the map and proved it stable across the tip amendments that followed it.
+
+**The audit step that had to be re-anchored.** `docs/audit-register.md` documents a personal-path check whose
+procedure pins the pre-cleanup revision by SHA inside a fenced constant. The local rewrite moved that
+revision's name off this chain, so the constant now carries its rewritten form,
+`d9270c052cdf0df819507edb4781281ee5836f95`, which resolves only in this clone until and unless a push is
+approved. The old name still resolves while the original chain is kept: at `refs/heads/pre-rewrite-main`
+here, and on the remote, which no part of this change touches. The historical prose in this file at
+`:1225-1227` is left exactly as it was written, because it records a measurement taken against the object
+that existed at the time. The map in Addendum 28 is the bridge between the two names.
+
+**Not recorded here on purpose:** the SHA of the commit this entry becomes part of. A commit cannot cite itself, so
+the corrected tip is identified by content — it is the only commit whose message is this documentation change — and
+by whatever `main` resolves to once the branch is moved.
+
+**Local state and remote state, stated separately, because the two are easy to conflate.** Locally, in the throwaway
+clone: `main` names the rewritten chain of 35 commits — the 34 recreated historical commits plus this documentation
+commit — and `pre-rewrite-main` names the original 34, also held as a verified bundle. On the hosting service,
+`refs/heads/main` still names the original tip, the original root commit still carries the trailer, and the rendered
+contributor line is therefore unchanged. Nothing in these entries says otherwise: the correction is complete locally
+and entirely pending remotely.
+
+**Not done in this entry, and not implied by it:** nothing has been pushed. The rewrite is local, the old chain is
+kept as a reference and a verified bundle, and the push is a separate decision with the old and new HEADs presented
+for approval first.
