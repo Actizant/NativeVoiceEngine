@@ -1,24 +1,14 @@
-"""Adapters and the pronunciation gap: the refusal surface, asserted."""
+"""The pronunciation gap and the scripted transport: the refusal surface, asserted."""
 
 from __future__ import annotations
 
+import importlib
 import sys
 
 import pytest
 
-from nativevoice.core.errors import (
-    CapabilityUnavailable,
-    LanguageUnsupported,
-    ModelNotApproved,
-    ModelNotInstalled,
-)
+from nativevoice.core.errors import CapabilityUnavailable, LanguageUnsupported
 from nativevoice.core.language import CapabilityStatus, LanguageTag, Task
-from nativevoice.models.api import ModelManifest, Provenance, ReviewStatus
-from nativevoice.tts.adapters.pocket_reference import (
-    MISSING_COMPONENTS,
-    PocketReferenceAdapter,
-    development_plan,
-)
 from nativevoice.tts.adapters.self_test import PLUMBING_LANGUAGE, ScriptedSynthesisEngine
 from nativevoice.tts.api import SynthesisRequest, VoiceReference
 from nativevoice.tts.engine_registry import EngineRegistry
@@ -31,19 +21,6 @@ from nativevoice.tts.phonemiser import (
 
 BENGALI = LanguageTag("bn")
 HINDI = LanguageTag("hi")
-
-
-def manifest(review: ReviewStatus = ReviewStatus.UNREVIEWED) -> ModelManifest:
-    return ModelManifest(
-        model_id="pocket-class-flow-matching",
-        engine="pocket-reference",
-        task=Task.TTS,
-        display_name="Reference architecture (not installed)",
-        languages=("en", "fr", "de"),
-        sample_rate=24000,
-        provenance=Provenance(source="kyutai/pocket-tts", licence_spdx="MIT"),
-        review=review,
-    )
 
 
 class TestScriptedEngine:
@@ -85,75 +62,6 @@ class TestScriptedEngine:
         engine = ScriptedSynthesisEngine()
         with pytest.raises(Exception):
             engine.condition(VoiceReference(voice_id="x", consent_token="t", owner="o"))
-
-
-class TestPocketReferenceRefusal:
-    def test_it_imports_nothing_from_the_upstream_package(self):
-        assert "pocket_tts" not in sys.modules
-
-    def test_without_a_manifest_it_refuses_as_unapproved(self):
-        adapter = PocketReferenceAdapter()
-        with pytest.raises(ModelNotApproved) as refused:
-            adapter.synthesize(SynthesisRequest("hello", BENGALI))
-        assert "no model manifest" in str(refused.value)
-
-    def test_unreviewed_manifest_is_refused_before_any_capability_question(self):
-        adapter = PocketReferenceAdapter(manifest(ReviewStatus.UNREVIEWED))
-        with pytest.raises(ModelNotApproved) as refused:
-            adapter.warm()
-        assert refused.value.details["review"] == "unreviewed"
-
-    def test_rejected_manifest_is_also_unapproved(self):
-        adapter = PocketReferenceAdapter(manifest(ReviewStatus.REJECTED))
-        with pytest.raises(ModelNotApproved):
-            adapter.stream(SynthesisRequest("hello", BENGALI))
-
-    def test_even_approved_it_still_refuses_and_names_every_missing_piece(self):
-        adapter = PocketReferenceAdapter(manifest(ReviewStatus.APPROVED))
-        with pytest.raises(CapabilityUnavailable) as refused:
-            adapter.synthesize(SynthesisRequest("hello", BENGALI))
-        message = str(refused.value)
-        for component in MISSING_COMPONENTS:
-            assert component.split(" (")[0] in message
-
-    def test_conditioning_is_refused_the_same_way(self):
-        adapter = PocketReferenceAdapter(manifest(ReviewStatus.APPROVED))
-        reference = VoiceReference(voice_id="v", consent_token="c", owner="o", language=BENGALI)
-        with pytest.raises(CapabilityUnavailable) as refused:
-            adapter.condition(reference)
-        assert "voice-conditioning" in str(refused.value)
-
-    def test_it_lists_no_voices_it_cannot_render(self):
-        assert PocketReferenceAdapter(manifest(ReviewStatus.APPROVED)).voices() == ()
-
-    def test_registry_turns_its_no_model_into_model_not_installed(self):
-        registry = EngineRegistry()
-        registry.register(PocketReferenceAdapter(manifest(ReviewStatus.APPROVED)))
-        with pytest.raises(ModelNotInstalled) as refused:
-            registry.best_for("bn")
-        assert refused.value.details["language"] == "bn"
-
-    def test_capabilities_cover_targets_and_reference_languages(self):
-        adapter = PocketReferenceAdapter(manifest())
-        languages = {capability.language for capability in adapter.capabilities()}
-        assert {"bn", "hi", "en", "zh"} <= languages
-        assert all(
-            capability.status is CapabilityStatus.NO_MODEL for capability in adapter.capabilities()
-        )
-
-    def test_development_plan_is_labelled_unverified(self):
-        plan = development_plan()
-        assert plan["status"] == "external_requirements_unverified_by_training"
-        assert plan["architecture"]["frame_rate_hz"] == 12.5
-        assert plan["architecture"]["output_sample_rate_hz"] == 24000
-        assert plan["architecture"]["text_front_end"]["chunk_budget_tokens"] == 50
-        assert plan["data_requirements"]["per_language_read_speech_hours"]["minimum_target_hours"]
-        assert plan["evaluation_protocol"]["intelligibility"]
-        assert plan["unknowns"]
-
-    def test_manifest_asset_kinds_are_not_claimed_present(self):
-        adapter = PocketReferenceAdapter(manifest())
-        assert adapter.manifest.assets == ()
 
 
 class TestPronunciationGap:
@@ -208,3 +116,23 @@ class TestPronunciationGap:
     def test_describe_covers_declared_languages(self):
         described = GraphemeToPhonemeRegistry().describe()
         assert {capability.language for capability in described} == {"bn", "en", "hi"}
+
+
+class TestNoUpstreamSynthesisRuntime:
+    """The invariant the retired reference adapter used to assert on its own."""
+
+    def test_no_upstream_tts_package_is_loaded(self):
+        assert "pocket_tts" not in sys.modules
+
+    def test_the_retired_reference_adapter_is_not_reachable(self):
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("nativevoice.tts.adapters.pocket_reference")
+
+    def test_the_adapters_package_exports_only_live_engines(self):
+        adapters = importlib.import_module("nativevoice.tts.adapters")
+        assert set(adapters.__all__) == {
+            "PLUMBING_LANGUAGE",
+            "SHERPA_KOKORO_ENGINE_ID",
+            "ScriptedSynthesisEngine",
+            "SherpaKokoroEngine",
+        }

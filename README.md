@@ -53,7 +53,7 @@ through a stable interface, with deployment flexibility and usage-based commerci
 | A hosted, documented developer **API** | `PLANNED — does not exist` | there is **no** HTTP service, server, SDK or REST surface anywhere in this repository |
 | **Usage-based billing** and a pricing model | `PLANNED — does not exist` | no metering, accounts, keys or payment code is present |
 | Hosted, private and on-premises **deployment options** | `PLANNED` | today the engine runs only where the code is installed |
-| **Independently trained** speech models | `PLANNED — not started` | every model in use is a third-party pretrained asset loaded through an adapter; nothing has been trained or fine-tuned in this project |
+| **Independently trained** speech models | `PLANNED — not started` | the first development priority: a Conformer-TDT-class recognition student distilled against a Whisper large-v3 teacher, then a flow-matching synthesis student. Every model in use today is a third-party pretrained asset loaded through an adapter; nothing has been trained or fine-tuned in this project |
 | Voice cloning | `REFUSED, not a feature` | every zero-shot asset surveyed is non-commercial or unlicensed (`docs/provenance.md`) |
 
 Distinguishing these tiers is the point of the table. The engine's own vocabulary is stricter than a typical
@@ -131,7 +131,7 @@ Confirmed by the code in this repository:
 | Capability and status model | `core/`, `language/` | `CapabilityStatus`, the 61-language registry, routing that refuses to cite an unmeasured status |
 | Audio | `audio/` | PCM, fades, RMS/peak, WAVE container, device capture behind the `mic` extra |
 | Recognition | `stt/adapters/` | faster-whisper / CTranslate2 adapters, self-test echo engine, provenance gate at load |
-| Synthesis | `tts/adapters/` | sherpa-onnx Kokoro adapter, scripted/plumbing engines, refusal-only reference adapter |
+| Synthesis | `tts/adapters/` | sherpa-onnx Kokoro adapter with a hard front-end language gate, scripted/plumbing engines |
 | Voice identities | `voices/` | installable versioned identities, consent and redistribution fields, per-host registry |
 | Models and roots | `models/`, `config/` | default-deny asset gate, isolated measurement root, data-root confinement |
 | Hardware | `hardware/` | profiles and per-engine accelerator facts, with `measured` flags |
@@ -160,16 +160,16 @@ tree — a caller that names an explicit destination (settings save, evidence ex
 This section describes where the platform is heading, and each row carries the tier it deserves. Code cited
 inside a row describes what exists today, not the finished component the row names. `PARTLY BUILT` means
 code and tests exist in this tree.
-`CANDIDATE` means the project surveyed the approach and recorded why it is not usable here yet. `PROPOSED`
-means the row's component is not available as a feature anywhere in this build; a proposal may still be
-discussed in `docs/`. Where a `PROPOSED` row cites code, that code is adjacent machinery, not the component.
+`CANDIDATE` means a surveyed approach not usable here yet. No row carries it: the two that did are now
+`PROPOSED — chosen design, nothing built`, the owner having ruled which architecture to build. A
+`PROPOSED` component exists nowhere in this build, and any code it cites is adjacent machinery.
 
 | Component | Tier | What this repository actually contains |
 |---|---|---|
 | Provider-independent orchestration | `PARTLY BUILT` | engine registry and per-task orchestrators (`stt/orchestrator.py`, `session/orchestrator.py`); adapters lazy, behind optional extras; `dependencies = []` |
 | Direct speech-to-speech (STS) | `PROPOSED` | `hear()` and `speak()` sit on one object (`integration/adapter.py:84,104`); a turn loop exists and is tested on scripted engines (`:131-159`, `:161-186`; `tests/test_integration.py:93-103,159,175`), but every turn passes through text, so **direct** audio-to-audio STS does not exist |
-| Conformer-TDT-class recognition | `CANDIDATE` | no Conformer-class model is installed or wired here; the word occurs only on this line. Nearest survey: the sherpa-onnx TDT-class families recorded there, **ABSENT, not requested** (`docs/provenance.md:51`, `docs/research-report.md:39`) |
-| Flow-matching TTS | `CANDIDATE` | architecture read out of a third-party project and recorded with claim tiers (`docs/research-report.md:146-153`); no such model exists here |
+| Conformer-TDT-class recognition student | `PROPOSED` — chosen design, nothing built | this is the project's first model-development priority, with Whisper large-v3 as the planned teacher. No Conformer-class model is installed, wired or trained here; the nearest survey records the sherpa-onnx TDT-class families as **ABSENT, not requested** (`docs/provenance.md:51`, `docs/research-report.md:39`) |
+| Flow-matching TTS student | `PROPOSED` — chosen design, nothing built | the planned synthesis architecture, with Qwen3-TTS recorded as its intended teacher; neither the student nor a training path for it exists here. The published architecture reading behind the choice came from a third-party project and is recorded with claim tiers (`docs/research-report.md:146-153`). **EmbeddingGemma 2 (740M)** is recorded as the confirmed training-side encoder for this work; no computation-graph connection to it has been designed or implemented, and nothing of it is installed |
 | Safeguarded voice cloning | `PROPOSED`, rights-gated | consent and refusal machinery is built (`voices/identity.py:64-85`, `profiles/conditioning.py:55-68`, `tts/adapters/sherpa_kokoro.py:343-344`); no approved asset exists |
 | Hosted API, tenancy, quotas, metering | `PROPOSED` | nothing — no server, client library, account model or usage counter anywhere in `src/` |
 | This project's own trained weights | `PROPOSED` | **NONE EXIST YET** (`docs/provenance.md:56`); "there is not a single approved speech weight in this project" (`:58`) |
@@ -216,10 +216,10 @@ feature, and no interface described here should be treated as available.
 
 1. **Recognition quality from real speech.** The evaluation protocol exists (`docs/real-speech-protocol.md`);
    human-quality claims do not, because synthetic fixtures are refused in a quality path by design.
-2. **Adapting a compact recognition model against a teacher**, on data that clears the boundary register.
-   Blocked on an approved training corpus, on a training stack this project has not declared yet (`torch` is
-   in no dependency list and no trainer module exists in this tree), and on a GPU validation run that has been
-   proposed but not executed.
+2. **Train the native recognition model**: a Conformer-TDT-class student against a Whisper large-v3 teacher, on
+   data that clears the boundary register. Blocked on an approved training corpus, on a training stack this
+   project has not declared yet (`torch` is in no dependency list and no trainer module exists in this tree),
+   and on a GPU validation run that has been proposed but not executed.
 3. **Indic synthesis.** Hindi and Bengali need a front-end the approved asset does not have: new assets and a
    rights decision before code.
 4. **Closing the open licence and provenance findings** listed in `docs/audit-register.md`, which gate
@@ -231,8 +231,8 @@ feature, and no interface described here should be treated as available.
    this engine.
 6. **Usage-based pricing, accounts, keys and metering.** Nothing of it is implemented.
 7. **Deployment options** — hosted, private and on-premises — beyond running the engine where it is installed.
-8. **Independently trained models** so that the platform's core capability is its own rather than adapted from
-   third-party weights.
+8. **Independently trained synthesis** — the §5 flow-matching student, its intended Qwen3-TTS teacher and the
+   recorded EmbeddingGemma 2 training-side encoder are decisions on paper: no weight, trainer or checkpoint.
 9. **Language expansion** — moving registered languages out of `NO_MODEL` by earning `MEASURED` status, one
    measured evaluation at a time.
 10. **A separate public Client SDK.** Not started and not part of this repository; shipping any derived asset
@@ -242,7 +242,7 @@ feature, and no interface described here should be treated as available.
 
 The repository's default position is that a number either comes from measurement or says it does not.
 
-**What is in the tree (static counts, `tests/`):** 43 test files, 1,004 `def test_` functions. Pytest declares
+**What is in the tree (static counts, `tests/`):** 43 test files, 996 `def test_` functions. Pytest declares
 four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
 
 **Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
@@ -259,8 +259,8 @@ python -m pytest -q \
 ```
 
 Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
-release snapshot staged; reconciled in `docs/audit-register.md`). That is a recorded figure against a named
-commit, **not** a claim that it was re-run for this README.
+release snapshot staged; reconciled in `docs/audit-register.md`). That figure is a record against one commit,
+not a live claim; this tree returns **1,063 passed, 7 skipped, 1 deselected, 86 excluded** on that command.
 
 **Asset-gated tests** are skipped unless a named human has approved the asset *and*
 `--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven
@@ -348,9 +348,9 @@ paths load — only through the default-deny asset gate, and only where an appro
 the Kokoro package behind `tts/adapters/sherpa_kokoro.py`, including the espeak-ng data files bundled
 inside it, which is why §8's GPL-3.0 item is a live blocker rather than a hypothetical, and the
 faster-whisper checkpoints behind `stt/adapters/faster_whisper.py`. Everything else §8 names is **examined
-but not adopted**: Kyutai Pocket TTS, HiFiTTS-2, Silero and pyannote. The warnings §8 records about them
-are licence findings, not dependencies — what this tree holds of Pocket TTS is a reference adapter that
-documents the target architecture, declares no usable capability and synthesises nothing.
+but not adopted**: Kyutai Pocket TTS, HiFiTTS-2, Silero and pyannote, and the warnings §8 records about them
+are licence findings, not dependencies. This tree holds no Pocket TTS code: the reference adapter that
+documented its architecture is retired, and the reading survives in `docs/research-report.md`.
 
 **Nothing here grants a licence, transfers any third-party material to Actizant, or states that commercial
 redistribution has been cleared.**

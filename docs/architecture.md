@@ -185,3 +185,31 @@ Layered, and mapped to §14 rather than invented:
 - **benchmark suite** with warmup/repeats/p95 and a `no_baseline` first-run outcome, never a fake regression;
 - **real speech quality** gated on approved assets and a licence-usable corpus, with synthetic fixtures
   refused by name in any quality path.
+
+## 7. Planned model stack, and what is absent from this document
+
+Everything above describes machinery that exists in this tree. This section records the model stack the
+owner has chosen, and none of it exists here yet — no weights, no trainer, no dataloader, no feature
+extraction, no tokenizer, no checkpoint, and `torch` appears in no dependency list. Nothing in §1 to §6
+should be read as a component of it.
+
+- **Recognition** is the first development priority: a Conformer-TDT-class student distilled against a
+  Whisper large-v3 teacher. `stt/adapters/faster_whisper.py` is the inference path that can load a cached CT2
+  large-v3 directory today; it is not a training path and its weights are third-party and unapproved.
+- **Synthesis** is planned as a flow-matching student with Qwen3-TTS as its intended teacher. The published
+  reading of that architecture — read out of a third-party project, with its claim tiers — is
+  `docs/research-report.md`; this document does not restate it, and no flow-matching model exists here.
+- **EmbeddingGemma 2 (740M)** is recorded as the confirmed training-side encoder for that work. That is the
+  whole of the decision as it stands: no computation graph connects it to either student, no adapter imports
+  it, and no asset manifest, provenance record or approval entry for it exists in this repository.
+
+A reference adapter that documented a third-party flow-matching architecture for its own sake — the one held
+against Kyutai Pocket TTS — has been retired from `tts/adapters/`, together with its package exports and its
+tests. It had no runtime consumer and was never routable, and the architecture reading it carried lives in
+`docs/research-report.md` instead. The `pocket` entry in `tools/audit.py`'s host-independence deny-list stays,
+precisely because it now guards a removal rather than documenting a component.
+
+Rights and compute constraints on this stack are unchanged: `docs/provenance.md` still records the third-party
+assets as absent or prohibited, `docs/audit-register.md` still records the open licence findings, and any move
+to a larger or GPU-bound architecture has to be cleared by measurement on the target hardware — the rule
+`CapabilityStatus` already enforces for languages.

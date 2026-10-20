@@ -63,10 +63,12 @@ points at a per-call ONNX cost rather than a scheduling problem.
 - **First audio is still ~2 s**, so press-to-hear remains the honest description of the experience even
   with a faster model. Real-time *generation* is not the same as conversational responsiveness.
 
-**Recommendation, pending his approval:** adopt Kitten nano as an *additional selectable voice*, not as a
-replacement — eight named voices with evidence, English, real-time generation, lighter on RAM and load —
-while Kokoro remains the default and the only Chinese path. Promotion would need its own reviewed adapter,
-identity packages per named voice, and its own tests, none of which exists yet.
+**Recommendation as recorded at the time — now superseded, do not act on it:** adopt Kitten nano as an
+*additional selectable voice*, not as a replacement — eight named voices with evidence, English, real-time
+generation, lighter on RAM and load — while Kokoro remains the default and the only Chinese path. Promotion
+would need its own reviewed adapter, identity packages per named voice, and its own tests, none of which
+exists yet. Synthesis is now headed for this project's own flow-matching student (`docs/architecture.md` §7),
+so this trial stands as a measured comparison and a licence observation, not as a route to a new dependency.
 
 ## Reproduce
 

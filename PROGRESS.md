@@ -1465,3 +1465,31 @@ attestation. No trainer consults the gate, so P1–P4 bind a build and a test, n
 shape only — P5 declined. `main()` still returns 0 when every asset is refused. The corpus audio remains absent,
 so `digests_verified` stays false and unverifiable by construction. And A54 remains **proposed S2**, with A50,
 A52 and A53 untouched.
+
+## Architecture-first cleanup — the Pocket reference adapter retired, direction recorded (2026-10-20)
+
+The owner ruled the model direction: a Conformer-TDT-class recognition student against a Whisper large-v3
+teacher as the first priority, then a flow-matching synthesis student with Qwen3-TTS as its intended teacher,
+and EmbeddingGemma 2 (740M) recorded as the training-side encoder. `pocket_reference.py` was traced first and
+removed second: a whole-tree scan for its six public symbols found only its own package `__init__`, its test
+file, this register and two untracked caches, so it had no runtime consumer and — with every capability
+`NO_MODEL` — no route could select it. Its exports and the 11 adapter-specific tests went with it; the
+`sys.modules` guard it also carried was rewritten forward rather than dropped, and the `pocket` term in
+`tools/audit.py:142`'s deny-list stays to guard the removal. Shared machinery — phonemiser, normalisation,
+chunking, voice identity and consent, approval, integrity, evaluation, orchestration — is untouched.
+
+**Verification.** `def test_` 1,004 → 996 over 43 unchanged files. The command `README.md:253-259` documents
+returns **1,063 passed, 7 skipped, 1 deselected, 86 excluded**; the whole suite returns **1,150 passed,
+7 skipped**. Both protected artefacts read `d7d97731…` and `f8ae6c9e…` before the first edit, after every run
+and after the last, and neither was regenerated, staged or committed. Every README edit is line-count neutral
+above `:358`, so the register's README locators still resolve; `docs/architecture.md` gained §7.
+
+**One blocker, reported rather than bypassed.** `tools/audit.py` hard-codes its write to
+`artifacts/audit/mechanical-findings.json` and has no `--out`, so re-running it after a source deletion must
+modify a protected artefact. The 12 checks ran in-process with the writer not called: 11 PASS, 1 FAIL, and the
+FAIL is `error taxonomy` on `evidence_paths.py:58` — introduced at `b2df403`, unrelated to this pass. The
+artefact still records 11 findings and `0 raise site(s)`, which is why it reads as stale rather than as
+contradicted. Fixing that is a separate authorised decision. **Nothing in the recorded direction is built**:
+no trainer, no dataloader, no tokenizer, no checkpoint, `torch` in no dependency list, and Qwen3-TTS and
+EmbeddingGemma 2 have no manifest, provenance row or approval entry — they are now named in tracked files for
+the first time, and named as decisions only.

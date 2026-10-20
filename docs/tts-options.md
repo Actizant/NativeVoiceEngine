@@ -1,7 +1,7 @@
 # TTS performance — measured baseline, execution headroom, and asset candidates
 
-**Proposal only. Nothing here has been downloaded, installed or measured on a candidate.** The current
-asset stays in place until he approves a specific change.
+**Proposal only, and superseded as a plan.** Nothing here was downloaded, installed or measured; §1 and §2
+stay as evidence, §3 and §4 as history — synthesis now heads for our own flow-matching student (`architecture.md` §7).
 
 ## 1. Measured baseline: Kokoro-82M int8 multi-language v1.1
 
@@ -43,7 +43,7 @@ is measured on this machine.** That distinction is the whole point of the table.
 
 | Candidate | Identity | Terms | Runs on installed runtime? | Expected vs baseline | Language coverage | Quality evidence | Verdict |
 |---|---|---|---|---|---|---|---|
-| **KittenTTS nano 0.8 int8** | `KittenML/kitten-tts-nano-0.8-int8`; sherpa package `kitten-nano-en-v0_8-fp32` 60.9 MB / nano v0_1 fp16 25.6 MB | **Apache-2.0** (HF tag, verified) | **yes** — `OfflineTtsModelConfig.kitten` exists in sherpa-onnx 1.13.8 | much smaller model ⇒ expect a large RTF and first-audio gain; magnitude unknown | English only | none here; upstream claims only | **recommended first trial** |
+| **KittenTTS nano 0.8 int8** | `KittenML/kitten-tts-nano-0.8-int8`; sherpa package `kitten-nano-en-v0_8-fp32` 60.9 MB / nano v0_1 fp16 25.6 MB | **Apache-2.0** (HF tag, verified) | **yes** — `OfflineTtsModelConfig.kitten` exists in sherpa-onnx 1.13.8 | much smaller model ⇒ expect a large RTF and first-audio gain; magnitude unknown | English only | none here; upstream claims only | **was the recommended first trial; superseded by `docs/architecture.md` §7** |
 | Kokoro int8 multi-lang **v1.0** | `kokoro-int8-multi-lang-v1_0.tar.bz2`, 126.2 MB | Apache-2.0 (same family) | yes | marginal (same architecture, older weights) | en, zh | current asset is v1.1 | no |
 | Kokoro **fp16 / q4** ONNX | `onnx-community/Kokoro-82M-v1.0-ONNX` variants (`model_fp16.onnx`, `model_q4.onnx`) | Apache-2.0 | partially — needs a new packaging path | fp16 on CPU ONNX is usually **slower**, not faster; q4 cuts memory, accuracy unknown | en, zh | none here | not recommended |
 | **Supertonic 3** | `Supertone/supertonic-3`; sherpa int8 package 122.8 MB | **OpenRail** — not an OSI-approved licence; terms must be read before any use | yes (`supertonic` config) | vendor positions it as a small, fast, on-device model | multilingual claims, unverified | none here | **blocked pending his approval on terms** |
@@ -59,13 +59,14 @@ Apache-2.0; `DeepDiveDev/Bengali_finetuned_speecht5_tts`, MIT) need a Python mod
 installed, and their quality is unverified by anyone on this machine. Multilingual coverage is therefore a
 separate decision from latency, and should be sequenced after it.
 
-## 4. What I would do, in order, on approval
+## 4. What was proposed at the time, in order — now superseded by `docs/architecture.md` §7
 
 1. Implement the two no-asset changes (per-chunk callback playback; per-language engine cache) and re-run
-   the latency lab. Free, reversible, and it makes the remaining gap honest rather than padded.
+   the latency lab. Free, reversible, and it makes the remaining gap honest rather than padded. These two
+   remain open against the **current** asset, whichever synthesis model eventually answers for it.
 2. Approve **KittenTTS nano int8** only (25.6–61 MB, Apache-2.0, zero new packages). Then: provision it with
    a manifest and digests, run the same round-trip evaluation, and publish its measured RTF, first audio,
-   peak RAM and English WER **next to** the Kokoro numbers rather than replacing them.
+   peak RAM and English WER **next to** the Kokoro numbers rather than replacing them. **Not the route now.**
 3. Keep both engines selectable per voice identity. Providers stay interchangeable behind
    `SpeechSynthesizer`, so a faster English voice and a future Indic voice coexist without an architecture
    change, and a candidate that measures badly simply never gets an identity that routes to it.
@@ -74,6 +75,8 @@ separate decision from latency, and should be sequenced after it.
 
 ## 5. Explicitly not claimed
 
+The approved Kokoro asset stays in place until the owner approves a specific change; nothing in §3 or §4 is a
+decision, and no candidate here has been adopted.
 No candidate has a measured number in this document. Supertonic's OpenRail terms and the untagged
 matcha/piper repositories are **not** cleared for distribution. The espeak-ng GPL-3.0 obligation applies to
 every option that uses its data — which is all of them — and remains the blocking item for shipping a
