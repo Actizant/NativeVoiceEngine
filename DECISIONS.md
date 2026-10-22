@@ -22,8 +22,8 @@ Say the word and I move it and re-verify every digest; nothing else in the code 
 dating, not a measurement: the commit that wrote it is 4 deep in that chain. Both of those facts changed later.
 
 **Resolved 2026-10-20.** The `Co-Authored-By:` trailer naming an AI model is removed from the initial commit
-of the locally rewritten chain, by a message-only rewrite of all 34 historical commits. The remote still
-serves the original chain, so nothing on the hosting service has changed; the owner rules on a push separately.
+of the locally rewritten chain, by a message-only rewrite of all 34 historical commits. That chain was pushed
+on 2026-10-22, so the branch history is corrected; some rendered attribution surfaces did not change with it.
 Each commit was re-created with its own tree, its own parents, and its original author and committer names,
 timestamps and offsets; the only bytes that changed are the one trailer line and the parent pointers it forced.
 Trees, blobs, file contents, identities and timestamps are unchanged; the old→new map is in Addendum 28.

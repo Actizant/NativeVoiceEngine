@@ -1494,7 +1494,7 @@ no trainer, no dataloader, no tokenizer, no checkpoint, `torch` in no dependency
 EmbeddingGemma 2 have no manifest, provenance row or approval entry — they are now named in tracked files for
 the first time, and named as decisions only.
 
-# Progress ledger — entry 20 (2026-10-20, the unsupported AI co-author trailer is removed locally; remote unchanged)
+# Progress ledger — entry 20 (2026-10-20, the unsupported AI co-author trailer is removed; chain published 2026-10-22)
 
 **What this entry reverses, and what it does not.** Entry 17 recorded that history was preserved as it stands and
 listed the AI co-author trailer on the initial commit among the facts that stayed. That part has now been ruled on
@@ -1522,10 +1522,10 @@ the map and proved it stable across the tip amendments that followed it.
 **The audit step that had to be re-anchored.** `docs/audit-register.md` documents a personal-path check whose
 procedure pins the pre-cleanup revision by SHA inside a fenced constant. The local rewrite moved that
 revision's name off this chain, so the constant now carries its rewritten form,
-`d9270c052cdf0df819507edb4781281ee5836f95`, which resolves only in this clone until and unless a push is
-approved. The old name still resolves while the original chain is kept: at `refs/heads/pre-rewrite-main`
-here, and on the remote, which no part of this change touches. The historical prose in this file at
-`:1225-1227` is left exactly as it was written, because it records a measurement taken against the object
+`d9270c052cdf0df819507edb4781281ee5836f95`, which since the push authorized on 2026-10-22 resolves on the
+remote branch history as well as here. The pre-rewrite name is kept at `refs/heads/pre-rewrite-main`; no
+remote ref names that chain now, though its commits are still served at their direct URLs. The historical
+prose at `:1225-1227` is left exactly as it was written, because it records a measurement taken against the object
 that existed at the time. The map in Addendum 28 is the bridge between the two names.
 
 **Not recorded here on purpose:** the SHA of the commit this entry becomes part of. A commit cannot cite itself, so
