@@ -1,0 +1,27 @@
+=== E-1  remote ref advertisement (anonymous: credential.helper disabled)
+8ba505b6c22e83e473187bb4c63b4ab71c8e3c49	refs/heads/main
+    stderr:   rc=0
+    refs seen: ['refs/heads/main']
+    E-1a only main is advertised: ['refs/heads/main']
+    E-1b main == 8ba505b6c22e : True
+    E-1c no advertised object is the pre-rewrite tip 6ab1e58: True
+
+=== E-2  trailer census, both chains (local objects, no network)
+    published branch: 35 commits, 0 carry the target trailer
+    pre-rewrite chain (positive control): 34 commits, 1 carry it
+    published messages/identities containing 'claude': 0 (control: pre-rewrite 1)
+    new root 25661e2af9b0 trailer-free: True ; original root 3c2857597f32 still has it: True
+
+=== E-3  direct HTML page for every commit orphaned by the push
+    34/34 pages returned HTTP 200
+    pages whose body mentions claude: 1 of 34 -> ['3c285759']
+    (expected exactly one: the original root, the only commit that ever carried the trailer)
+    any non-200: []
+    3c285759: status 200, request-id 2B08:DDE3:196D229:227FBC8:6ADA43F3, rendered pair line 'not in the fetched HTML'
+       trailer text present in the page bytes: True
+    6ab1e586: status 200, request-id 5BF4:1B5454:1963696:2279D08:6ADA43F4, rendered pair line 'not in the fetched HTML'
+       trailer text present in the page bytes: False
+
+=== E-4  API sample for an orphaned commit (repo-level surfaces measured in part 3)
+    API commit for orphaned root: status 200 request-id 0CF9:1F0D5F:2093395:2EA8D4D:6ADA43F5
+       keys: ['author', 'comments_url', 'commit', 'committer', 'files', 'html_url'] ; trailer in served commit message: True

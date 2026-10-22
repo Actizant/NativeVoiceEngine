@@ -1,0 +1,14 @@
+=== PRE-PUSH local refs (verify main-2 == e60538a) ===
+refs/heads/main e60538a2e29a995f1a5ea37a847b5aff690a2790
+refs/heads/main-2 e60538a2e29a995f1a5ea37a847b5aff690a2790
+refs/heads/pre-rewrite-main 6ab1e58631f584df4b06d8046a0738a3655bb52d
+refs/remotes/origin/HEAD 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+refs/remotes/origin/main 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+
+=== PRE-PUSH anonymous ls-remote ===
+8ba505b6c22e83e473187bb4c63b4ab71c8e3c49	HEAD
+8ba505b6c22e83e473187bb4c63b4ab71c8e3c49	refs/heads/main
+
+=== local time ===
+2026-10-22 23:39:01 +0530
+2026-10-22 18:09:01 UTC

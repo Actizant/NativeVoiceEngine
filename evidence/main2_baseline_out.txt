@@ -1,0 +1,31 @@
+=== B-1  branch surface that exists today ===
+B-1a repo meta                     HTTP 200  body-shape=dict       req-id=1596:3A07D3:216319C:2FE57C0:6ADA4C9F  bytes=6345 content-type=application/json; charset=utf-8
+      default_branch='main' pushed_at=2026-10-22T16:07:49Z updated_at=2026-10-22T16:07:57Z size=882 fork=False
+B-1b branch list                   HTTP 200  body-shape=list       req-id=3BA5:CD62C:217FBB1:300150E:6ADA4C9F  bytes=208 content-type=application/json; charset=utf-8
+      branches -> ['main']   main-2 present: False
+B-1c git refs                      HTTP 200  body-shape=list       req-id=4045:33A6C7:21776C3:2FF7DE9:6ADA4C9F  bytes=352 content-type=application/json; charset=utf-8
+      refs/heads/main = 8ba505b6c22e
+
+=== B-2  commit surface keyed on the branch that exists ===
+B-2a main commit list              HTTP 200  body-shape=list       req-id=5B2D:3BFF41:2157407:2FD252A:6ADA4C9F  bytes=151912 content-type=application/json; charset=utf-8
+      count=35  'claude' occurrences=0  'co-authored-by'=1
+      author logins on main: ['ShreshthaDas-1999', 'swarnajitdas108']
+      tip = 8ba505b6c22e 'Correct the record about the unsupported AI co-author traile'
+B-2b main-2 commit list (must 404 now) HTTP 404  body-shape=ERROR-BODY req-id=6FB7:132B8E:2151166:2FCEDA0:6ADA4C9F  bytes=118 content-type=application/json; charset=utf-8  message='Not Found'
+B-2c new doc commit by SHA         HTTP 422  body-shape=ERROR-BODY req-id=4DF7:261ED8:214F604:2FC9EB0:6ADA4CA0  bytes=174 content-type=application/json; charset=utf-8  message='No commit found for SHA: e60538a2e29a995f1a5ea37a847b5aff690a2790'
+
+=== B-3  contributor surfaces (the two that disagree today) ===
+B-3a REST /contributors            HTTP 200  body-shape=list       req-id=796D:CD62C:217FD69:30017AF:6ADA4CA0  bytes=2092 content-type=application/json; charset=utf-8
+      logins: ['ShreshthaDas-1999', 'swarnajitdas108']
+B-3b graphs/contributors-data      HTTP 404  body-shape=ERROR-BODY req-id=6B92:24E418:213E563:2FBBB6C:6ADA4CA0  bytes=106 content-type=application/json; charset=utf-8  message='Not Found'
+
+=== B-4  the orphaned original root, by direct object route ===
+B-4a orphan root /git/commits      HTTP 200  body-shape=dict       req-id=24E8:336B6C:2169813:2FE7411:6ADA4CA0  bytes=2477 content-type=application/json; charset=utf-8
+      FETCHABLE by anonymous object route: sha=3c2857597f32 parents=[]
+      message tail=' host application module.\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>'
+      author={'name': 'Shreshtha', 'email': '[AUTHOR-EMAIL-REDACTED]', 'date': '2026-10-12T18:39:38Z'}
+      'claude' occurrences in this object: 1
+B-4b positive control: a SHA that cannot exist HTTP 404  body-shape=ERROR-BODY req-id=2682:3569E7:215C190:2FD696C:6ADA4CA1  bytes=121 content-type=application/json; charset=utf-8  message='Not Found'
+B-4c new doc commit /git/commits (must be absent) HTTP 404  body-shape=ERROR-BODY req-id=6A20:788E5:219B6EC:301A00A:6ADA4CA1  bytes=121 content-type=application/json; charset=utf-8  message='Not Found'
+
+restored -> main2_baseline_rest.txt

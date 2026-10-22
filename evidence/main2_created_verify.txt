@@ -1,0 +1,45 @@
+=== V-1  main-2 points to the accepted documentation commit ===
+PASS  V-1a refs/heads/main-2 == e60538a  | e60538a2e29a995f1a5ea37a847b5aff690a2790
+PASS  V-1b main-2 resolves to the same commit object as e60538a
+PASS  V-1c main-2 is not a tag or a peeled ref
+
+=== V-2  parentage unchanged ===
+PASS  V-2a main-2's parent is the published tip 8ba505b  | 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+PASS  V-2b single parent (no merge introduced)
+PASS  V-2c main-2 history = 36 commits, i.e. published 35 + the doc commit  | 35 -> 36
+PASS  V-2d same root as the published branch (corrected root, no ancestor rewrite)  | 25661e2af9b0
+PASS  V-2e no ref anywhere names the pre-rewrite chain  | only refs/heads/pre-rewrite-main carries it, local-only as before
+
+=== V-3  the commit content main-2 names is the reviewed content ===
+PASS  V-3a main-2's tree is the accepted tree 976d56384c1e
+PASS  V-3b the three authorized blobs are the reviewed ones
+PASS  V-3c 207 tracked paths, none added or deleted  | 207
+PASS  V-3d message unchanged and claude-free
+
+=== V-4  local main left exactly where it was ===
+PASS  V-4a refs/heads/main still == e60538a (not rewound, per instruction)  | e60538a2e29a995f1a5ea37a847b5aff690a2790
+PASS  V-4b HEAD still attached to refs/heads/main (no checkout happened)  | refs/heads/main
+PASS  V-4c main and main-2 now name the same commit
+
+=== V-5  working tree clean, and no new objects were created ===
+PASS  V-5a status --porcelain --untracked-files=all is empty  | ''
+PASS  V-5b every worktree file still hashes to main-2's blob (207 paths)
+      count-objects -v: count: 74 size: 882 in-pack: 621 packs: 1 size-pack: 901 prune-packable: 0 garbage: 0 size-garbage: 0
+PASS  V-5c naming an existing commit added no objects: e60538a already existed before this step
+
+=== V-6  remote refs unchanged (read anonymously) ===
+      HEAD = 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+      refs/heads/main = 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+PASS  V-6a remote still has exactly HEAD + refs/heads/main  | ['HEAD', 'refs/heads/main']
+PASS  V-6b remote main still 8ba505b
+PASS  V-6c NO main-2 on the remote (nothing was pushed)
+PASS  V-6d local remote-tracking refs untouched
+
+=== V-7  other stores untouched ===
+PASS  V-7a pre-rewrite bundle unchanged (905,415 B, sha256 0212a8dd…)  | 905415 B
+PASS  V-7b git bundle verify still reports complete history tipped at 6ab1e58 (not at 8ba505b)  | The bundle uses this hash algorithm: sha1 | [USER_HOME]/Documents/Qoder/2026-10-14/e14afe8e/scratch/attrib/pre-rewrite-main.bundle is okay
+PASS  V-7c permanent copy refs unchanged  | {'refs/heads/master': '6ab1e58631f584df4b06d8046a0738a3655bb52d', 'refs/remotes/origin/HEAD': '24ec1d3ea419db91514132c43212748442f670af', 'refs/remotes/origin/master': '24ec1d3ea419db91514132c43212748442f670af'}
+PASS  V-7d permanent copy still its own 2 dirty protected files, nothing more  | [' M artifacts/audit/mechanical-findings.json', ' M artifacts/audit/offline-proof.json']
+PASS  V-7e all 38 artifacts/ paths in main-2 identical to the published tip's
+
+ALL POST-CREATION CHECKS PASSED

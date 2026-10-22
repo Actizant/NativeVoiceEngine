@@ -1,0 +1,57 @@
+=== A-1  ref reachability (ls-remote is the authority) ===
+      HEAD = 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+      refs/heads/main = 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+
+=== A-2  branch and repo meta ===
+A-2a branch list                 HTTP 200  req-id=4A78:CD62C:2195D1C:3021E13:6ADA4D96  bytes=208
+      branches -> ['main']
+A-2b repo meta                   HTTP 200  req-id=3315:3569E7:2173A87:2FF8A3B:6ADA4D97  bytes=6345
+      default_branch='main' pushed_at=2026-10-22T16:07:49Z
+
+=== A-3  branch-derived commit surface ===
+A-3a main commit list            HTTP 200  req-id=74B7:264BC1:2182A0E:3008597:6ADA4D97  bytes=151912
+      count=35 tip=8ba505b6c22e 'claude'=0 'co-authored-by'=1 authors=['ShreshthaDas-1999', 'swarnajitdas108']
+A-3b main-2 commit list          HTTP 404  req-id=73B4:34DE3:2192AB8:301A75F:6ADA4D98  bytes=118  message='Not Found'
+
+=== A-4  the doc commit is now served (was 404/422 at baseline) ===
+A-4a /git/commits/e60538a        HTTP 404  req-id=6F49:71F5E:21857D7:300D64D:6ADA4D98  bytes=121  message='Not Found'
+
+=== A-5  contributor surfaces vs the 17:47Z baseline ===
+A-5a REST /contributors          HTTP 200  req-id=2FC4:DBA6:216A2D0:2FF16CF:6ADA4D99  bytes=2092
+      logins -> ['ShreshthaDas-1999', 'swarnajitdas108']   'claude' in payload=0
+      baseline was ['ShreshthaDas-1999','swarnajitdas108']
+A-5b graphs/contributors-data    HTTP 404  req-id=3C6F:15C7A2:2178AC0:2FFEAA1:6ADA4D99  bytes=106  message='Not Found'
+      NOTE: unstable surface (200 earlier today, 404 at baseline) - recorded, not used as evidence
+A-5c stats/contributors          HTTP 200  req-id=630B:147338:216C7FD:2FF3458:6ADA4D9A  bytes=2274
+      2 entries: [('swarnajitdas108', 5), ('ShreshthaDas-1999', 30)]
+
+=== A-6  the orphaned objects: still served, still unreferenced ===
+A-6a orphan root by URL          HTTP 200  req-id=63D1:18CB82:21AAE02:303135E:6ADA4D9A  bytes=2477
+      STILL FETCHABLE: parents=0 trailer present=True
+A-6b corrected root              HTTP 200  req-id=1071:15C7A2:2178CF2:2FFEDFC:6ADA4D9B  bytes=1025889
+      clean control: message 'claude'=0
+A-6c control SHA that cannot exist HTTP 404  req-id=1EEF:1922A7:21ADE97:3032D32:6ADA4D9C  bytes=121  message='Not Found'
+
+=== A-7  local store untouched by the read ===
+      refs/heads/main e60538a2e29a995f1a5ea37a847b5aff690a2790
+      refs/heads/pre-rewrite-main 6ab1e58631f584df4b06d8046a0738a3655bb52d
+      refs/remotes/origin/HEAD 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+      refs/remotes/origin/main 8ba505b6c22e83e473187bb4c63b4ab71c8e3c49
+
+      origin/* must still be 8ba505b until an explicit fetch is authorised
+
+------------------------------------------------------------
+PASS  A-1a main still exactly the published tip
+FAIL  A-1b main-2 now names the doc commit
+FAIL  A-1c exactly HEAD + 2 branches, nothing else
+PASS  A-1d no ref names the pre-rewrite tip 6ab1e58
+PASS  A-1e no new tag appeared
+FAIL  A-2a branches are exactly main + main-2
+PASS  A-2b default branch is STILL main (not switched)
+PASS  A-3a main: 35 == expected 35
+PASS  A-3a main: zero 'claude' in branch history
+PASS  A-3a main: no trailer introduced
+PASS  A-6c control still 404 (the probe discriminates)
+PASS  A-6d the main branch surface is unchanged vs baseline
+
+FAILURES: ['A-1b main-2 now names the doc commit', 'A-1c exactly HEAD + 2 branches, nothing else', 'A-2a branches are exactly main + main-2']

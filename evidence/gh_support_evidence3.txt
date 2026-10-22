@@ -1,0 +1,15 @@
+=== published branch history through the REST list endpoint
+    GET /commits?sha=main  status=200 request-id=7ADB:CD52C:206F11D:2E7CCE1:6ADA4325
+    commits returned: 35   first sha: 8ba505b6c22e   tip matches git: True
+    distinct GitHub-attached authors: ['ShreshthaDas-1999', 'swarnajitdas108']
+    distinct committers: ['ShreshthaDas-1999', 'swarnajitdas108']
+    messages carrying 'Co-Authored-By: Claude': 0
+    messages or identities carrying 'claude' anywhere: 0
+
+=== Insights ▸ Contributors graph payload
+    status=400 request-id=76DB:10ABD8:195357A:2258074:6ADA4326
+    payload: None
+
+=== the tip commit's own message, as the API serves it
+    status=200  0 bytes of message
+    asserts 'no remote reference moved': False
