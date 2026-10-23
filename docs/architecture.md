@@ -189,9 +189,11 @@ Layered, and mapped to §14 rather than invented:
 ## 7. Planned model stack, and what is absent from this document
 
 Everything above describes machinery that exists in this tree. This section records the model stack the
-owner has chosen, and none of it exists here yet — no weights, no trainer, no dataloader, no feature
-extraction, no tokenizer, no checkpoint, and `torch` appears in no dependency list. Nothing in §1 to §6
-should be read as a component of it.
+owner has chosen. One piece of it now exists: **feature extraction** — `audio/features.py` is a
+stdlib-only log-mel frontend with a named teacher-parity configuration (`docs/asr-architecture.md` §3.3).
+The rest does not: no weights, no trainer, no dataloader, no tokenizer, no checkpoint, and `torch`
+appears in no dependency list. A frontend producing numbers is not a model, and nothing in §1 to §6 or in
+that new module should be read as recognition capability.
 
 - **Recognition** is the first development priority: a Conformer-TDT-class student distilled against a
   Whisper large-v3 teacher. `stt/adapters/faster_whisper.py` is the inference path that can load a cached CT2

@@ -3,8 +3,15 @@
 Canonical in-memory representation is interleaved PCM16 little-endian. int16 was
 chosen over float32 because capture, resampling and playback on the control path
 all stay exact and dependency-free, and every engine family studied in the
-reference projects ultimately consumes 16-bit PCM anyway. Float is available at
-the boundary (`to_float32`) for engines and metric maths that need it.
+reference projects ultimately consumes 16-bit PCM anyway.
+
+Float lives at the boundary, not in this class: `AudioBuffer` deliberately exposes
+no float method. Conversion is `nativevoice.audio.pcm.to_float_samples` (an
+`array('d')` divided by 32768.0) for anything in the control path, and an engine
+that needs a tensor converts inside its own adapter —
+`stt/adapters/faster_whisper_engine.py` turns a buffer into float32 numpy, and
+`audio/features.py` builds its log-mel grid in float64. Naming the helper here
+rather than inventing a method keeps one rounding convention, not two.
 
 `array` is used rather than `bytes` so that per-frame arithmetic never pays for a
 decode/re-encode pair.

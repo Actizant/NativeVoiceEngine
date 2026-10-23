@@ -1542,3 +1542,57 @@ and entirely pending remotely.
 **Not done in this entry, and not implied by it:** nothing has been pushed. The rewrite is local, the old chain is
 kept as a reference and a verified bundle, and the push is a separate decision with the old and new HEADs presented
 for approval first.
+
+
+## ASR Phase 1 and 1B — log-mel frontend, adversarial review, teacher frontend parity (2026-10-23)
+
+**Scope.** A read-only audit of the existing ASR path was followed by two implementation phases, both left
+**uncommitted** for owner review: a stdlib-only log-mel frontend (Phase 1) and numerical parity with the installed
+Whisper feature extractor (Phase 1B). No model, trainer, dataloader, tokenizer, adapter, checkpoint or dependency
+was added. `pyproject.toml` is untouched; `evidence/`, `artifacts/`, `docs/audit-register.md` and this file's
+earlier entries are untouched.
+
+**Implemented and tested.** `src/nativevoice/audio/features.py`: `FBankConfig` (all geometry, mel, log and
+post-processing choices as fields), `mel_filters`, `power_spectrum`, `window_function`, `log_fbank`,
+`FeatureGrid`. `tests/test_audio_features.py` (98 tests) covers the student contract;
+`tests/test_audio_features_parity.py` (34 tests) covers the reference comparison. Exports added to
+`nativevoice.audio`; `models/`, `stt/`, `tools/` and every gate are unchanged.
+
+**Reference parity verified, within limits.** `FBankConfig.whisper_parity()` reproduces
+`faster_whisper==1.2.1` `FeatureExtractor(feature_size=80)` on identical input: worst absolute difference
+**1.0e-05** in the reference's own post-normalised units against an 8-unit usable span (about 1.3e-06 % of it),
+with frame counts and shapes matching on all 16 compared cases from one sample to one second of audio. The mel
+matrix agrees to 9.2e-10. The same reference algorithm restated in float64 agrees to 4.8e-09, which is what
+separates "different precision" from "different formula" — the residual is the reference's float32 arithmetic,
+not a divergent implementation. **No bitwise equivalence is claimed.** This is environment-dependent: with
+`faster_whisper` made unimportable the 21 reference tests report NOT RUN and 111 pass, and a module that exists
+but fails to import is reported as a failure rather than skipped. The reference is pinned in
+`docs/asr-architecture.md` §9 by version and file digest, and in no dependency list.
+
+**Measured divergence, kept on the record.** The project's own default geometry is **not** teacher-compatible:
+mapped into the reference's units it differs by mean 1.23–1.41 and max 1.67–2.59, i.e. 15–18 % of the reference's
+usable dynamic range, at 98 frames per second against the reference's 101. That number was written down before the
+parity config existed, and it is not hidden by the parity result.
+
+**Found and fixed during review.** A reversed right-hand reflect mirror (invisible in the padding itself, visible
+only as wrong late-frame spectra); a **fabricated** refusal of buffers shorter than the reflect pad, where numpy
+keeps bouncing at any pad length; two `dom_len`-style comparisons that were vacuous because a test generator had
+truncated every tone to zero samples; a silent short row from a malformed `FeatureGrid`; a `TypeError` where a
+`ConfigurationError` was intended; and two claims in `docs/` that a later phase made stale.
+
+**Verification.** `python -m pytest` → **1275 passed, 7 skipped** in 29.3 s, against 1150 passed / 7 skipped
+before this work: +132 tests, the same 7 pre-existing asset-gated skips, no regressions. Focused frontend and
+audio/STT runs, `tools/audit.py` and `tools/offline_proof.py` results are recorded in the checkpoint report.
+
+**Not claimed.** No recognition accuracy, no measured capability, no change to any `CapabilityStatus`, no
+competitive performance, and no training. `docs/capability-matrix.md` is unchanged; English remains the only
+`MEASURED` recognition language.
+
+**Awaiting the owner's approval, nothing assumed.** D1, which frontend a student trains on
+(`docs/asr-architecture.md` §7.1 carries a recommendation with its reasoning and did not apply it); whether
+`faster-whisper` should become an opt-in `parity` extra (§9) or stay an undeclared local convenience; and the
+pre-existing D2–D10 (licence semantics for a self-trained asset, checkpoint formats, teacher-target rights,
+corpus rights, the EmbeddingGemma 2 scope conflict, and the closed AI4Bharat question of zero occurrences).
+
+**Commit state.** Nothing has been committed or pushed by this work; `main` still resolves to the last published
+commit and the changes sit in the working tree for review.
