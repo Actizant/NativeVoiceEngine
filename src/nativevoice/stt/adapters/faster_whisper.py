@@ -5,9 +5,12 @@ imported lazily *inside* methods, and the adapter refuses to execute at all
 unless ``approved=True``. The 6 Whisper CT2 models already in ``~/.cache`` are
 THIRD-PARTY ASSETS THAT HAVE NOT BEEN APPROVED for shipping, so this class carries
 ``ReviewStatus.UNREVIEWED`` provenance and gates every load behind an explicit
-approval flag. A missing package raises ``ModelNotInstalled`` naming the package;
-a missing model directory raises ``ModelNotInstalled`` naming the exact cache path;
-both are checked with a path *name*, never by reading the cache contents.
+approval flag. A missing package raises ``ModelNotInstalled`` naming the package with
+``import_state`` ``package-absent``; a package that is present but will not import keeps
+the same category and says so, because telling a host to install what is already there
+hides a corrupt environment. A missing model directory raises ``ModelNotInstalled``
+naming the exact cache path; both are checked with a path *name*, never by reading the
+cache contents.
 
 The languages it can claim come only from the upstream model card, so they are
 ``DECLARED`` - unverified - and strict routing therefore will not select this
@@ -26,6 +29,7 @@ from ...core.language import Capability, CapabilityStatus, LanguageTag, Task
 from ...models.api import ModelManifest, Provenance, ResourceRequirement, ReviewStatus
 from ...language.registry import LanguageRegistry
 from ..api import TranscriptionRequest, TranscriptionResult
+from .optional_backend import ABSENT, import_state
 
 ENGINE_ID = "faster-whisper"
 
@@ -117,10 +121,16 @@ class FasterWhisperAdapter:
         try:
             import faster_whisper
         except Exception as exc:
+            state = import_state("faster_whisper", exc)
             raise ModelNotInstalled(
-                "faster-whisper backend package is not installed",
+                (
+                    "faster-whisper backend package is not installed"
+                    if state == ABSENT
+                    else "faster-whisper backend package is present but failed to import"
+                ),
                 package="faster-whisper",
                 engine=ENGINE_ID,
+                import_state=state,
                 detail=f"{type(exc).__name__}: {exc}",
             ) from exc
         return faster_whisper

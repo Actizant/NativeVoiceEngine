@@ -242,7 +242,7 @@ feature, and no interface described here should be treated as available.
 
 The repository's default position is that a number either comes from measurement or says it does not.
 
-**What is in the tree (static counts, `tests/`):** 43 test files, 996 `def test_` functions. Pytest declares
+**What is in the tree (static counts, `tests/`):** 45 test files, 1,095 `def test_` functions. Pytest declares
 four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
 
 **Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
@@ -260,7 +260,7 @@ python -m pytest -q \
 
 Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
 release snapshot staged; reconciled in `docs/audit-register.md`). That figure is a record against one commit,
-not a live claim; this tree returns **1,063 passed, 7 skipped, 1 deselected, 86 excluded** on that command.
+not a live claim; this tree returns **1,205 passed, 7 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-24 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,299 overall, 86 inside the four ignored modules, 1,213 collected by the command, 1 deselected, 7 skipped; the step from 1,063 is +132 frontend/parity nodes at `2b167a9` and +10 optional-backend nodes here.
 
 **Asset-gated tests** are skipped unless a named human has approved the asset *and*
 `--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven

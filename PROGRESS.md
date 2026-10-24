@@ -1596,3 +1596,86 @@ corpus rights, the EmbeddingGemma 2 scope conflict, and the closed AI4Bharat que
 
 **Commit state.** Nothing has been committed or pushed by this work; `main` still resolves to the last published
 commit and the changes sit in the working tree for review.
+
+## ASR Phase 1B — owner rulings and the controlled cleanup (2026-10-24)
+
+**Ruled, not assumed.** D1 was ruled as recommended: `FBankConfig()` stays the student frontend
+contract and `FBankConfig.whisper_parity()` stays a separate reference instrument. **No default was
+changed** — the ruling was verified by reading both objects field by field afterwards, and the
+student geometry still answers `fft_size=1024, window=povey, center=none, mel_scale=htk,
+dynamic_floor=None, post_scale=None`. The optional `parity` extra was **not added**; the exact
+reference environment (`faster-whisper 1.2.1`, its `feature_extractor.py` at 230 lines and sha256
+`e403966d…7be7a397c`, numpy 2.5.3) stays documented in `docs/asr-architecture.md` §9, and the
+dependency question returns when parity enters CI. Nothing under `evidence/` or `artifacts/` was
+regenerated, staged or committed; the support request was not submitted.
+
+**README's live figure was stale and is corrected.** `README.md:263` asserted in the present tense
+that the tree returns 1,063 passed on the documented command; that was true at `f403b47` and false
+after `2b167a9`. All three points were measured rather than reasoned about: the documented exclusions
+and deselection, run against a `git archive` extract of `f403b47`, return **1,063 passed, 7 skipped,
+1 deselected**; against `2b167a9`, **1,195**; against this working tree, **1,205 passed, 7 skipped,
+1 deselected**. Whole-tree collection is **1,299**, the four ignored modules hold **86** of it and the
+command collects **1,213**, so 1,213 − 1 deselected = 1,212 run, of which 7 skip — the arithmetic
+closes without inferring anything, and the two steps from 1,063 are this work's own **+132** (frontend
+and parity at `2b167a9`) and **+10** (below). The static counts moved with it: **45** test files,
+**1,095** `def test_` functions, counted two ways (`grep -o` over `tests/` and anchored per-file) to the
+same number — the ten new nodes come from five new test functions, one of them parametrised six ways,
+so `def test_` gains 5 (1,090 at `2b167a9`) while the node count gains 10. Both edits are **line-count neutral** — `README.md` is still 392 lines
+and 2 insertions / 2 deletions — so every `README.md:NN` anchor the audit register cites still resolves:
+`:245`, `:253-259`, `:261-263`, `:305-307`, `:332`, `:358` were each re-read after editing.
+
+**One unguarded optional-dependency test was found and fixed.**
+`tests/test_stt.py::test_whisper_names_missing_pieces_when_authorized` asserted `expected_path`,
+which is the *weights-missing* branch, so it passed here only because `faster-whisper` happens to be
+installed: with the package unimportable it failed for the wrong reason, and the adapter had described
+both states as "not installed". That conflation is the bug — a corrupted wheel told a host to install
+what is already present hides the corruption. The two states are now named once, in
+`src/nativevoice/stt/adapters/optional_backend.py` (`package-absent` only when `ModuleNotFoundError`
+names the requested module itself), and both `_import_backend` call sites raise `ModelNotInstalled`
+with an added `import_state` field and a message that says which. The category is unchanged, so no host
+that catches `ModelNotInstalled` or `CapabilityUnavailable` branches differently, and no existing
+assertion was weakened: the test keeps every assertion it had, and now skips with a labelled NOT RUN on
+absence while **failing by name** on a broken install. Ten tests cover it (six classifier cases,
+absence, broken, the `sys.modules` measurement, and one that fails if the two messages collapse).
+Falsified rather than trusted: with the classifier replaced by a constant — the pre-fix behaviour —
+**7 of the 10 fail**; with `faster_whisper` genuinely unimportable the whole suite is **1270 passed,
+29 skipped, 0 failed** (it was 1 failed / 1260 / 28 before); with a shadowing package that raises on
+import it is **22 failed, 1270 passed, 7 skipped**, and the stt failure names the corrupt install.
+The two classifier cases the review added are the ones the suite did not yet pin: a
+`ModuleNotFoundError` naming a **submodule** of an installed package
+(`faster_whisper.feature_extractor`) and one naming **nothing at all** — both answer `package-broken`,
+because guessing absence from an unattributable failure would turn a corrupt environment into a skip.
+
+**Measured along the way:** `sys.modules["faster_whisper"] = None`, which `tests/test_measurement.py`
+uses to block the backend, raises `ModuleNotFoundError` naming the module on **both** interpreters
+present here (CPython 3.12.10 and 3.14.7), so that control simulates *absence*, not corruption. It is
+now pinned by a test rather than by a reading, and the classifier does not consult the module table.
+
+The three real cases were also driven through the actual import machinery, outside the suite, because
+an injected exception cannot prove what CPython itself raises: an interpreter on which `faster_whisper`
+is genuinely not installed (3.12.10) gives `package-absent` and "is not installed"; a shadow package
+whose own import of a missing dependency fails gives `package-broken`; a shadow package that raises
+`ImportError` while loading gives `package-broken`; and a shadow package that imports but has no
+`feature_extractor` submodule reports the submodule failure as broken, not missing. The harness is kept
+at `…/scratch/p1b_verify/` (`import_case.py` plus `case2`, `case3`, `case4`) and stays outside the
+repository; the in-suite tests exercise the shipped `import_state` and the shipped `_import_backend`,
+not a second copy of the rule.
+
+**Suite state after the cleanup.** Full suite **1292 passed, 7 skipped in 22.04s**; with
+`ULTRON_RUN_APPROVED_ASSET=1` **1299 passed in 56.90s**; targeted set (`test_stt`, `test_measurement`,
+both frontend files, both hygiene guards) **229 passed, 1 skipped**. `tools/audit.py` in a throwaway
+copy of this tree reports **11 passed, 1 failed, 0 not run** with the single offender still
+`evidence_paths.py:58:TypeError` — identical to the HEAD-only baseline, so this change contributes
+nothing to it. Leaving that FAIL in place is deliberate: the raise is asserted by
+`tests/test_evidence_paths.py:151`, and widening the audit's allowlist would rewrite the meaning of a
+mechanical check whose output is itself evidence. Both that and the stale
+`artifacts/audit/mechanical-findings.json` (11 findings where the code emits 12 checks) remain the
+owner's calls, as does the working-copy fingerprint drift of that artefact reported to him in this
+pass: the restored working copy now equals `HEAD` (`1babf3fab05b3dbd…`, 1,444 B) where rows A65/A72
+recorded `d7d97731ea0274b4…`, 1,500 B with 56 CRLF pairs. Nothing in `docs/audit-register.md` was
+appended or edited.
+
+**Still not claimed, and unchanged by this pass:** no trainer, no dataloader, no tokenizer, no
+checkpoint, no Conformer-TDT adapter, no `torch`; no model ran, so no accuracy, no WER and no
+competitiveness. Phase 2 stays closed and nothing was pushed — `main` is `2b167a9` locally, one ahead
+of `origin/main` at `f403b47`, and the cleanup above is an uncommitted working-tree change for review.

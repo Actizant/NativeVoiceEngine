@@ -9,7 +9,9 @@ this machine are unreviewed third-party assets and are NOT RUN for acceptance.
 from __future__ import annotations
 
 import array
+import builtins
 import os
+import sys
 
 import pytest
 
@@ -34,6 +36,7 @@ from nativevoice.stt import (
     TranscriptReducer,
     TranscriptionService,
 )
+from nativevoice.stt.adapters.optional_backend import ABSENT, BROKEN, import_state
 from nativevoice.stt.api import TranscriptionRequest, TranscriptionResult
 from nativevoice.stt.text_context import MAX_PROMPT_CHARS, build_prompt, dedupe, sanitize
 
@@ -327,11 +330,118 @@ def test_whisper_refuses_without_approval():
 
 
 def test_whisper_names_missing_pieces_when_authorized():
+    state = _whisper_backend_state()
+    if state == ABSENT:
+        pytest.skip(
+            "NOT RUN: faster-whisper is not installed on this machine, so the expected-path "
+            "branch below is unreachable - the package-absent path is tested separately"
+        )
+    assert state == "importable", (
+        "faster-whisper is present but will not import. This test is about a missing model "
+        "directory, and a broken installation must not be reported as one."
+    )
     adapter = FasterWhisperAdapter(model_name="definitely-not-installed-xyz", approved=True)
     with pytest.raises(ModelNotInstalled) as exc:
         adapter.transcribe(TranscriptionRequest(audio=sine(rate=16000), language=LanguageTag("en")))
     assert "expected_path" in exc.value.details
     assert exc.value.details["model_id"] == "faster-whisper-definitely-not-installed-xyz"
+
+
+class TestOptionalBackendImportStates:
+    """An absent optional package and a broken one are two different failures.
+
+    Both arrive as an import error and both were reported as "not installed", which
+    sends a host off to reinstall a package that is already there while the real fault
+    - a wheel that loads and raises - stays invisible. These go through the import
+    machinery rather than the installed package, so they run and fail identically
+    whether or not faster-whisper is present here.
+    """
+
+    @pytest.mark.parametrize(
+        "error, expected",
+        [
+            (ModuleNotFoundError("No module named 'faster_whisper'", name="faster_whisper"), ABSENT),
+            (ModuleNotFoundError("No module named 'ctranslate2'", name="ctranslate2"), BROKEN),
+            (ModuleNotFoundError("No module named 'faster_whisper.feature_extractor'", name="faster_whisper.feature_extractor"), BROKEN),
+            (ModuleNotFoundError("a finder raised without naming anything"), BROKEN),
+            (ImportError("numpy.dtype size changed, may indicate binary incompatibility"), BROKEN),
+            (OSError("DLL load failed while importing _ext"), BROKEN),
+        ],
+    )
+    def test_the_classifier_names_the_two_states_apart(self, error, expected):
+        assert import_state("faster_whisper", error) == expected
+
+    def test_absent_package_is_reported_as_an_installation_gap(self, monkeypatch):
+        _raise_on_import(monkeypatch, ModuleNotFoundError("No module named 'faster_whisper'", name="faster_whisper"))
+        adapter = FasterWhisperAdapter(model_name="base", approved=True)
+        with pytest.raises(ModelNotInstalled) as exc:
+            adapter._import_backend()
+        assert exc.value.details["import_state"] == ABSENT
+        assert exc.value.args[0] == "faster-whisper backend package is not installed"
+
+    def test_a_package_that_will_not_load_is_not_reported_as_absent(self, monkeypatch):
+        _raise_on_import(monkeypatch, OSError("DLL load failed while importing _ext"))
+        adapter = FasterWhisperAdapter(model_name="base", approved=True)
+        with pytest.raises(ModelNotInstalled) as exc:
+            adapter._import_backend()
+        assert exc.value.details["import_state"] == BROKEN
+        assert exc.value.args[0] == "faster-whisper backend package is present but failed to import"
+
+    def test_poisoning_the_module_table_presents_as_absent(self, monkeypatch):
+        """What the suite's existing `sys.modules` simulation actually proves.
+
+        `test_measurement.py` blocks the backend with `setitem(sys.modules, ..., None)`;
+        measured on CPython 3.12.10 and 3.14.7 that raises `ModuleNotFoundError` naming the
+        package, so the adapter reports an installation gap rather than a broken load. Pinned
+        here so nobody reads that control as evidence about a corrupt wheel - and so a future
+        interpreter that changes it fails a named test instead of silently changing the
+        meaning of a guard-ordering assertion.
+        """
+        monkeypatch.setitem(sys.modules, "faster_whisper", None)
+        adapter = FasterWhisperAdapter(model_name="base", approved=True)
+        with pytest.raises(ModelNotInstalled) as exc:
+            adapter._import_backend()
+        assert exc.value.details["import_state"] == ABSENT
+
+    def test_the_two_states_do_not_collapse_into_one_message(self, monkeypatch):
+        """The point of the split: a host branching on the payload gets different answers."""
+        adapter = FasterWhisperAdapter(model_name="base", approved=True)
+        messages = {}
+        for state, error in (
+            (ABSENT, ModuleNotFoundError("No module named 'faster_whisper'", name="faster_whisper")),
+            (BROKEN, ImportError("binary built against a different numpy")),
+        ):
+            _raise_on_import(monkeypatch, error)
+            with pytest.raises(ModelNotInstalled) as exc:
+                adapter._import_backend()
+            messages[state] = (exc.value.args[0], exc.value.details["import_state"])
+        assert messages[ABSENT] != messages[BROKEN]
+
+
+def _raise_on_import(monkeypatch, error: BaseException) -> None:
+    """Make `import faster_whisper` inside the adapter raise `error`, nothing else changes."""
+    real = builtins.__import__
+
+    def fake(name, *args, **kwargs):
+        if name == "faster_whisper":
+            raise error
+        return real(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake)
+
+
+def _whisper_backend_state() -> str:
+    """Ask the shipped classifier, so a skip can never disagree with the adapter.
+
+    `pytest.importorskip` would skip here too, but it skips on any ModuleNotFoundError -
+    including one naming a dependency of an installed-but-broken package - which is the
+    confusion these tests exist to prevent. "importable" is the third answer.
+    """
+    try:
+        FasterWhisperAdapter(model_name="base", approved=True)._import_backend()
+    except ModelNotInstalled as exc:
+        return str(exc.details["import_state"])
+    return "importable"
 
 
 def test_whisper_is_unreviewed_and_declared_only():

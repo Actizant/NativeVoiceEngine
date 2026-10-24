@@ -61,6 +61,7 @@ from ...models.api import AssetScope, ModelManifest
 from ...models.approval import ensure_approved, ensure_measurement_use, ensure_product_scope
 from ...models.integrity import inspect as inspect_integrity
 from ...models.roots import ensure_asset_root_isolated
+from .optional_backend import ABSENT, import_state
 
 ENGINE_ID = "faster-whisper"
 
@@ -232,11 +233,17 @@ class FasterWhisperEngine:
     def _import_backend(self):
         try:
             import faster_whisper
-        except Exception as exc:  # a missing package is an installation gap, named exactly
+        except Exception as exc:  # absent and broken are different facts, named separately
+            state = import_state("faster_whisper", exc)
             raise ModelNotInstalled(
-                "faster-whisper backend package is not installed",
+                (
+                    "faster-whisper backend package is not installed"
+                    if state == ABSENT
+                    else "faster-whisper backend package is present but failed to import"
+                ),
                 package="faster-whisper",
                 engine=self.engine_id,
+                import_state=state,
                 detail=f"{type(exc).__name__}: {exc}",
             ) from exc
         return faster_whisper

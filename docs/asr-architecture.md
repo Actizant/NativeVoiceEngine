@@ -166,8 +166,9 @@ Consequences, stated as conclusions rather than caveats:
 1. **Parity with the selected teacher is not achieved, and the size of the gap is now measured, not guessed.**
    Nothing in this repository claims equivalence.
 2. A student trained on these features and distilled against Whisper large-v3 would be comparing its view of the
-   audio against a teacher's view of materially different numbers. Until D1 below is ruled, the §2 input contract
-   is **PROVISIONAL** — provisional for training use, not provisional for the arithmetic it performs.
+   audio against a teacher's view of materially different numbers. D1 below was **ruled on 2026-10-24** in favour of
+   this geometry, so the §2 input contract is the training contract; before that ruling it was provisional for
+   training use, and it was never provisional for the arithmetic it performs.
 3. Whisper's last three lines are a **normalisation the teacher bakes into its input** (`max−8` floor, `(x+4)/4`);
    this module applies none, by design (§2.1). So "add CMN later" is not the only gap: matching or deliberately
    not matching that exact transform is a decision that has to be made and recorded.
@@ -257,7 +258,7 @@ docstring no longer implies the collapse guard applies to both edge modes.
 ```
 AudioBuffer(int16)                                  [BUILT]
   → resample/mono to 16 kHz by the orchestrator      [BUILT, unchanged]
-  → log_fbank → FeatureGrid(frames × 80, float64)    [BUILT; contract PROVISIONAL for training — §3]
+  → log_fbank → FeatureGrid(frames × 80, float64)    [BUILT; contract ruled for training 2026-10-24 — §7 D1]
   → (proposed) cast to float32, optional CMN          [NOT BUILT]
   → (proposed) subsampling front-end (stride 2)       [NOT BUILT]
   → (proposed) Conformer blocks × N                   [NOT BUILT]
@@ -327,13 +328,14 @@ vocabulary and its provenance (none recorded anywhere in this tree).
 adapter-local conversions (`faster_whisper_engine._to_float32` for numpy float32). The docstring now names the
 functions that exist. Docstring text only — no behaviour changed, no signature added or removed.
 
-## 7. Unresolved decisions, blocking Phase 2 and all training
+## 7. Decisions, and what still blocks Phase 2 and all training
 
-These are the owner's to rule on. Nothing here was assumed, and none of them is a bug I can fix by typing.
+These were the owner's to rule on; **nothing here was assumed**, and none of them is a bug I can fix by typing.
+**D1 was ruled on 2026-10-24** and is marked as such below; D2–D10 remain open and still block Phase 2.
 
 | # | Decision | Why it blocks |
 |---|---|---|
-| D1 | **Awaiting the owner's approval.** Train on the project's own geometry (`FBankConfig()`) or on `FBankConfig.whisper_parity()`? | Both are implemented and tested; §3.2 and §3.3 give the measured trade-off. Neither has been made the default of the other. Recommendation below; it is not applied. |
+| D1 | **RULED by the owner on 2026-10-24: keep `FBankConfig()` as the student frontend contract, `FBankConfig.whisper_parity()` as a separate reference instrument. No default was changed.** The open question was: train on the project's own geometry or on the teacher's? | Both were implemented and tested and §3.2 / §3.3 carried the measured trade-off; the ruling follows §7.1. It no longer blocks Phase 2 — D2 onwards still do. |
 | D2 | Licence, `source` and `redistributable` for a **self-trained** checkpoint | `models/api.py:96-104` and `approval.py:43-53` require non-empty `licence_spdx` and non-`None` `redistributable`; `docs/audit-register.md` Addendum 27 and `DECISIONS.md` N11 record that the repo still carries no `LICENSE`, `AUTHORS` or ownership record. |
 | D3 | `*.pt` / `*.safetensors` / `*.yaml` checkpoint formats | `tools/provision.py` `classify_asset` refuses them today; touching that allowlist is a licence-facing change, explicitly out of Phase 1 scope. |
 | D4 | Whether the student is `MEASUREMENT`-scoped first | The existing fence proves a measurement manifest cannot reach the product path — which is correct, and also means a student cannot "just work" in the product. |
@@ -345,10 +347,12 @@ These are the owner's to rule on. Nothing here was assumed, and none of them is 
 | D10 | `Task` has no EMBEDDING member | `core/language.py:23-27` is closed (`stt`, `tts`, `lid`, `voice_clone`); an embedding asset has no task to register under. |
 
 
-### 7.1 Recommendation on D1 (proposed, not applied)
+### 7.1 Recommendation on D1 (proposed on 2026-10-23; ruled as recommended on 2026-10-24)
 
-The evidence points to **keeping the student geometry as the project's frontend and treating
-`whisper_parity()` strictly as a measurement instrument** — but it is a ruling, not a fact, and it is yours.
+The evidence pointed to **keeping the student geometry as the project's frontend and treating
+`whisper_parity()` strictly as a measurement instrument** — it was a ruling to be made, not a fact to be
+discovered, and on 2026-10-24 the owner made it in exactly that form. The reasoning is kept below because it is
+the reason a future change would have to be argued for, not merely re-implemented.
 
 * **Frame independence is an architectural property, not a preference.** The teacher's `max(x, x.max() − 8)`
   clamp makes every value depend on the loudest frame in the call, so a model trained on it inherits a
@@ -368,12 +372,28 @@ The evidence points to **keeping the student geometry as the project's frontend 
   anyway by `tools/corpus_forge.py`'s rights gate (D6). Choosing a parity frontend now would not unlock
   pseudo-labelling, and choosing it later costs only a config field.
 
-Suggested form of the decision, if you agree: record `FBankConfig()` as the student contract for Phase 2, keep
-`whisper_parity()` exported and tested as the parity instrument, and revisit only if a feature-level
-distillation experiment is actually proposed. Implementation scope is unchanged in this checkpoint: no
-default was altered, and both configs remain selectable.
+Form of the decision, as ruled on 2026-10-24: `FBankConfig()` is recorded as the student contract for Phase 2,
+`whisper_parity()` stays exported and tested as the parity instrument, and the choice is revisited only if a
+feature-level distillation experiment is actually proposed. The ruling changes no code: no default was altered,
+and both configs remain selectable.
 
 ## 8. What Phases 1 and 1B do **not** entitle anyone to claim
+
+* That recognition works, improved, was measured, or is competitive with anything. No model ran, no accuracy
+  number exists anywhere in this checkpoint, and a matching frontend is a precondition of a comparison, not one.
+  `tests/test_audio_features.py` are tones, DC and envelopes — `tests/fixtures.py` states in its own docstring
+  that they "must never be used to claim recognition or synthesis quality".
+* That the **student** geometry matches a third-party frontend. It does not, by measurement (§3.2). The parity
+  config does (§3.3), but only under `tests/test_audio_features_parity.py::TestAgainstReference`, which reports
+  **NOT RUN** without `faster_whisper` installed — so on a machine without that package, no executed parity claim
+  exists at all, and the reference itself is unpinned by any lockfile or CI.
+* That `frozen=True` on `FeatureGrid` makes the feature buffer immutable. It does not: `values` is a mutable
+  `array('d')` by design, the same convention as `AudioBuffer.samples`, and a test pins that fact. What the
+  review added is the shape invariant, so a malformed grid cannot silently yield a short row.
+* That a Conformer–TDT student, its trainer, its tokenizer or its checkpoint exists. None does.
+* That any capability status was raised. Every language row in `docs/capability-matrix.md` remains as generated
+  on 2026-10-12; `CapabilityStatus` was not imported by the frontend and no status was written.
+
 ## 9. Reproducing the parity environment
 
 `faster_whisper` and `numpy` are **not declared dependencies** of this package (`pyproject.toml` stays at
@@ -393,24 +413,8 @@ Reference identity used for every number in §3: `faster-whisper 1.2.1`, file
 `e403966dbc592a53695eea2aea24fa60bab50ef6755e0076b311f907be7a397c`), `numpy 2.5.3`. If that digest changes, the
 parity figures in this document are stale until re-measured.
 
-**Recommendation, not applied (needs approval):** declare the reference as an opt-in extra —
-`[project.optional-dependencies] parity = ["faster-whisper==1.2.1", "numpy"]` — so the parity tests are runnable
-from a clean environment and the pin is recorded where a reviewer will find it. That is a dependency change and
-an unpinned-third-party decision, both of which this phase's boundaries forbid without your say-so, so nothing was
-added.
-
-
-* That recognition works, improved, was measured, or is competitive with anything. No model ran, no accuracy
-  number exists anywhere in this checkpoint, and a matching frontend is a precondition of a comparison, not one.
-  `tests/test_audio_features.py` are tones, DC and envelopes — `tests/fixtures.py` states in its own docstring
-  that they "must never be used to claim recognition or synthesis quality".
-* That the **student** geometry matches a third-party frontend. It does not, by measurement (§3.2). The parity
-  config does (§3.3), but only under `tests/test_audio_features_parity.py::TestAgainstReference`, which reports
-  **NOT RUN** without `faster_whisper` installed — so on a machine without that package, no executed parity claim
-  exists at all, and the reference itself is unpinned by any lockfile or CI.
-* That `frozen=True` on `FeatureGrid` makes the feature buffer immutable. It does not: `values` is a mutable
-  `array('d')` by design, the same convention as `AudioBuffer.samples`, and a test pins that fact. What the
-  review added is the shape invariant, so a malformed grid cannot silently yield a short row.
-* That a Conformer–TDT student, its trainer, its tokenizer or its checkpoint exists. None does.
-* That any capability status was raised. Every language row in `docs/capability-matrix.md` remains as generated
-  on 2026-10-12; `CapabilityStatus` was not imported by the frontend and no status was written.
+**Recommendation, ruled on 2026-10-24: not added yet.** The proposal was to declare the reference as an opt-in
+extra — `[project.optional-dependencies] parity = ["faster-whisper==1.2.1", "numpy"]` — so the parity tests are
+runnable from a clean environment and the pin is recorded where a reviewer will find it. The owner kept the exact
+reference environment documented here instead and will revisit the dependency when parity is integrated into CI,
+so `pyproject.toml` is unchanged and the reference remains unpinned.
