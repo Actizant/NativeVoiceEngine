@@ -242,7 +242,7 @@ feature, and no interface described here should be treated as available.
 
 The repository's default position is that a number either comes from measurement or says it does not.
 
-**What is in the tree (static counts, `tests/`):** 45 test files, 1,095 `def test_` functions. Pytest declares
+**What is in the tree (static counts, `tests/`):** 46 test files, 1,150 `def test_` functions. Pytest declares
 four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
 
 **Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
@@ -260,7 +260,7 @@ python -m pytest -q \
 
 Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
 release snapshot staged; reconciled in `docs/audit-register.md`). That figure is a record against one commit,
-not a live claim; this tree returns **1,205 passed, 7 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-24 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,299 overall, 86 inside the four ignored modules, 1,213 collected by the command, 1 deselected, 7 skipped; the step from 1,063 is +132 frontend/parity nodes at `2b167a9` and +10 optional-backend nodes here.
+not a live claim; this tree returns **1,297 passed, 10 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-24 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,394 overall, 86 inside the four ignored modules, 1,308 collected by the command, 1 deselected, 10 skipped. The passed figures at each step were measured, not derived: 1,063 at `f403b47`, 1,195 at `2b167a9` (+132), 1,205 at `a353272` (+10) and 1,297 here (+92 passed and three new NOT RUN, 95 new nodes), the last from `tests/test_audit_tool.py`. Those three NOT RUNs are honest: this platform refuses `os.symlink` for an unprivileged process (WinError 1314), so the three symlink-refusal cases cannot run here; what is proven is each refusal function's own `is_symlink`/`lexists` branch and the directory, escape and sub-path controls, not a write attempted through a real link on this machine, and not `O_EXCL`'s behaviour through a planted link.
 
 **Asset-gated tests** are skipped unless a named human has approved the asset *and*
 `--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven
@@ -278,7 +278,7 @@ docstring (`:59-62`) — which is why English clears the bar and Chinese is reco
 `python -m nativevoice.cli.diagnose` reports a host summary, real per-language status and offline scan
 findings, with `--max-wer` / `--max-first-audio-ms` turning measured figures into an exit code and `--strict`
 treating a criterion that was never run as a failure rather than a pass; `tools/audit.py` runs mechanical checks
-and reports NOT RUN separately from FAIL; `tools/offline_proof.py` runs the real
+and reports NOT RUN separately from FAIL, and writes nothing at all: an ordinary run only prints — which a test now proves by comparing every file name in the repository and the digest of everything in the evidence areas before and after the shipped twelve-check run — `--out PATH` writes to a destination the operator named outside the protected evidence areas, replacing an existing file there and re-checking nothing before the write because it publishes no evidence, `--publish PATH --yes` overwrites a committed findings record only while its bytes still equal `HEAD`, which is re-read immediately before writing, and `--publish-new PATH --yes` creates one in `artifacts/audit/` as `mechanical-findings-YYYY-MM-DD.json`, refusing any other name and claiming the name exclusively with `O_EXCL` so a file that appeared mid-run is not followed: two operations with two different mechanisms, neither falling back into the other; and `--check-artefact PATH` reads a record and reports drift without writing anything; `tools/offline_proof.py` runs the real
 synthesis-then-recognition pair under an offline guard (`artifacts/audit/offline-proof.json`, verdict PASS,
 zero connection attempts, single run) — evidence of network silence only, not of ownership or
 licensing rights. Separately, `tests/test_no_personal_paths.py` blocks personal filesystem paths from

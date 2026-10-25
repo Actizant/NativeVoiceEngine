@@ -1679,3 +1679,349 @@ appended or edited.
 checkpoint, no Conformer-TDT adapter, no `torch`; no model ran, so no accuracy, no WER and no
 competitiveness. Phase 2 stays closed and nothing was pushed — `main` is `2b167a9` locally, one ahead
 of `origin/main` at `f403b47`, and the cleanup above is an uncommitted working-tree change for review.
+
+## Audit baseline remediation — Proposals 1 and 2, applied to the working tree (2026-10-24)
+
+**Owner ruling that authorised this:** Option B approved in principle for the error-taxonomy
+failure, with the exemption required to be site-specific, documented and tested; Proposal 2
+(audit output safety) approved first, Proposal 1 second. `src/nativevoice/diagnostics/evidence_paths.py`
+and `tests/test_evidence_paths.py` were not modified — both verified byte-identical to the
+pre-change baseline after the work (`358b375940f54c38…` and `f145f44ee8e245ed…`).
+
+**Proposal 2, `tools/audit.py`.** An ordinary run now reports and creates **nothing**: the
+hard-coded write that made every verification a protected-artefact edit is gone. Four
+mutually exclusive destinations exist — `--out PATH` (refused anywhere inside the whole
+protected evidence area, `artifacts/` **and** `evidence/`, and refused unless the destination
+directory already exists, because `write_json` creates parents silently and a typo would
+scatter evidence-shaped files), `--check-artefact PATH` (row-level drift report, never writes,
+drift exits non-zero, and the reference is structurally validated first), `--publish PATH
+--yes` (overwrite a committed record in `artifacts/audit/`: refuses a symlink, a path whose
+resolved parent is not exactly that directory, a target that does not already exist as a
+committed record, a target whose bytes differ from its `HEAD` version, and committed bytes
+that fail the structural rules — all before any check runs), and `--publish-new PATH --yes`
+(create a record that does not exist yet, confined to a direct child of `artifacts/audit/`,
+refusing anything that already exists). Overwrite and creation are separate flags and neither
+falls back into the other, so no combination of them can silently turn one operation into the
+other. Both print the resolved destination, the findings summary and the proposed content
+digest before writing, and both write nothing without `--yes`. `--yes` without a publish flag
+is rejected rather than ignored; exit code still tracks failures; and every destination is
+validated *before* a single check runs, so a typo cannot cost a full run and a refusal never
+executes anything. The write helper was already parameterised (`write_findings(findings, out)`),
+so no new abstraction was invented for this.
+
+**Proposal 1, `tools/audit.py`.** `check_error_taxonomy()` now admits a builtin `TypeError` only
+at a site named in `ARGUMENT_TYPE_GUARDS` — exactly one key, `diagnostics/evidence_paths.py::redact`
+— and the finding prints what it admitted: `0 raise site(s) outside core.errors; 1 admitted
+argument-type guard(s): ['diagnostics/evidence_paths.py::redact:58']`. Four separate conditions
+keep the grant narrow: a `TypeError` anywhere else is an offender; any *other* builtin category is
+an offender even at the exempt site; a guard key that matches no live raise is itself an offender,
+so a deleted guard cannot leave a standing permission behind; and a `TypeError` outside any
+function is not exempt because there is no guarding function to name. Parent tracking was added
+(`_raise_sites`) precisely because `ast.walk` discards the function relationship the grant depends
+on. `redact()` itself is unchanged and its refusal still works.
+
+**Provenance, corrected against the map.** The `TypeError` and the twelfth check both entered in
+the same commit, `849de9ab4d8cdeb5656ec7c058c4c11f8c08fa26` (2026-10-17T19:53:44+05:30), verified
+with `git log -S` and `git blame -L 56,60`. `docs/audit-register.md` A72 names that snapshot by its
+pre-rewrite hash `b2df403…`, which no longer resolves in this clone; Addendum 28's old→new map at
+`docs/audit-register.md:965` records `b2df403… → 849de9a… → tree 3f4a6616…`, and `849de9a`'s tree
+is exactly that. So the register is self-consistent and no citation is broken — the single commit
+is simply why both discrepancies exist. The historical `artifacts/audit/mechanical-findings.json`
+was last written by `25661e2` (2026-10-13), before either change.
+
+**What the tool now says about the historical artefact** (read-only, `--check-artefact`): 2 drift
+items — `~ error taxonomy: detail differs` and `+ measurement assets cannot reach the product path:
+PASS (not recorded in the artefact)`. Statuses no longer disagree, because the taxonomy check now
+passes for a stated reason. **The artefact was not regenerated, not republished and not touched**:
+`1babf3fab05b3dbd…`, byte-identical, before and after every run in this pass.
+
+**Adversarial review of that first implementation found three defects, and all three were fixed.**
+(1) `--out` refused only `artifacts/audit/`, so a findings dump could still be written into
+`evidence/`, `artifacts/corpus/`, `artifacts/benchmarks/` or `artifacts/` itself — proven by probing
+each destination with the writer stubbed, so nothing was created. The guard is now
+`PROTECTED_AREAS = (artifacts/, evidence/)`, compared on the **resolved** path, and the refusal names
+both areas. (2) `--check-artefact` accepted any parseable JSON: `["a"]` and `[{"check":"x"}]` raised an
+unhandled `TypeError`/`KeyError`, and `{}` was silently treated as an artefact with no rows, producing a
+confident wrong drift report. A reference is now validated structurally — top level a list, each row an
+object with exactly `check`, `status` and `detail`, string types, status one of `PASS`/`FAIL`/`NOT_RUN` —
+and anything else is refused before a check runs. (3) Arguments were validated *after* the checks had
+already executed, so a typo cost a full run; validation now precedes execution, proved by spy checks
+that record whether anything ran (`test_publish_refusals_run_no_checks`,
+`test_yes_without_publish_and_a_bad_out_are_rejected_before_any_check`, and the malformed-reference
+table). The test that claimed to cover the evidence area only exercised `artifacts/audit`, which is how
+defect 1 survived its own suite; it is replaced by one that walks all five destinations and asserts each
+was refused **before** any check ran. Three tests were collapsed as part of that, and three more were
+lost to a scripted edit during it — restored, then the whole module re-run, so the counts below are from
+the tree as it now stands, not from arithmetic.
+
+**Third round: creation restored as its own operation, after the owner ruled that the original
+contract had intended it.** The previous round had closed the typo hazard by removing creation
+entirely, which narrowed the approved design — publishing a new dated revision is deferred by
+ruling, not cancelled. `--publish-new PATH --yes` now provides it: confined to a direct child of
+`artifacts/audit/` on the resolved path, refusing symlinks, dangling links, sub-directories,
+escapes, anything outside the area, and any target that already exists, so it can never become an
+overwrite; `--publish` still refuses an absent target, so it can never become a creation. The
+record about to be written is itself validated before the write, which is why two checks sharing a
+name are refused rather than published as a record that collapses when read back.
+
+**A detail found while implementing it, which resolves an old fingerprint puzzle.** `write_json`
+serialises with `dumps()` and writes in text mode, so on this machine the bytes on disk carry CRLF
+while the content the repository stores is LF: the same rows are 1,444 bytes and `1babf3fab05b3dbd…`
+normalised, 1,500 bytes with 56 CRLF pairs and `d7d97731ea0274b4…` on disk. That is precisely the pair
+`docs/audit-register.md` rows A65 and A72 recorded as the working-copy/HEAD difference for this
+artefact — it was the tool's own write, not a hand edit. Consequently the digest `--publish` and
+`--publish-new` print before writing is the **LF-normalised content, as git will store it**, and is
+labelled that way rather than presented as the hash of the file that appears on disk; a test pins
+the two together by normalising before comparison.
+
+**Verification.** `python tools/audit.py` → **12 passed, 0 failed, 0 not run**, exit 0, with no file
+created anywhere in the tree. `tests/test_audit_tool.py` (new, 47 test functions, 71 collected
+nodes): **68 passed, 3 skipped**. All three skips are the same honest one — `NOT RUN: this
+platform/user does not permit creating symlinks` (Windows refuses `os.symlink` for an unprivileged
+process, WinError 1314) — so the symlink refusals for the two publish paths and the check-destination
+path are proven at the refusal-function level and by the directory, sub-directory, relative-escape and
+outside-area controls, which do run for real. Full suite **1360 passed, 10 skipped in 23.23s**; with
+`ULTRON_RUN_APPROVED_ASSET=1` **1367 passed, 3 skipped in 59.87s**; guards **22 passed**; frontend
+pair **132 passed**; `test_stt.py` **38 passed, 1 skipped**; `test_evidence_paths.py` +
+`test_evidence_writers.py` **44 passed** (the protected redaction tests are unchanged and green).
+
+**A second review round found four more defects; three were authorisation gaps in my own tests.**
+(1) `--publish` parsed the committed baseline with a bare `json.loads` *after* the whole check run:
+`["a"]` and `[{"check":"x"}]` raised unhandled `TypeError`/`KeyError`, `{}` was read as "no rows
+recorded" and produced a confident wrong drift summary, and non-UTF-8 or unparsable bytes raised
+`UnicodeDecodeError`/`JSONDecodeError`. The structural rules now live in one `_validate_rows()` used by
+both readers, and `--publish` validates the baseline **before** any check runs. (2) Duplicate `check`
+names were accepted and then collapsed by the comparison's dict, hiding rows — now refused by name.
+(3) `_report()` raised `ValueError: max() …` on an empty findings list; it now reports a zero run.
+(4) The hole my own test exposed: a `--publish` target that did not exist was *created*, so a typo with
+`--yes` could mint a new file inside the protected area. That round confined `--publish` to overwriting an
+existing committed record; the next round restored creation as its own flag rather than leaving the
+capability dropped, which is how the contract was originally intended to read.
+
+**An incident, recorded rather than smoothed over.** While that fourth defect was being found, the test
+that exposed it had already run and **did** create `artifacts/audit/x.json` in the working tree. It was
+deleted the moment it was seen; `artifacts/` and `evidence/` are byte-identical to `HEAD` again
+(`git diff --stat HEAD -- artifacts evidence` empty, the findings artefact still `1babf3fab05b3dbd…`,
+1,444 B), and the write was made impossible by the change above rather than merely by the test being
+fixed. The failing test also used relative paths, which would have written wherever the tests happened
+to be run from; it now uses absolute paths under `ROOT` and a relocated temporary repository, so no
+test in this file can touch real evidence again.
+
+**Falsified, not trusted — with the harness measured as carefully as the code.** Each variant below is a
+throwaway copy in which exactly one guard was undone, the patch asserted to have applied, and the suite run
+against an **unmodified copy of the same shape** so the deltas are attributable rather than absolute. In a
+copy without `.git` that baseline is 1 failed / 67 passed / 3 skipped — the lone failure is the test that
+shells out to `git show HEAD:…`, which passes in the real tree — and every figure here is the excess over it:
+undoing the shared `_validate_rows` call in the file reader fails **14**; undoing it on the committed-baseline
+side fails **6** (the seventh malformed case is a raw syntax error the older parse branch still catches);
+narrowing `--out` back to `artifacts/audit/` fails **3**; dropping the `--publish-new` parent confinement
+fails **6**; dropping its already-exists refusal fails **1**; running the checks before argument validation
+fails **40**; and restoring `max()` without a default fails **1**. Reverting `tools/audit.py` to its
+`a353272` version fails **66** of the tests that can run there. Two harness faults are recorded rather than
+hidden: a copy that *included* `.git` reported 66 failures while entirely unmodified, so it was discarded
+instead of quoted, and one earlier probe ran from the real repository's directory while claiming to test a
+patched copy. Every sandbox was deleted afterwards.
+
+**README.md updated from measurement, not arithmetic**: the documented command now returns **1,273
+passed, 10 skipped, 1 deselected, 86 excluded** (1,370 collected overall, 1,284 under the command, 1
+deselected, 10 skipped; 1,063 measured at `f403b47`, 1,195 at `2b167a9`, 1,205 at `a353272`, +68 passed
+and three new NOT RUN here), and static counts are 46 files / 1,142 `def test_` functions, counted two
+ways. The README wording that made `--check-artefact` sound like a writer is corrected, and it now names the
+two publish operations as separate: overwrite and create, neither falling back into the other. The edits are
+line-count neutral — `README.md` is still **392 lines**, 3 insertions / 3 deletions — and the register's cited
+anchors (`:245`, `:253-259`, `:261-263`, `:280-281`, `:305-307`, `:332`, `:358`) each still resolve to the
+expected sentence.
+
+**Still open, deliberately not acted on.** The new-record path exists and has never been used: no dated
+findings artefact has been published, in the real repository or anywhere else during this work; no write to
+`evidence/`, `artifacts/`, `docs/audit-register.md` or `DECISIONS.md`; the register annotation for the
+artefact's working-copy fingerprint drift is still awaiting approval; D2–D10 unresolved; Phase 2 and
+training not started. Nothing staged, no commit, nothing pushed: `HEAD` remains
+`a3532720cee3f4591a785092dacbd1b85bf3d26f`.
+
+### Round three of the same working-tree change — the naming convention and the write window (2026-10-24)
+
+**Read this section as the current state; the paragraphs above are round two's record of the tree as it was
+then, and their figures (`47` functions / `71` nodes / `68` passed, full suite `1,360`, command `1,273`,
+static `1,142`) are superseded below, not deleted.** One sentence above is also now imprecise: "no dated
+findings artefact has been published … anywhere else" was true when it was written, and is not true in the
+narrow sense any more — round three's tests do exercise real creation, but only inside relocated temporary
+repositories (`tmp_path`), and nothing was created in the working tree, which the verification below checks
+file by file rather than asserting.
+
+**Recommended and implemented: `mechanical-findings-YYYY-MM-DD.json`.** The convention is enforced, not
+suggested. The record itself is `11` rows of exactly `check`, `status`, `detail` — read from the committed
+artefact, and it carries no timestamp field of any kind — so a revision's date can only live in its name.
+`--publish-new` therefore refuses anything else before it runs: a name that does not match the pattern, and a
+name whose digits are not a real calendar date (`2099-13-01`, `2099-02-30`, `2099-00-10` are refused by
+`datetime.date`, not by a wider regex). The undated `mechanical-findings.json` is refused for creation
+because `--publish` owns it; the two operations still cannot substitute for one another, and a refusal names
+the convention in its own text so the operator does not have to guess it.
+
+**The check-then-write window, closed as far as the filesystem allows and documented where it is not.** A
+destination judged free before a run that takes minutes is not free at the write. So creation now goes
+through `os.open(..., O_CREAT | O_EXCL)`: if something appears in the window, the create fails, the refusal
+is printed and the other writer's bytes are left alone. An overwrite re-reads both sides of its baseline
+immediately before writing — the working bytes against `HEAD` and `HEAD` against what it was at validation —
+and refuses if either moved, so a local edit made during a run is not buried and an amended baseline is not
+published against. A create that opened its file and then failed to write it closes the descriptor before
+removing the partial file; that order was measured, not assumed, because on Windows an unlinked-but-open
+handle makes the removal fail, and the probe below shows the test catching exactly that.
+
+**Residual limitations, stated rather than smoothed.** (1) The overwrite's last window is the instant between
+its final `read_bytes()` and the writer's own `open`; nothing inside this process can close it. An atomic
+rename would close it and would also silently discard a concurrent edit instead of refusing it, which is the
+wrong trade for an evidence publisher — so the honest guarantee is "refuse what can be seen; if it cannot be
+seen, `HEAD` still holds the bytes that were approved". (2) A process killed outright (not an `OSError`, but
+`SIGKILL`, power loss) leaves a partial new record that no handler can clean up. (3) **Symlink handling has
+not been tested on this machine.** All three symlink tests skip with `NOT RUN: this platform/user does not
+permit creating symlinks` (Windows refuses `os.symlink` for an unprivileged process, WinError 1314), so what
+is proven is the refusal functions' own `is_symlink`/`lexists` branches plus the directory, sub-directory,
+relative-escape and outside-area controls, which do run for real. How `O_EXCL` behaves through a planted link
+is unverified here, and no claim in this file should be read as covering it.
+
+**Verification, every figure from this round's own output — superseded by round four below, kept as the
+record of what was measured then.** `tests/test_audit_tool.py`: **54 test functions,
+89 collected nodes, 86 passed, 3 skipped in 0.89s**. Full suite **1,378 passed, 10 skipped in 24.16s**; with
+`ULTRON_RUN_APPROVED_ASSET=1` **1,385 passed, 3 skipped in 66.24s**; the documented README command **1,291
+passed, 10 skipped, 1 deselected, 86 excluded** (collected **1,388** overall, **86** inside the four ignored
+modules, **1,302** under the command, which is 1,291 + 10 + 1). Guards (`test_suite_hygiene.py` +
+`test_no_personal_paths.py`) **22 passed**; frontend pair **132 passed**; `test_stt.py` **38 passed, 1
+skipped**; `test_evidence_paths.py` + `test_evidence_writers.py` **44 passed**. Static counts **46 files /
+1,149 `def test_` functions**, counted two ways (per-file regex sum and a whole-tree `grep`, both 1,149).
+`python tools/audit.py` → **12 passed, 0 failed, 0 not run**, exit 0, and `git status --porcelain -- artifacts
+evidence` is empty after the run: it created nothing. `--check-artefact artifacts/audit/mechanical-findings.json`
+still reports the same **2 drift items** (`~ error taxonomy: detail differs`, `+ measurement assets cannot
+reach the product path: PASS (not recorded in the artefact)`) and wrote nothing.
+
+**Falsified, not trusted — each probe measured against the same unmodified copy.** The sandbox copy reported
+**86 passed, 3 skipped** before any patch and the identical **86 passed, 3 skipped** after every patch was
+reverted, so the deltas below are excess failures and not the sandbox's own noise: removing the naming rule
+fails **10** (every parametrised convention case, and no other); removing `O_EXCL` from the create fails **1**
+(`test_publish_new_refuses_a_target_that_appeared_during_the_run`, which is the test that also asserts the
+racer's bytes survive); removing the pre-overwrite re-read fails **2** (the working-file and HEAD-move races);
+and removing the close-before-unlink fails **1**, with the guard's own text reporting `LEFT IN PLACE` — the
+partial record would have stayed in the artefact area. Each probe verified its patch had applied before
+trusting its count, and the sandbox was deleted afterwards.
+
+**A defect of mine, found while re-reading the README this round.** Round two's edit to the
+reproducibility-instruments sentence dropped the word `and`, leaving "`tools/audit.py` runs mechanical checks /
+reports NOT RUN separately from FAIL". Round three restored it, and the same sentence now names the new-record
+convention and the fact that each write re-reads its baseline. `README.md` is still **392 lines** with **3
+insertions / 3 deletions**, and every anchor the register cites — `:245`, `:253-259`, `:261-263`, `:280-281`,
+`:305-307`, `:332`, `:358` — was re-read and still resolves to the sentence it names, including the two whose
+content changed here.
+
+**Boundaries held, re-measured not remembered.** `artifacts/audit/x.json` is **absent**; the historical
+findings artefact is **`1babf3fab05b3dbd…`, 1,444 bytes, byte-equal to its `HEAD` blob**; **64** protected
+paths (both evidence areas, `docs/audit-register.md`, `DECISIONS.md`, `src/nativevoice/diagnostics/evidence_paths.py`,
+`tests/test_evidence_paths.py`, `tests/test_evidence_writers.py`) compare identical to `HEAD`, with **0**
+differing, **0** missing and **0** files in the areas that were not there before; `git status --porcelain`
+shows exactly the four expected entries (`PROGRESS.md`, `README.md`, `tools/audit.py`, untracked
+`tests/test_audit_tool.py`). `HEAD` is still `a3532720cee3f4591a785092dacbd1b85bf3d26f` on `main`, **0**
+staged files, **ahead 2** of `origin/main` (`f403b47…`), and the reflog's newest entry is still that commit —
+no commit, no push, no publication. D2–D10 remain unresolved and Phase 2 and training remain unauthorised.
+
+### Round four of the same working-tree change — the review's four corrections (2026-10-24)
+
+**An independent review of the round-three tree found one Medium and several Small items, and this round
+applies exactly those four corrections — nothing else.** The Medium item was a coverage claim, not a shipped
+defect: the suite proved that an ordinary run does not *overwrite* the committed artefact, but nothing proved
+that it does not *create* anything.
+
+**1. The bare-run guarantee is now tested, and provably failable.** `test_the_shipped_twelve_check_audit_gains_no_file_anywhere`
+runs the real `audit.CHECKS` through `main([])` — the operator's own command, measured at ~1.5s in process,
+which is why it is now in the suite rather than only in a manual note — and compares two independent
+observations: every file name in the repository, and the SHA-256 of every file in both evidence areas.
+`test_an_ordinary_run_leaves_the_committed_artefact_byte_identical` also watches `_create_exclusive` now, not
+only `write_findings`, because watching one writer was precisely the blind spot. A refutation probe puts the
+regression back — a bare run minting `mechanical-findings-2099-12-31.json` through the create path — and it
+now fails **3** tests where it previously failed **0**: the two above and
+`test_a_failing_check_still_exits_non_zero_and_still_writes_nothing`, which watches both writers for the same
+reason. The probe's own report confirms the patch applied and that the file really was written in the copy.
+
+**2. The README now names the different mechanisms instead of blurring them.** The old sentence claimed both
+publish operations re-read "its baseline" before writing. `--publish-new` has no baseline: it claims its name
+with `O_EXCL`. The corrected sentence separates them — overwrite re-reads `HEAD`, create refuses a name that
+is already taken — and adds what `--out` does and does not do.
+
+**3. `--out` behaviour was left unchanged and written down.** It is not a publisher: outside the evidence
+areas there is no committed record to compare against, so it re-validates nothing before the write and
+replaces an existing file the operator named. That is now stated in the module docstring, in `--out`'s own
+help text and in the README, and it is tested rather than asserted:
+`test_out_replaces_an_existing_destination_and_revalidates_nothing` plants an edit to the destination from
+inside a check and asserts that the run still replaces it with a readable record, exit 0. The protection for
+`--out` is the one applied *before* the run: a destination inside `artifacts/` or `evidence/` is refused.
+
+**4. Names and tidy-ups a reviewer should not have to trip over.** `test_the_three_destinations_are_mutually_exclusive`
+became `test_no_two_destinations_can_be_combined`, parametrised over all six pairs generated from the flag
+names, and it absorbs `test_publish_new_and_publish_cannot_be_combined` (whose only unique case, `--yes`
+alone, was already covered elsewhere). `test_no_ordinary_or_refused_run_leaves_a_new_file_behind` — which
+never ran an ordinary run — is now `test_refused_runs_leave_no_new_file_behind_in_the_repository`, checks five
+refusal paths including a `--publish-new` whose name is refused, and compares the repository by name and the
+evidence areas by digest. Five publish tests that hand-relocated two of the three area constants now call
+`_repository_areas`, so none of them can silently judge the real repository's protected areas. The HEAD-move
+race test counts its two baseline reads instead of consuming a two-item iterator, and a placeholder-less
+f-string is gone.
+
+**An incident from my own correction script, recorded rather than quietly recovered.** The script that was
+supposed to swap three README figures called `write_text(t, encoding="newline")` — a wrong keyword that
+`pathlib` accepts as an encoding name and only rejects after opening the file for writing. The file was
+truncated to **0 bytes** before the `LookupError` was raised. It was restored with `git checkout HEAD -- README.md`
+(README is not a protected path; nothing else was touched, nothing was staged), the three line edits were
+re-applied with the Edit tool rather than a script, and the result is verified as **392 lines** with exactly
+**3 insertions / 3 deletions** at lines **245, 263 and 281**, each cited anchor re-read. Silent truncation
+followed by an exception is the failure mode worth writing down: a script that can open a tracked file for
+writing can destroy it before it fails, which is why this round's file edits are string replacements, not
+regeneration.
+
+**Verification, every figure from this round's own final tree.** `tests/test_audit_tool.py`: **55 test
+functions, 95 collected nodes, 92 passed, 3 skipped**. Full suite **1,384 passed, 10 skipped**; with
+`ULTRON_RUN_APPROVED_ASSET=1` **1,391 passed, 3 skipped**; the documented README command **1,297 passed, 10
+skipped, 1 deselected, 86 excluded** (collected **1,394** overall, **86** inside the four ignored modules,
+**1,308** under the command = 1,297 + 10 + 1). Guards **22 passed**; frontend pair **132 passed**;
+`test_stt.py` **38 passed, 1 skipped**; `test_evidence_paths.py` + `test_evidence_writers.py` **44 passed**.
+Static counts **46 files / 1,150 `def test_` functions**, counted two ways. The skip composition was measured
+rather than inherited: 3 symlink NOT RUN + 4 Kokoro + 2 faster-whisper + 1 CT2 = 10. `python tools/audit.py`
+→ **12 passed, 0 failed, 0 not run**, exit 0, repository unchanged afterwards; `--check-artefact` on the
+historical record still reports the same **2 drift items**, exit 1, and wrote nothing.
+
+**Falsification deltas, each against the same unmodified copy** (which reported **92 passed, 3 skipped**
+before patching and again after every revert, so each figure is an excess and not sandbox noise): naming rule
+removed **11** — the ten parametrised convention cases plus `test_refused_runs_leave_no_new_file_behind_in_the_repository`,
+which fails because `x.json` stops being a refusal and the loop's exit-code assertion catches it; `O_EXCL`
+removed **1**; pre-overwrite re-read removed **2**; close-before-unlink removed **1** (reporting `LEFT IN
+PLACE`); `--check-artefact` turned into a writer **2**; bare run turned into a minter **3**. All sandboxes
+were deleted.
+
+**Limitations preserved, not resolved.** The overwrite's final `read_bytes()` → writer's `open` instant is
+still open; an atomic replace would close it and would bury a concurrent edit instead of refusing it. Nothing
+protects a write from a process killed outright — the partial-file cleanup only runs when a handler executes.
+The races are planted inside checks to make the interleaving deterministic; two genuinely simultaneous
+processes were never run. **Symlink handling is still NOT RUN on this machine** (WinError 1314 on all three
+tests), so `O_EXCL`'s behaviour through a planted link is unverified. And `--out` still re-validates nothing
+before writing — now documented and tested as the deliberate choice it is.
+
+**Boundaries held, re-measured after every change.** `artifacts/audit/x.json` absent, no dated record in the
+area at all, the historical findings artefact `1babf3fab05b3dbd…`, 1,444 bytes, byte-equal to its `HEAD` blob,
+all 60 files in `artifacts/` and `evidence/` identical to `HEAD`, and `docs/audit-register.md`, `DECISIONS.md`,
+`src/nativevoice/diagnostics/evidence_paths.py`, `tests/test_evidence_paths.py` and
+`tests/test_evidence_writers.py` unchanged. `git status --porcelain` shows exactly four entries; `HEAD` is
+still `a3532720cee3f4591a785092dacbd1b85bf3d26f`, 0 staged, ahead 2 of `origin/main`. Nothing published,
+committed or pushed; D2–D10 unresolved; Phase 2 and training unauthorised.
+
+**Open by ruling, added 2026-10-26.** The historical mechanical-findings artefact comparison remains open by
+ruling; see Addendum 29 / A74 in `docs/audit-register.md`. The historical snapshot remains unchanged, and no
+offline-proof remeasurement is authorized. Round two's clause "the register annotation for the artefact's
+working-copy fingerprint drift is still awaiting approval" at `:1838` is left in place as the record of when the
+decision was pending; this paragraph supersedes it, and nothing earlier in this file is rewritten.
+
+**Clarification, added 2026-10-26.** Addendum 29 / A74 has now been appended to `docs/audit-register.md`,
+below its then-last line `:1009`, so the register stands at 1,032 lines with its heading at `:1011` and the
+A74 row at `:1022`, and no earlier row edited. Two counts reported above were true when they were measured
+and are left in place unchanged as historical records: round two's "no write to … `docs/audit-register.md`"
+at `:1836-1837`, and round four's "`git status --porcelain` shows exactly four entries" at `:2009`. The
+working tree now contains **five** entries — `PROGRESS.md`, `README.md`, `docs/audit-register.md`,
+`tools/audit.py` and the untracked `tests/test_audit_tool.py` — with nothing staged, `HEAD` still
+`a3532720cee3f4591a785092dacbd1b85bf3d26f` and ahead 2 of `origin/main`; no commit, push, publication,
+measurement or phase transition is made by this paragraph.
