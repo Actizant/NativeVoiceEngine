@@ -2025,3 +2025,67 @@ working tree now contains **five** entries — `PROGRESS.md`, `README.md`, `docs
 `tools/audit.py` and the untracked `tests/test_audit_tool.py` — with nothing staged, `HEAD` still
 `a3532720cee3f4591a785092dacbd1b85bf3d26f` and ahead 2 of `origin/main`; no commit, push, publication,
 measurement or phase transition is made by this paragraph.
+
+### `tools/offline_proof.py` no longer publishes a non-measurement, and its write joins the shared redaction boundary (2026-10-26)
+
+**What was changed, on explicit approval and in a narrow scope.** Three files: `tools/offline_proof.py`
+(the gate, the serializer, the docstring), `tests/test_offline_proof.py` (ten new tests beside the two
+existing ones), and `tests/test_evidence_writers.py` (one classification moved). The publication contract now
+is: a completed run — PASS **or** FAIL — publishes to `artifacts/audit/offline-proof.json` as before; a
+`NOT RUN` run writes nothing, does not create the directory, prints why, and exits 1; `--allow-incomplete`
+publishes an incomplete report **only** where `--out` was explicitly named, and can never authorise the
+default destination — the permission is tested against whether the operator named a path, not against what
+the resolved path happens to look like. The write goes through `evidence_paths.write_json`, so a home-rooted
+path in the payload is published as `[USER_HOME]` and non-ASCII text stays literal
+(`ensure_ascii=False`); text mode is unchanged, so a Windows working copy carries CRLF while the repository
+stores LF. `offline_proof.py` left `PATH_FREE_WRITERS` and joined the parametrisation that asserts a writer
+imports the boundary — a stricter classification, with the existing set-equality assertion still an equality
+and no assertion weakened. The commercial direction is unchanged and unrelated to this: offline inference is a
+capability, and the hosted API remains planned work.
+
+**Verification, every figure measured on this tree after the change.** `tests/test_offline_proof.py`
+**12 passed**; `tests/test_evidence_writers.py` **22 passed**; `tests/test_no_personal_paths.py` **19
+passed**; `tests/test_audit_tool.py` with it **104 passed, 3 skipped** (the audit-tool module itself
+unchanged at **92 passed, 3 skipped**); full suite **1,395 passed, 10 skipped**, the 10 skips measured as
+3 symlink NOT RUN + 4 Kokoro + 2 faster-whisper + 1 CT2; the documented README command **1,308 passed, 10
+skipped, 1 deselected, 86 excluded** (collected **1,405** overall, **86** inside the four ignored modules,
+**1,318/1,319** under the command = 1,308 + 10 + 1); with `ULTRON_RUN_APPROVED_ASSET=1` **1,402 passed, 3
+skipped**; static counts **46 files / 1,160 `def test_`**, both ways. Every suite delta is **+11** nodes: ten
+new test functions plus the one added parametrised case.
+
+**Falsified, not trusted.** Each probe patched a throwaway copy, verified the patch parsed, and ran against
+the same copy unmodified (**12 passed**; inventory **22 passed**), returning to **12 passed** after every
+revert: removing the gate fails **4** (`writes_nothing_by_default`, `allow_incomplete_alone…`,
+`explicit_destination_alone…`, `empty_model_root…`); dropping the named-destination rule so the flag alone
+authorises the default fails **1** (`test_allow_incomplete_alone_cannot_reach_the_default_destination`);
+replacing the redacting serializer with the old raw writer fails **3** (scrubbing, non-ASCII, and the
+docstring contract pin). The sandbox was deleted. One probe was invalid on its first attempt — its patch put
+a comment before a colon and produced a collection error, not a refutation — and was rewritten and re-run;
+the figures above are from the second run.
+
+**Preservation, checked rather than asserted.** `artifacts/audit/mechanical-findings.json` stayed
+`1babf3fab05b3dbd…` / 1,444 bytes and `artifacts/audit/offline-proof.json` stayed `cebcc99f456589be…` / 577
+bytes, with their 2026-10-23 mtimes, before and after every test, suite and audit run above; the retained
+pre-Task-1 probe stayed `7d9b3be0d7c74a31` / 55,699 bytes. `tools/offline_proof.py` was never executed — not
+by me and not by a test: the tests stub the measurement or point the model root at an empty temporary
+directory, and every write target is a temporary repository, so no run of this suite can reach the committed
+record. `tools/audit.py`, `tests/test_audit_tool.py`, `README.md`, `docs/audit-register.md` and
+`DECISIONS.md` were not touched; `python tools/audit.py` still reports **12 passed, 0 failed, 0 not run**,
+exit 0, and `--check-artefact` still reports the same **2 drift items**, exit 1 — both findings stay open by
+ruling, and A74's severity stays undecided.
+
+**A consequence reported, not repaired.** Freezing `README.md` out of this change leaves two of its counts
+behind: `:245` says 46 files / **1,150** `def test_` where the tree now measures 46 / **1,160**, and `:263`
+says **1,297 passed** on the documented command where it now returns **1,308**. The same applies to the
+figures inside this file's round-two to round-four paragraphs, which remain the record of the trees they
+were measured against. Nothing here was corrected, because editing README was not approved; it should be
+refreshed with measured numbers the next time documentation work is authorised.
+
+**Out of scope, and explicitly not claimed safe.** The other seven tools that still write JSON directly —
+`ab_samples.py`, `benchmark_profiles.py`, `corpus_forge.py`, `evaluate.py`, `multilingual_compare.py`,
+`tts_head_to_head.py`, `tts_latency_lab.py` — were not assessed for verdict gating, default destinations or
+symlink handling; `offline_proof` was fixed first because it is the one whose default destination carries two
+open findings. Destination policy for `offline_proof` itself (refusing a protected `--out`, confirming before
+overwriting) was left to the deferred O2 option. No register row, no artefact regeneration, no offline-proof
+re-measurement, nothing staged, committed, pushed, tagged or branched; D2–D10, Phase 2 and training remain
+closed.

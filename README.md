@@ -242,7 +242,7 @@ feature, and no interface described here should be treated as available.
 
 The repository's default position is that a number either comes from measurement or says it does not.
 
-**What is in the tree (static counts, `tests/`):** 46 test files, 1,150 `def test_` functions. Pytest declares
+**What is in the tree (static counts, `tests/`):** 46 test files, 1,160 `def test_` functions. Pytest declares
 four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
 
 **Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
@@ -260,7 +260,7 @@ python -m pytest -q \
 
 Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
 release snapshot staged; reconciled in `docs/audit-register.md`). That figure is a record against one commit,
-not a live claim; this tree returns **1,297 passed, 10 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-24 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,394 overall, 86 inside the four ignored modules, 1,308 collected by the command, 1 deselected, 10 skipped. The passed figures at each step were measured, not derived: 1,063 at `f403b47`, 1,195 at `2b167a9` (+132), 1,205 at `a353272` (+10) and 1,297 here (+92 passed and three new NOT RUN, 95 new nodes), the last from `tests/test_audit_tool.py`. Those three NOT RUNs are honest: this platform refuses `os.symlink` for an unprivileged process (WinError 1314), so the three symlink-refusal cases cannot run here; what is proven is each refusal function's own `is_symlink`/`lexists` branch and the directory, escape and sub-path controls, not a write attempted through a real link on this machine, and not `O_EXCL`'s behaviour through a planted link.
+not a live claim; this tree returns **1,308 passed, 10 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-26 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,405 overall, 86 inside the four ignored modules, 1,319 collected by the command, 1 deselected, 10 skipped. The passed figures at each step were measured, not derived: 1,063 at `f403b47`, 1,195 at `2b167a9` (+132), 1,205 at `a353272` (+10), 1,297 with the audit-tool module (+92 passed and three new NOT RUN over the 95 nodes of `tests/test_audit_tool.py`) and 1,308 with O1 (+11: ten new tests in `tests/test_offline_proof.py` and one added case in `tests/test_evidence_writers.py`). Those three NOT RUNs are honest: this platform refuses `os.symlink` for an unprivileged process (WinError 1314), so the three symlink-refusal cases cannot run here; what is proven is each refusal function's own `is_symlink`/`lexists` branch and the directory, escape and sub-path controls, not a write attempted through a real link on this machine, and not `O_EXCL`'s behaviour through a planted link.
 
 **Asset-gated tests** are skipped unless a named human has approved the asset *and*
 `--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven

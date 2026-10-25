@@ -403,7 +403,7 @@ def test_the_identity_writer_imports_the_boundary() -> None:
 @pytest.mark.parametrize(
     "tool",
     ["multilingual_eval.py", "real_speech_check.py", "platform_demo.py", "asset_status_audit.py",
-     "audit.py", "selftest_audio.py"],
+     "audit.py", "offline_proof.py", "selftest_audio.py"],
 )
 def test_in_scope_writers_import_the_boundary(tool: str) -> None:
     """A writer that stops importing the helper has started publishing raw paths again."""
@@ -413,14 +413,17 @@ def test_in_scope_writers_import_the_boundary(tool: str) -> None:
 
 # Writers reviewed in the A53 inventory and found to publish no path at all: each payload is
 # numbers, model ids, licence strings and clip names, never a filesystem path. They stay on this
-# list until a field in one of them starts naming a file.
+# list until a field in one of them starts naming a file. `offline_proof.py` left it when its
+# publication path was gated and routed through the boundary above: the scan reports findings
+# relative to the directory scanned, but that is a construction this writer no longer has to
+# rely on, so it is now classified with the writers the boundary is asserted over rather than
+# declared exempt. The set equality below is unchanged and remains an equality.
 PATH_FREE_WRITERS = {
     "ab_samples.py": "records `file` by name only",
     "benchmark_profiles.py": "records thread counts and timings",
     "corpus_forge.py": "records clip names under the corpus directory",
     "evaluate.py": "records transcripts and scores",
     "multilingual_compare.py": "copies configuration fields, never a path field",
-    "offline_proof.py": "static findings are repo-relative by construction",
     "tts_head_to_head.py": "records medians; the model directory stays in the engine",
     "tts_latency_lab.py": "records medians",
 }

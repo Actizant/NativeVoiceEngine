@@ -11,7 +11,23 @@ records zero attempts, and the static scan finds no network import on the speech
 path. Two independent proofs, because a runtime guard only catches code that
 actually ran, and a static scan only catches code that was written.
 
-    python tools/offline_proof.py
+What is proved is a capability, not a restriction: the speech path can complete with
+no network access. The hosted API is separate planned work (`README.md:53`) and this
+tool says nothing about it.
+
+What this tool does is publish. The default destination is
+`artifacts/audit/offline-proof.json`, committed evidence, so reaching it is a
+deliberate act rather than a side effect: a completed run - PASS or FAIL - publishes,
+while a run that never measured anything (NOT RUN, for want of an approved asset)
+writes nothing at all, not even a directory, and exits 1. `--allow-incomplete`
+publishes such a report only when `--out` names another destination; it can never
+authorise a write to the default one. The payload goes through the shared redacting
+serializer, so a home-rooted path is published as `[USER_HOME]`; like every writer on
+that boundary it writes text, so a Windows working copy carries CRLF while the
+repository stores the LF form.
+
+    python tools/offline_proof.py                # publishes the evidence record
+    python tools/offline_proof.py --out PATH     # publishes elsewhere instead
 """
 
 from __future__ import annotations
@@ -28,6 +44,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from nativevoice.audio import write_wav  # noqa: E402
 from nativevoice.config import models_dir  # noqa: E402
 from nativevoice.core.language import Task  # noqa: E402
+from nativevoice.diagnostics.evidence_paths import write_json  # noqa: E402
 from nativevoice.diagnostics.offline import OfflineGuard, static_scan  # noqa: E402
 from nativevoice.models.registry import ModelRegistry  # noqa: E402
 
@@ -111,20 +128,43 @@ def run(voice_text: str, language: str, threads: int) -> dict:
     return result
 
 
+#: The committed evidence record this tool publishes to when the operator names no
+#: destination. Written in one place so the refusal and the publication agree on it.
+DEFAULT_OUT = ROOT / "artifacts" / "audit" / "offline-proof.json"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--text", default="The voice engine is running locally on my machine.")
     parser.add_argument("--language", default="en")
     parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--out", default=str(ROOT / "artifacts" / "audit" / "offline-proof.json"))
+    parser.add_argument("--out", metavar="PATH",
+                        help=f"publish to PATH instead of the default {DEFAULT_OUT.relative_to(ROOT).as_posix()}")
+    parser.add_argument("--allow-incomplete", action="store_true", dest="allow_incomplete",
+                        help="publish a NOT RUN report, and only where --out already names a destination")
     args = parser.parse_args(argv)
 
+    # Whether a destination was *named* is what gates an incomplete report, not whether the
+    # resolved path happens to look like somewhere safe: `--allow-incomplete` alone must
+    # never be able to reach the committed record.
+    out = Path(args.out) if args.out is not None else DEFAULT_OUT
+    label = out.relative_to(ROOT).as_posix() if out.is_relative_to(ROOT) else str(out)
     report = run(args.text, args.language, args.threads)
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    verdict = report.get("verdict")
+
+    if verdict == "NOT RUN" and not (args.out is not None and args.allow_incomplete):
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        reason = report.get("reason", "no reason was given")
+        print(f"artefact NOT written: verdict is NOT RUN ({reason}). {label} is unchanged: no directory "
+              "was created, nothing was overwritten. To publish an incomplete report elsewhere, pass "
+              "--out PATH --allow-incomplete")
+        return 1
+
+    write_json(out, report)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    print(f"artefact -> {args.out}")
-    return 0 if report.get("verdict") == "PASS" else 1
+    print(f"artefact -> {label}"
+          + (" (incomplete report, never the default destination)" if verdict == "NOT RUN" else ""))
+    return 0 if verdict == "PASS" else 1
 
 
 if __name__ == "__main__":
