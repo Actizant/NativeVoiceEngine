@@ -60,6 +60,25 @@ def test_every_test_file_contributes_at_least_one_test():
     assert empty == []
 
 
+def unconditional_skip_offenders(source: str, name: str) -> list[str]:
+    """Unconditional skips in ``source``, reported as ``file:function:line``.
+
+    A dotted decorator parses to ``ast.Attribute``, never ``ast.Name``, so the bare form is the
+    decorator that is not a call. Both ``@pytest.mark.skip`` and ``@pytest.mark.skip(...)`` refuse
+    the test unconditionally and are offenders; ``skipif`` and ``xfail`` do not end with
+    ``mark.skip`` and are left alone, because conditional skips are deliberate here.
+    """
+    offenders = []
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        for decorator in node.decorator_list:
+            target = decorator.func if isinstance(decorator, ast.Call) else decorator
+            if ast.unparse(target).endswith("mark.skip"):
+                offenders.append(f"{name}:{node.name}:{node.lineno}")
+    return offenders
+
+
 def test_no_test_is_unconditionally_skipped():
     """A bare `@pytest.mark.skip` is how a suite quietly stops measuring anything.
 
@@ -68,14 +87,22 @@ def test_no_test_is_unconditionally_skipped():
     """
     offenders = []
     for path in sorted(TESTS.glob("test_*.py")):
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                continue
-            for decorator in node.decorator_list:
-                target = decorator.func if isinstance(decorator, ast.Call) else decorator
-                dotted = ast.unparse(target)
-                if dotted.endswith("mark.skip") and isinstance(decorator, ast.Name):
-                    offenders.append(f"{path.name}:{node.name}:{node.lineno}")
-                elif dotted.endswith("mark.skip") and isinstance(decorator, ast.Call) and not decorator.args:
-                    offenders.append(f"{path.name}:{node.name}:{node.lineno}")
+        offenders += unconditional_skip_offenders(path.read_text(encoding="utf-8"), path.name)
     assert offenders == []
+
+
+def test_the_skip_detector_can_actually_fail():
+    """The verifier, verified: the detector must catch the bare form, not only the call form.
+
+    The branch this replaces asked for ``isinstance(decorator, ast.Name)``, which no dotted
+    decorator can satisfy, so the detector silently found nothing at all.
+    """
+    bare = "import pytest\n\n@pytest.mark.skip\ndef test_gone():\n    assert True\n"
+    called = "import pytest\n\n@pytest.mark.skip()\ndef test_gone():\n    assert True\n"
+    reasoned = "import pytest\n\n@pytest.mark.skip(reason='later')\ndef test_gone():\n    assert True\n"
+    conditional = ("import pytest\n\n@pytest.mark.skipif(True, reason='no torch')\n"
+                   "def test_kept():\n    assert True\n")
+    assert unconditional_skip_offenders(bare, "f.py") == ["f.py:test_gone:4"]
+    assert unconditional_skip_offenders(called, "f.py") == ["f.py:test_gone:4"]
+    assert unconditional_skip_offenders(reasoned, "f.py") == ["f.py:test_gone:4"]
+    assert unconditional_skip_offenders(conditional, "f.py") == []
