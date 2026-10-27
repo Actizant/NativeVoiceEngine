@@ -2089,3 +2089,295 @@ open findings. Destination policy for `offline_proof` itself (refusing a protect
 overwriting) was left to the deferred O2 option. No register row, no artefact regeneration, no offline-proof
 re-measurement, nothing staged, committed, pushed, tagged or branched; D2–D10, Phase 2 and training remain
 closed.
+## 2026-10-27 - the TDT lattice verification suite is promoted into `tests/` (code-only, uncommitted)
+
+Authorised scope: promote three verification files, add the adapter-to-lattice seam test, remove unused
+imports, validate the real repository. **No TDT loss module, no training caller, no package boundary, no
+contract, no dependency, no download, no checkpoint.**
+
+What landed: `tests/tdt_lattice_oracle.py` (184 lines, enumeration only), `tests/tdt_lattice_recursion.py`
+(234 lines, recursion plus the decoder contract), `tests/test_tdt_lattice.py` (454 lines, 25 definitions,
+239 collected nodes). The promoted bytes are identical to the staged copies that passed the dry run
+(sha256 prefixes `80ee0ebc52666283`, `9e146a7fe459faad`, `8970fb2f3f167a1f`).
+
+Measured in the real tree, not projected: the promoted file alone **239 passed**; the complete suite
+**1,634 passed, 10 skipped** (1,644 collected); the documented release command **1,547 passed, 10 skipped,
+1 deselected**, with the four ignored modules re-counted at exactly **86 excluded**; `tools/audit.py`
+**12 passed, 0 failed, 0 not run**, exit 0; `tests/test_no_personal_paths.py` **19 passed**. The three
+personal-path failures seen in the staging copy were staging artefacts - it has no `.git` and no `.trials`
+declaration to read - and they do not occur in the repository. `artifacts/audit/mechanical-findings.json`
+remains 1,444 B `1babf3fab05b3dbd...` and `artifacts/audit/offline-proof.json` 577 B `cebcc99f456589be...`:
+neither was written, regenerated or staged.
+
+Two defects the staging dry run caught before promotion, reported rather than hidden: an inner
+`from tdt_oracle import ...` that the module rename missed (1 failed / 240 passed), and a cleanup that
+collapsed an indented import and broke collection outright. Both were fixed and re-run green (242 passed)
+before any file entered the repository, which is the reason a throwaway copy is used for this at all.
+
+Status of the formulation this suite pins, in the same terms as its module docstring: the boundary sentences
+(`alpha(1,0)=1`, `beta(T+1,U)=1`, `beta(T+1,u)=alpha(T+1,u)=0` for `u != U`, `P_TDT=alpha(T+1,U)`, Eq. 9), the
+Eq. 6 asymmetry (blanks over `D` excluding 0, tokens over all of `D`) and the Appendix D joint shape are
+**VERIFIED quotations**. That the node `T+1` carries no encoder state - i.e. that `T` is the encoder output
+length - is **DERIVED** from those sentences; the paper's explicit definition of `T` is **UNRESOLVED** after
+six failed retrieval routes, including one extraction gloss that was rejected as evidence. The suite therefore
+tests a documented interpretation with a named open item, and
+`test_adapter_length_and_lattice_length_are_the_same_number` exists so that a one-frame error at the
+adapter-to-lattice seam fails a test instead of training a subtly wrong model: it pins 1,359 samples to zero
+frames and 1,360 to one, exposes the intermediate lengths of the **proposed** stride-4 stack - two unpadded
+3x3 stride-2 convolutions, a component that does not exist in this tree - and proves the likelihood changes
+when the declared length changes by one.
+
+`lambda_feat = 0` unchanged; Whisper still measurement-only pending rights and integrity verification;
+AI4Bharat still a candidate, not a dependency; EmbeddingGemma 2 still pending tooling review; no training
+corpus authorised; `D`/`Nd` and model capacity still undecided. Outstanding audit items (O2, the seven
+unclassified writers, A74's severity, the 11-vs-12 artefact drift) and the unsubmitted support request remain
+separate and untouched. Nothing here authorises implementation of the loss or a training run.
+
+## 2026-10-27 - A-2 documentation corrections and one authorised source-file comment, applied and verified (repository state at this checkpoint: nothing staged, nothing committed)
+
+Precedence: this section supersedes the "(code-only, uncommitted)" status in the section above and the "nothing
+staged, committed, pushed, tagged or branched" line that closes the one before it. Both are left exactly as written,
+because each described the working tree at its own task's close; the tree has since changed and that is a new record.
+
+Authorised scope, recorded in two stages so the sequence is not blurred. Stage one - the original authorization -
+covered documentation corrections inside the three already-modified tracked files only, plus verification and a new
+preservation snapshot. Stage two - a later, separate authorization, given only after stage one's report had been
+reviewed - permitted one additional change: the comment-only correction in `src/nativevoice/modeling/config.py`, which
+was **not** part of stage one and is recorded separately under `Edits applied` below. Across both stages: no staging,
+commit, push, reset, clean, stash, restore or branch change; A-3 through A-9 and P0-a through P0-h not started; nothing
+installed, nothing downloaded.
+
+Edits applied: `README.md` - ten replacements: six in the first pass, then four for review findings F-1, F-2 and F-3 -
+dating the 1,945/1,859 collection reconciliation explicitly as the 2026-10-26 measurement and naming the separate
+2,182-node collection census as a count that is not a test result and overwrote nothing; ending the dated step series
+explicitly at 1,547 with the head figure 1,783 identified as its next reading rather than a discrepancy; restoring the
+filenames behind the historical isolated-environment figures 169, 63 and 19 and stating that none of those three files
+was run individually in this phase; and rewording the static count so the 10 student files are described as present in
+the working tree but not yet tracked (static counts now 56 `test_*.py` files and 1,374 `def test_`
+definitions, with the census-versus-node distinction stated; the 1,783-passed / 75-skipped result re-labelled as a
+dated 2026-10-26 measurement NOT re-measured for these commits; the torch gate reported as 71
+`pytest.importorskip("torch")` call sites across seven files; per-file skipped-node figures replaced with measured
+values and three files explicitly marked NOT MEASURED; the "10 and 65" split sentence reworded; and a final
+consistency pass removing the sentence that said the per-file split had been withdrawn, which contradicted the
+measured figures inserted two sentences earlier).
+`docs/asr-architecture.md` - ten replacements (title, Status line, §4 heading, three data-flow rows re-labelled
+SKELETON with the still-open ruling named, the Phase-2 open-questions paragraph given an "implementation is not a
+ruling" status, and the §8 claim bullet rewritten). Rows 4 and 8 of the proposal were left unchanged as instructed,
+and no other document was touched.
+`src/nativevoice/modeling/config.py` - one comment-only correction, authorised separately after the
+documentation pass described above. The line above `REQUIRED_FIELD_COUNT` no longer claims the constant is
+"Asserted by tests", because nothing asserts it: `grep -rn REQUIRED_FIELD_COUNT src/ tools/ tests/ docs/` finds only
+the definition at `config.py:198` and the re-export in `modeling/__init__.py:35,71`. The replacement records what is
+tested instead - `tests/test_modeling_encoder_shapes.py::test_config_refuses_every_attempt_to_omit_a_field`, which
+asserts that no field carries a default and expects `TypeError` for an omitted field, and which needs no torch. The
+module's AST with docstrings stripped is identical before and after, every non-comment line is unchanged, and the
+constant's value is unchanged: no behaviour, validation rule, interface or architectural decision moved.
+
+Commands executed, project interpreter, torch absent:
+`python -B tools/audit.py` -> 12 passed, 0 failed, 0 not run, exit 0.
+`python -B -m pytest -o addopts='' -q` over the seven stdlib-tier student files -> 537 passed, 76 skipped, exit 0.
+Per file: `test_tdt_lattice.py` 239/0; `test_tdt_lattice_reference.py` 135/34; `test_tdt_batch_length_contract.py`
+18/25; `test_tdt_zero_length_contract.py` 12/7; `test_modeling_lengths_bridge.py` 50/0; `test_modeling_masking.py`
+43/0; `test_tdt_length_seam.py` 40/10. `tests/test_no_personal_paths.py` -> 19 passed.
+`tests/test_suite_hygiene.py` -> 3 passed. `python -B -m pytest --collect-only -q` -> 2,182 collected nodes summed
+from the per-file report, exit 0.
+NOT RUN: the full suite and every benchmark (not authorised); `test_modeling_encoder_masks.py`,
+`test_modeling_encoder_shapes.py` and `test_modeling_normalization.py` individually (not authorised in this phase),
+so no whole-tree pass or skip total is claimed anywhere; all torch-dependent nodes; the isolated CPU-torch
+environment (not re-entered).
+
+Integrity: 24/24 objects matched the A-1 manifest before editing, and all 21 code and test files were byte-identical
+to it at the close of the documentation pass. The `config.py` comment correction recorded above is the one authorised
+exception: 20 of the 21 still match the A-1 floor and that single file is flagged `CORRECTED` in the refreshed
+post-correction manifest. Line endings preserved per file - `README.md` LF-only, and this file,
+`docs/asr-architecture.md` and `src/nativevoice/modeling/config.py` CRLF-only, zero lone LF and zero bare CR in each -
+so the inserted text did not alter either convention. Six files remain CRLF in the working tree and will still be
+stored LF-normalised by `* text=auto eol=lf`.
+
+Correction to the audit trail: the earlier statement that no per-file skipped-node attribution could be verified was
+half wrong. The original README figures of 34 and 7 for `test_tdt_lattice_reference.py` and
+`test_tdt_zero_length_contract.py` were correct node counts for their own date; what is true is that 65 no longer
+covers this tree, because two further student files joined the torch-gated set. Stale-versus-unverified is now
+recorded that way in `README.md` rather than as a withdrawal.
+
+Preservation: the two A-1 copies and the restore-proof scratch are untouched and re-verified at 24 files / 572,325
+bytes each with `MANIFEST.sha256` passing. A third, separately identified post-correction snapshot of all 24 objects
+now exists in the same backup root as the A-1 copies, at `[USER_HOME]\Documents\Qoder\backups\NativeVoiceEngine\`
+**2026-10-27-post-correction**, with its own `MANIFEST.txt` and `MANIFEST.sha256`. `[USER_HOME]` is this repository's
+sanctioned redaction token: the literal absolute path is deliberately not committed here. No byte total or manifest
+digest is quoted in this record, because the snapshot contains this file - any figure written here would be made
+stale by the act of taking the snapshot. The authoritative totals and per-file digests are those in the snapshot's
+own `MANIFEST.txt`, whose rows are each flagged `CORRECTED` or `unchanged` against the pre-correction floor. The
+originals are kept: the corrected snapshot supplements the floor, it does not replace it.
+
+Status: no capacity, subsampling (R1), duration-set (`D`/`Nd`), vocabulary, normalisation-placement or block-topology
+ruling is made or implied here. `GATED_TRAINING_CALLERS=set()`, `lambda_feat=0`, `TEACHER_TARGET_REFUSAL`, the corpus
+reader allowlist, the `.pt`/`.safetensors`/`.yaml` refusals, the consent gates and the provenance gates are unchanged.
+Commit hashes, post-commit content digests and any commit-time re-measurement remain NOT RUN: they cannot honestly be
+written until staging and committing are separately authorised.
+
+## 2026-10-27 - pre-commit correctness pass: four demonstrated defects fixed, TDT mathematics independently validated
+
+Authorised scope: fix justified correctness issues before the first commit. No staging, commit, push, reset, clean,
+checkout, restore or stash; no dependency, download, training or teacher target. Everything below is uncommitted
+working-tree state.
+
+Defects were probed first, then fixed, then probed again:
+
+1. **Encoder batch broadcast (P0).** A `[4, 40, 80]` grid with a `[1, 3]` target tensor returned logits equal to the
+   four-transcript call: torch broadcasts a size-1 batch dimension through the joint, so one transcript was scored for
+   every row and nothing refused it. `Student.forward` now refuses a `target_ids` leading dimension that differs from
+   the grid's, naming both.
+2. **Inherited TDT spec (P1).** Both scorers defaulted to `TdtSpec()`, which chooses `durations=(0, 1, 2)` and
+   `blank_index=0` by nobody. The defaults are gone; all 48 existing call sites already passed a spec, so nothing else
+   moved.
+3. **Inferred vocabulary (P0).** `vocab = width - Nd` meant a spec with a shorter duration alphabet re-labels duration
+   slots as token ids and still returns a finite loss - demonstrated: width 9 with `Nd=3` accepted token id 5 for a
+   model whose vocabulary is 5. `TdtSpec` now carries an optional declared `vocab_size` and both scorers refuse a
+   disagreement between declaration and tensor, naming both. Undeclared callers keep the old behaviour, so this is
+   additive; the full closure is the `EmissionContract` decision (A-3), which is **not** made here.
+4. **Misattributed non-finite input (P1).** A slice with no finite logit made `log_softmax` return NaN and the
+   reference then raised "terminal cell unreachable; check that durations include 0 when U > T" - pointing at the
+   duration alphabet when the input is malformed. Both scorers now refuse NaN logits and all-non-finite slices by name
+   before any lattice cell is built, and an `-inf` entry in an otherwise finite slice stays legal (a class of
+   probability zero), which the new control test pins.
+
+Dead and vacuous test code, removed with the replacement's falsifiability measured rather than asserted:
+
+* `tests/test_suite_hygiene.py` carried a bare-`@pytest.mark.skip` branch that could never fire, because a dotted
+  decorator parses to `ast.Attribute` and never to `ast.Name`. The detector is now a function catching the bare form,
+  `skip()` and `skip(reason=...)` while leaving `skipif` alone, and a new node proves it fails on all three synthetic
+  inputs. Nodes 3 -> 4.
+* `tests/test_tdt_lattice.py` asserted `len(paths) >= 1 or enumerated == 0`, unfalsifiable because `total_probability`
+  is the sum over that same enumeration. Replaced by the biconditional plus a positivity check on every enumerated
+  weight. Across 108 lattice cells times 3 conventions, 99 cells take the has-paths branch and 9 the empty branch, so
+  both sides of the biconditional are exercised by real data.
+
+Independent validation rather than a suite re-run:
+
+* A path enumerator written from the Eq. 5/6 rules in exact rationals, sharing no code with the repository, was
+  compared with `loss` on 8 lattices including `D=(1,)`, `D=(0,2)`, `Nd=4` and `U > T`: no discrepancy below 1e-9.
+  The recurrence, blank handling, zero-duration tokens, termination and `sum d == T` hold.
+* Reverse-mode gradients through `tdt_loss` were compared with central differences of `tdt_loss` itself for the first
+  time: 72 components of a deterministic 3x2 lattice at `h = 1e-6`, worst relative error 6.309e-10. The gap
+  `tdt_loss.py` had recorded as untested is closed, and the check is now a repo node, torch-gated.
+
+Executed: project interpreter over the ten files covering this code -> 567 passed, 81 skipped, exit 0. Isolated
+CPU-torch environment, whole tree -> 2,162 passed, 33 skipped, exit 0 (previously 2,149/33; +13 is exactly the new
+nodes). `tools/audit.py` -> 12 passed, 0 failed, 0 not run.
+
+NOT RUN or out of scope: no real audio, engine, training or measurement; the three encoder test files were not run
+individually in the project interpreter; nothing here tests recognition quality, capacity, latency or any unruled
+encoder architecture. `README.md` static counts were re-measured after the new tests (57 files, 1,391 definitions, 76
+torch gate sites across eight files) and the file now states they are a dated census.
+
+Unchanged and still open: R1, `D`/`Nd`, capacity, vocabulary and token unit, normalisation placement, block topology -
+the shipped pre/post hybrid remains unruled - the `mutate_*` keywords still reachable through `loss()`'s `**mut` (a
+P1 API-hygiene item whose fix would touch the mutation-control tests, so it is recorded rather than done), the padded
+axis returned instead of per-row lengths, export form, `B = 0` semantics, and every data and rights gate.
+`GATED_TRAINING_CALLERS=set()`, `lambda_feat=0`, `TEACHER_TARGET_REFUSAL`, the corpus-reader allowlist and the
+weight-format refusals are untouched.
+
+## 2026-10-27 - R-9a and R-9c implemented: two length facts returned apart, and empty batches refused
+
+Precedence: this section supersedes the two items in the section above that recorded them as open -
+"the padded axis returned instead of per-row lengths" and "`B = 0` semantics" - and it narrows the
+R-9b entry, which stays open. Nothing above is rewritten.
+
+Owner decisions applied: R-2 keeps the optional declared vocabulary (no incompatible change; residual
+risk documented); R-8 keeps every mutation control and its tests, with the test-only interface left as
+the intended future direction; R-9a authorised the smallest output-contract correction; R-9b
+authorised documentation of the limit, not a new frontend abstraction; R-9c authorised the `B = 0`
+refusal provided valid `U = 0` behaviour is preserved.
+
+Changed:
+* `Student.forward` now returns `(logits, per_row_positions, padded_positions)`. The old contract
+  returned one number - the padded axis - and a caller reading it as a row's length scored
+  positions that utterance never produced; measured on a `[2, 40, 80]` batch with
+  `frame_lengths=[40, 20]`, the short row scored 10.957882927 at the padded `T = 10` against
+  5.774457903 at its own `T_b = 5`, and nothing refused either. The arity change is loud, not
+  silent: every old two-name unpack raises `ValueError: too many values to unpack`. All 21 call
+  sites are in tests and were updated (19 by name-pattern rewrite, plus `out_a`/`out_b` in
+  `tests/test_modeling_encoder_shapes.py:303` which the pattern missed and the isolated run caught);
+  no production caller existed. `masking.py`'s module docstring no longer claims the padded axis is
+  all `forward` reports.
+* Both scorers refuse `B = 0` with `TdtContractError` naming the batch, instead of returning `[]` /
+  a zero-length tensor whose `.mean()` is NaN. `B >= 1, U = 0` still scores in both, which the new
+  control nodes pin. The now-unreachable `if B else 0` branch in `_check_shapes` was removed rather
+  than left as dead code.
+* `check_expected_positions` records its own limit with the measured wrong-stem case: a two-stage
+  model scored at `T = 10` with `expected_positions` supplied from the one-stage stack was accepted.
+  The guard checks a caller's arithmetic, not the caller's architecture, so the seam is not
+  training-safe until a contract carries the frontend and the `StackSpec` - that is R-9b, still open,
+  and deliberately not solved by inventing a frontend type.
+* Four new nodes in `tests/test_scorer_contract_guards.py`: the two-facts contract with the pinned
+  5.774457903, reference `B = 0` refusal, torch `B = 0` refusal with the same type, and the
+  `U = 0` control on both paths.
+
+Executed: `python -B -m pytest -o addopts='' -q` in the isolated CPU-torch environment over the whole
+tree -> 2,166 passed, 33 skipped, exit 0 (2,162 before this section, +4 is exactly the new nodes).
+Project interpreter: the seven stdlib student files -> 537 passed, 77 skipped, exit 0 (the +1 skip is
+the torch-gated gradient node added in the previous section); the guards file -> 9 passed, 6 skipped;
+`tests/test_suite_hygiene.py` -> 4 passed; `tests/test_no_personal_paths.py` -> 19 passed;
+`tools/audit.py` -> 12 passed, 0 failed, 0 not run. One genuine miss was caught by the isolated run
+and fixed, not by inspection: a two-name unpack behind a differently-named callable survived the
+rewrite.
+
+NOT RUN: no audio, engine, training or benchmark; the three encoder test files were again not run
+individually in the project interpreter. Still open and still not decided: R-2's full closure via
+`EmissionContract`, R-8's test-only mutation interface, R-9b's typed frontend-plus-stack contract,
+R1, capacity, `D`/`Nd`, vocabulary, normalisation placement, block topology, dropout, decoder, export,
+and every data and rights gate. All training, teacher-target, corpus, asset, consent and provenance
+gates remain exactly as they were.
+
+## 2026-10-27 - call-site census corrected: the pre-existing `forward` sites were 19, not 21
+
+This section supersedes a figure; it does not restate the history around it. The section above
+records "All 21 call sites are in tests and were updated (19 by name-pattern rewrite, plus
+`out_a`/`out_b` in `tests/test_modeling_encoder_shapes.py:303` which the pattern missed and the
+isolated run caught)". That arithmetic is wrong, and the earlier figure of 21 was incorrect: it
+counts `tests/test_modeling_encoder_shapes.py:303` and `:304` twice, once inside the 19 pattern
+hits and again as the two hand fixes. The corrected census below replaces it.
+
+* **19** pre-existing tuple-destructuring invocations of `Student.forward` required re-arity -
+  every one of them two-name before the change: `tests/test_modeling_encoder_masks.py` 179, 252,
+  548, 549, 579, 803 - `tests/test_modeling_encoder_shapes.py` 192, 214, 227, 245, 256, 283, 303,
+  304, 322, 347 - `tests/test_modeling_normalization.py` 250, 348, 405.
+* **4** further invocations discarded the returned value inside `pytest.raises` and needed no
+  re-arity: `tests/test_modeling_encoder_masks.py` 176, 178 - `tests/test_modeling_encoder_shapes.py`
+  279 - `tests/test_modeling_normalization.py` 413.
+* **23** pre-existing invocations in total across those three files.
+* All 23 were in test files. No production caller under `src/` or `tools/` was identified:
+  `build_student` and `nativevoice.modeling.encoder` appear in neither tree except inside
+  `src/nativevoice/modeling/encoder.py` itself and one docstring reference at
+  `src/nativevoice/modeling/config.py:198`.
+* The current total of **22** tuple-destructuring sites is 19 + 3. The three new ones are
+  `tests/test_scorer_contract_guards.py` 187, 204 and 221, added by the correctness pass and
+  committed in C-4, not pre-existing call sites.
+
+Method. Counted by enumerating the invocations of callables bound from `build_student`, `build`
+and the per-file `student`/`a`/`b` variables in the A-1 floor copies - the byte-identical
+pre-`R-9a` files held in the preserved snapshot - and again in the committed tree, then compared.
+The name pattern that produced the original figure was deliberately not trusted a second time:
+that pattern is precisely what missed `out_a`/`out_b` the first round, so a recount by the same
+instrument could only have repeated the error.
+
+Commit-record consequence. C-3's body carries the measured 23 / 19 / 4 rather than 21, and its
+history is not rewritten: `1a0814c6949213b0042fb0813af877f5bce6c423` keeps its hash, as do
+`d2bcdd9d7049f823f0bb6e2d7543778d5b3bd055` and `2af95ad5c7c47378ba70b923c6e6f1fa7de0365b`. One
+typographical defect is therefore left in place by decision, not by oversight - C-3's word
+"re-aritied" should read "re-arity'd". Amending it would rewrite a commit the owner had already
+accepted a hash for, so the correction lives here instead. Nothing was amended, reset, restored
+or pushed.
+
+Executed for this correction: project interpreter, whole tree -> 1,984 passed, 215 skipped,
+exit 0; that is the first whole-tree run in this interpreter for this working copy, and the 215
+are torch-gated and asset/platform gates refusing to infer a result, so their status here is NOT
+RUN, not PASS. Isolated CPU-torch environment (Python 3.14.7, torch 2.14.1+cpu): the four C-3
+test files -> 214 passed, 0 skipped, exit 0; hygiene plus guards -> 19 passed, 0 skipped, exit 0;
+the guards file alone -> 15 passed. NOT RUN: any audio, engine, training step, teacher target,
+benchmark or asset admission. Still open and still not decided: R-2's full `EmissionContract`
+closure, R-8's test-only mutation interface, R-9b's typed frontend-plus-`StackSpec` contract, R1,
+capacity, `D`/`Nd`, vocabulary and blank id, normalisation placement, block topology, dropout,
+decoder, export. All training, teacher-target, corpus, asset, consent and provenance gates remain
+exactly as they were.

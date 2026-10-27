@@ -242,7 +242,13 @@ feature, and no interface described here should be treated as available.
 
 The repository's default position is that a number either comes from measurement or says it does not.
 
-**What is in the tree (static counts, `tests/`):** 46 test files, 1,160 `def test_` functions. Pytest declares
+**What is in the tree (static counts, `tests/`; a census re-taken on 2026-10-27 for the commits that track the
+student files, and not a property of any commit):**
+57 `test_*.py` files — 46 tracked at `ef49a1b`, plus the 11 student files that were still untracked at the A-1
+snapshot and are tracked by the commits that add them — and 1,395 `def test_` definitions; both are textual censuses,
+not pytest totals: a parametrised definition expands into many collected nodes, and `tests/` also holds four
+non-`test_*` modules (`conftest.py`, `fixtures.py`, `tdt_lattice_oracle.py`, `tdt_lattice_recursion.py`) that define
+none. Pytest declares
 four markers — `device`, `slow`, `network`, `requires_approved_asset` (`pyproject.toml:23-28`).
 
 **Recorded result.** `python -m pytest -q` needs no model, no network and no approved asset. A small number of
@@ -260,7 +266,38 @@ python -m pytest -q \
 
 Recorded as **1,071 passed, 7 skipped, 1 deselected, 86 excluded** (2026-10-17, at commit `6056f0e` with the
 release snapshot staged; reconciled in `docs/audit-register.md`). That figure is a record against one commit,
-not a live claim; this tree returns **1,308 passed, 10 skipped, 1 deselected, 86 excluded** on that command (re-measured 2026-10-26 with `PYTHONPATH=src` at verbosity −1 — the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). Reconciled against collected nodes rather than inferred: 1,405 overall, 86 inside the four ignored modules, 1,319 collected by the command, 1 deselected, 10 skipped. The passed figures at each step were measured, not derived: 1,063 at `f403b47`, 1,195 at `2b167a9` (+132), 1,205 at `a353272` (+10), 1,297 with the audit-tool module (+92 passed and three new NOT RUN over the 95 nodes of `tests/test_audit_tool.py`) and 1,308 with O1 (+11: ten new tests in `tests/test_offline_proof.py` and one added case in `tests/test_evidence_writers.py`). Those three NOT RUNs are honest: this platform refuses `os.symlink` for an unprivileged process (WinError 1314), so the three symlink-refusal cases cannot run here; what is proven is each refusal function's own `is_symlink`/`lexists` branch and the directory, escape and sub-path controls, not a write attempted through a real link on this machine, and not `O_EXCL`'s behaviour through a planted link.
+not a live claim; this tree returned, on 2026-10-26 only, **1,783 passed, 75 skipped, 1 deselected, 86 excluded** on
+that command — a dated historical measurement taken with the student files present in the working tree but untracked,
+and NOT re-measured for the commits that add them, so no total in this paragraph may be quoted as a property of those
+commits; re-measurement is a separate, authorised act (original measurement, 2026-10-26, with `python -B -m pytest -o addopts="" -q` — `tests/conftest.py` puts `src` on `sys.path`, so no `PYTHONPATH` was needed — at verbosity −1; the command's own `-q` on top of `addopts = "-q"` is verbosity −2 and prints no summary line). That 2026-10-26 measurement was reconciled against collected nodes rather than inferred, and its figures are
+historical: 1,945 overall, 86 inside the four ignored modules, 1,859 collected by the command, 1 deselected,
+75 skipped. The latest authorised collection census is a separate, later measurement — 2,182 collected nodes summed
+from the per-file `--collect-only` report on 2026-10-27 — and a collected-node count is not a test result: nothing ran
+to produce it, and no historical figure has been overwritten with it. The 75 skip is measured by reason, not assumed: 10 are asset- and platform-dependent — four Kokoro and two faster-whisper inference nodes behind `--run-approved-assets`, three symlink-refusal cases in `tests/test_audit_tool.py`, one unreviewed-CT2 case in `tests/test_stt.py` — and the remainder are gated behind `torch`, which is absent from this environment. Measured here by gate **call site**,
+not by node: 78 `pytest.importorskip("torch")` sites across eight files — `tests/test_modeling_encoder_masks.py` 34,
+`tests/test_modeling_normalization.py` 12, `tests/test_modeling_encoder_shapes.py` 10, `tests/test_tdt_lattice_reference.py` 9,
+`tests/test_scorer_contract_guards.py` 6, `tests/test_tdt_length_seam.py` 4, `tests/test_tdt_zero_length_contract.py` 2,
+`tests/test_tdt_batch_length_contract.py` 1.
+A call site is neither a collected node nor a skipped node: `tests/test_tdt_batch_length_contract.py` has one site
+that expands into 43 collected nodes. Measured per file in this environment on 2026-10-27, torch-gated skips are 35 in
+`tests/test_tdt_lattice_reference.py`, 25 in `tests/test_tdt_batch_length_contract.py`, 10 in
+`tests/test_tdt_length_seam.py`, 4 in `tests/test_scorer_contract_guards.py` and 7 in
+`tests/test_tdt_zero_length_contract.py` — 81 in all, from a ten-file run that returned 567 passed and 81 skipped.
+The skipped-node counts for `tests/test_modeling_encoder_masks.py` (68 collected nodes),
+`tests/test_modeling_encoder_shapes.py` (63) and `tests/test_modeling_normalization.py` (33) are NOT MEASURED in
+*this* environment, because those three files were not run individually here; they do execute in the isolated CPU-torch
+environment, where the whole tree returned 2,162 passed and 33 skipped on 2026-10-27. No whole-tree pass or skip total
+is claimed for this interpreter. The earlier split of "34, 24 and 7" totalling 65 correctly read its own
+2026-10-26 tree and is now stale: two further student files have joined the torch-gated set since. None of those sites executes here: they are **skipped, not passed**. The figures 169 passed with nothing skipped in `tests/test_tdt_lattice_reference.py`, 63 in
+`tests/test_modeling_encoder_shapes.py` and 19 in `tests/test_tdt_zero_length_contract.py` are historical results of
+the separate CPU-torch verification environment installed outside this repository, recorded against their own earlier
+tree state. They are not re-verified for these commits, and none of those three files was run individually in this
+phase. An earlier version of this paragraph counted 12 asset- and platform-dependent skips; that figure had absorbed the two torch-dependent nodes in `tests/test_tdt_lattice_reference.py` that predate the encoder work, and the corrected split is 10 asset- or platform-dependent skips versus a torch-gated remainder; the torch-gated
+per-file node figures above are measured, whereas the older totalling-65 split is retained only as a dated reading of
+the 2026-10-26 tree and is not a statement about this one. The passed figures at each step were measured, not derived: 1,063 at `f403b47`, 1,195 at `2b167a9` (+132), 1,205 at `a353272` (+10), 1,297 with the audit-tool module (+92 passed and three new NOT RUN over the 95 nodes of `tests/test_audit_tool.py`) and 1,308 with O1 (+11: ten new tests in `tests/test_offline_proof.py` and one added case in `tests/test_evidence_writers.py`) and 1,547 with the promoted TDT lattice suite (+239 nodes from 25 test definitions across `tests/test_tdt_lattice.py`, `tests/tdt_lattice_oracle.py` and `tests/tdt_lattice_recursion.py`; pure-stdlib exact-rational arithmetic, no dependency, no model, no asset, no new frontend). This dated series stops at 1,547; the 1,783 at the head of this
+sentence is the next measurement in the same chain, taken on 2026-10-26 once the encoder and seam suites had also
+landed, so the two are consecutive readings rather than a discrepancy — and no figure in the series has been replaced
+by a later one. Those three NOT RUNs are honest: this platform refuses `os.symlink` for an unprivileged process (WinError 1314), so the three symlink-refusal cases cannot run here; what is proven is each refusal function's own `is_symlink`/`lexists` branch and the directory, escape and sub-path controls, not a write attempted through a real link on this machine, and not `O_EXCL`'s behaviour through a planted link.
 
 **Asset-gated tests** are skipped unless a named human has approved the asset *and*
 `--run-approved-assets` is passed (`tests/conftest.py:23-35`); `docs/audit-register.md` records seven
