@@ -1,9 +1,11 @@
-# ASR architecture — proposed Conformer–TDT student, and what is not built
+# ASR architecture — what is ruled, what is built as a skeleton, and what is not built
 
-**Status: proposal.** This document records the recognition architecture the owner has chosen and the tensor
+**Status: proposal, with a partial skeleton.** This document records the recognition architecture the owner has chosen and the tensor
 contract the new frontend implements. It is not a description of a working model. Per the repository's own tier
-vocabulary (`README.md` §2, `docs/architecture.md` §7): the frontend is **BUILT and tested**; the student, its
-trainer, its checkpoint, its teacher path, its tokenizer and its decoder are **PROPOSED — nothing exists**. No
+vocabulary (`README.md` §2, `docs/architecture.md` §7): the frontend is **BUILT and tested**; a student shape skeleton (`src/nativevoice/modeling/`) and a verified TDT loss reference
+(`src/nativevoice/training/`) exist as untrained, unruled code, and a skeleton is not a model; the student's
+trainer, its checkpoint, its teacher path, its tokenizer and its decoder remain **PROPOSED — nothing exists**. A
+finite loss from a random initialisation is arithmetic about lattices, not recognition. No
 number in this file is a measured accuracy, and none may be quoted as one.
 
 Scope of this phase (Phase 1) was: a dependency-free log-mel frontend, its tests, this document, and one docstring
@@ -253,16 +255,19 @@ instead of once per filter; `post_scale` rejects a non-tuple as a `Configuration
 `TypeError`; an empty grid now carries its source length like every other grid; and the `FBankConfig`
 docstring no longer implies the collapse guard applies to both edge modes.
 
-## 4. Proposed Conformer–TDT data flow — PROPOSED, none of it built
+## 4. Conformer–TDT data flow — some of it built as an untrained skeleton; the rulings are still open
 
 ```
 AudioBuffer(int16)                                  [BUILT]
   → resample/mono to 16 kHz by the orchestrator      [BUILT, unchanged]
   → log_fbank → FeatureGrid(frames × 80, float64)    [BUILT; contract ruled for training 2026-10-24 — §7 D1]
   → (proposed) cast to float32, optional CMN          [NOT BUILT]
-  → (proposed) subsampling front-end (stride 2)       [NOT BUILT]
-  → (proposed) Conformer blocks × N                   [NOT BUILT]
-  → (proposed) TDT output layer + emission calendar   [NOT BUILT]
+  → subsampling stem: four candidates, stride 2, none ruled (§7.2)  [SKELETON — built as shapes, torch-gated;
+     R1 (stage count and padding) is OPEN, and §7.2 measures coverage rather than choosing a candidate]
+  → Conformer blocks × N                              [SKELETON — block topology NOT ruled; the shipped
+     arrangement is a pre/post hybrid selected by `macaron`, and the depth N is unset]
+  → TDT emission head + lattice loss                  [HEAD SKELETON; the loss is BUILT and cross-verified
+     against an exact-rational oracle and a float64 recursion; NO DECODER exists, so the emission calendar is not built]
   → (proposed) tokens → text via a tokenizer/vocab    [NOT BUILT: no vocab exists here]
   → Recognition / TranscriptionResult                 [BUILT contracts]
 ```
@@ -294,6 +299,14 @@ Open tensor questions for Phase 2, listed as questions rather than answered: bat
 whether `FeatureGrid` is passed as-is or converted to a tensor at the adapter edge; whether subsampling lives
 inside the model or in the frontend; VAD-segment length limits versus `max_duration_s = 30.0`; the token
 vocabulary and its provenance (none recorded anywhere in this tree).
+
+Status at 2026-10-27: two of those questions now have implementations rather than answers. "Batch shape and padding
+convention" is implemented in `src/nativevoice/modeling/` as required per-row `frame_lengths` plus four masks, and
+"whether subsampling lives inside the model or in the frontend" is answered inside the model today by `Subsample`.
+**Implementation is not a ruling:** R1 remains open, `expected_positions` remains an optional caller-conditional guard,
+and production training acceptance still has to state where the length invariant is enforced. The other three — the
+`FeatureGrid`-to-tensor adapter edge, the VAD-segment limit versus `max_duration_s = 30.0`, and the token vocabulary and
+its provenance — remain unanswered in every layer.
 
 ## 5. Environment and dependency facts
 
@@ -332,6 +345,8 @@ functions that exist. Docstring text only — no behaviour changed, no signature
 
 These were the owner's to rule on; **nothing here was assumed**, and none of them is a bug I can fix by typing.
 **D1 was ruled on 2026-10-24** and is marked as such below; D2–D10 remain open and still block Phase 2.
+**A1 clause S4 was ruled on 2026-10-27 and is recorded in §7.2; it narrows R1 rather than closing it, and it
+does not block Phase 2 by itself.**
 
 | # | Decision | Why it blocks |
 |---|---|---|
@@ -377,6 +392,133 @@ Form of the decision, as ruled on 2026-10-24: `FBankConfig()` is recorded as the
 feature-level distillation experiment is actually proposed. The ruling changes no code: no default was altered,
 and both configs remain selectable.
 
+### 7.2 A1 clause S4 — input coverage policy (RULED by the owner on 2026-10-27)
+
+**Identifier first, because it collides.** `DECISIONS.md` has owned the label **S4** since 2026-10-12 ("Where
+does this project live, and under what name?"). The clause below is the **A1-series** contract clause S4 - the
+input coverage policy - and is therefore always written as "A1 clause S4". Neither record was renumbered and the
+2026-10-12 entry stands as written.
+
+**The policy, as ruled.** *Every admissible input must have complete real-frame coverage on both the frontend
+time axis and frequency axis. Convolutional zero-padding outside the real input is permitted, but its use at
+boundaries must be explicitly documented.*
+
+Every number in this subsection is arithmetic over the shipped `stage_length`/`stack_length` and the frozen
+`FBankConfig()`, cross-checked three ways in the 2026-10-27 read-only audit: closed form, recursive
+back-mapping, and empirical influence sets of the real `nn.Conv2d` modules (0 disagreements on all four
+candidates, on both axes, over lengths 1..129). **Nothing here is a latency, memory, parameter or accuracy
+result.**
+
+**1. Quantifier domain.** "Admissible" is the set of frontend frame counts the frozen geometry can emit and the
+named stack can process: `F >= minimum_frames(variant)`, because `frame_count(N)` yields every positive integer
+for `N >= 400` and anything shorter emits `F = 0`, which `bridge` refuses with `SubFloorInputError` rather than
+scoring. Per candidate that is `F >= 3` (A), `F >= 1` (B), `F >= 7` (C), `F >= 1` (D), i.e. audio floors of
+45 / 25 / 85 / 25 ms. The frequency clause is evaluated at the frozen `n_mels = 80` (the D1 ruling of §7.1); it
+is a **point** evaluation, not a universal one, and changing the mel width reopens it.
+
+**2. The two coverage definitions, kept separate.** For `m` stages of kernel `k=3`, stride `s=2`, padding `p`,
+output position `o` reads frontend indices
+
+```
+lo_m(o) = 2^m o - p (2^m - 1)          hi_m(o) = 2^m o + (2 - p)(2^m - 1)
+span    = 2 (2^m - 1) + 1              P(F) = stack_length(F, variant)
+```
+
+* **Time-axis coverage:** for every `F` in the domain and every frame `f in [0, F-1]`, some valid `o in [0, P-1]`
+  satisfies `f in [lo_m(o), hi_m(o)]`. Because `hi(o) + 1 - lo(o+1) = 2^m - 1 >= 0`, windows never leave an
+  interior gap, so this reduces to a tail condition: `unread(F) = max(0, (F-1) - hi_m(P-1)) = 0`.
+* **Frequency-axis coverage:** the identical formula with `F` replaced by the fixed `M = 80`, over bins
+  `[0, M-1]`, giving `bins = stack_length(80, variant)` and `unread_freq = max(0, 79 - hi_m(bins-1))`.
+* **Boundary zero-padding** is a *separate* property from both. `past(F) = max(0, hi_m(P-1) - (F-1))` counts the
+  reads that fall outside the real input and are served as conv zeros; `lo_m(0) < 0` says the same at the start.
+  Coverage can be complete while `past(F) > 0`, and that is exactly what the policy permits and requires to be
+  documented.
+
+**3. Closed-form conditions.** Verified for every `F` in `1..3000` against the shipped functions:
+
+| | `P(F)` | time coverage | unread tail | right-edge zero reads | left-edge zero reads | mel bins | frequency coverage |
+|---|---|---|---|---|---|---|---|
+| **A** one stage, pad 0 | `floor((F-1)/2)`, `F>=3` | **iff `F` is odd** | `1` frame (10 ms) when `F` even, else 0 | never | none | 39 | **fails** (bin 79 unreachable) |
+| **B** one stage, pad 1 | `ceil(F/2)`, `F>=1` | **all `F`** | 0 | `F mod 2` (1 at odd `F`) | **always**, 1 index | 40 | holds |
+| **C** two stages, pad 0 | `floor((F-7)/4)+1`, `F>=7` | **iff `F ≡ 3 (mod 4)`** | `(F-3) mod 4` frames, 0..3 (up to 30 ms) | never | none | 19 | **fails** (bin 79 unreachable) |
+| **D** two stages, pad 1 | `ceil(F/4)`, `F>=1` | **all `F`** | 0 | `(-F) mod 4`, 0..3 | **always**, 3 indices | 20 | holds |
+
+Non-compliant share of lengths: **A 50 %, C 75 %** (measured 999 and 1495 of 2000), with first failures at `F=4`
+and `F=8`; **B and D fail none**.
+
+**4. Why the padding-zero stacks stay ineligible.** A and C *do* cover both... on the lengths where their parity
+works: A covers whenever `F` is odd, and C whenever `F ≡ 3 (mod 4)`. The policy is a universal quantifier over
+admissible `F`, so a stack that leaves the last frame unreachable for half - or three quarters - of lengths fails
+it, and no length is special enough to be excepted. Their failure also repeats on the frequency axis at
+`M = 80` (a fixed width that is neither odd for A's rule nor `3 mod 4` for C's), which is corroborating, not the
+basis: at `M = 79` both pad-0 stacks would cover frequency, and at `M = 81` C still fails while A passes - so the
+two axes share a formula, not a fate, and the eligibility agreement at `M = 80` is a property of the shipped
+width.
+
+**5. Zero-padding is permitted, and coverage is not quality.** The policy explicitly allows the boundary reads
+that B and D rely on: B always reads one index before frame 0, D always reads three, and each also reads
+`past(F)` indices past the end. Those values are the convolution's own zeros, not audio. A frame can therefore be
+"covered" - structurally inside a window - while the contribution reaching it is diluted by zeros, and whether
+that dilution matters depends on **learned weights**, which no arithmetic here can speak to. Coverage is a
+structural reach property; it establishes neither acoustic quality nor accuracy, and must not be quoted as
+either.
+
+**6. Receptive-field terminology, fixed for future records.** The four measures below are all correct for
+different questions; a bare "receptive field" is now considered ambiguous and must not be written without naming
+which one.
+
+| measure | definition | one stage | two stages |
+|---|---|---|---|
+| frame span | `hi(0) - lo(0) + 1` | 3 frames | 7 frames |
+| hop-centre span | `(span - 1) x 10 ms` | 20 ms | 60 ms |
+| real-sample-window extent | `(span - 1) x 10 ms + 25 ms` (a frame is 400 samples) | **45 ms** | **85 ms** |
+| encoder-position period | `2^m x 10 ms`, padding-independent | **20 ms** | **40 ms** |
+| position-zero alignment | `(lo(0) + hi(0))/2 x 10 ms` from frame 0's centre | B 0 ms (pad 0: 10 ms) | D 0 ms (pad 0: 30 ms) |
+
+*Historical record, preserved not rewritten:* the R1 decision report of 2026-10-27 - a review deliverable that
+was never written into this repository, so its figures survive only in that exchange - listed receptive fields
+"30 / 20 / 70 / 40 ms" and offsets "10 / 0 / 30 / 0 ms" for A/B/C/D. Reconciled here against the definitions
+above: the offsets are exactly the position-zero alignment, and the receptive-field line mixed two conventions -
+`30` and `70` are frame span x 10 ms (A, C) while `20` and `40` are the encoder-position period (B, D). The
+discrepancy is a naming/convention artefact in a historical note, **not** an implementation inconsistency; the
+original figures stay where they were written and this paragraph is the annotation.
+
+**7. Masking complexity, recorded as a measured candidate difference.** With a row inside a longer batch,
+compared bit-for-bit against the same row run alone, using the real modules (all-ones and random weight/bias
+draws, `row=21`, `axis=40`):
+
+| configuration | B (one stage) | D (two stages) |
+|---|---|---|
+| neither mask | differs at the last position | differs at the last position |
+| grid pad zeroing only | **bit-identical** | differs |
+| per-stage stem zeroing only | differs | differs |
+| both, as shipped | **bit-identical** | **bit-identical** |
+
+So B needs the grid pad zeroing alone, while D needs the grid zeroing **and** the per-stage stem zeroing: three
+boundary mechanisms are in play - out-of-array reads contribute zero plus one bias; in-array pad frames must be
+zeroed to match that; and intermediate positions that exist only because the batch is longer must be zeroed to
+`0.0` rather than left at the `0 + bias` they otherwise compute. The first two are needed by any padded stack,
+the third only from a second stage onwards. This is a complexity cost that belongs to the R1 comparison; the
+exhaustive suite already asserts padding-inertness for all four candidates, and nothing here changes it.
+
+**8. Eligibility after this ruling.** **B (`one stage, padding 1`) and D (`two stages, padding 1`) are both
+eligible and neither is preferred** - `SUBSAMPLE_VARIANTS` still enumerates all four, no default exists, every
+function still requires an explicit variant, and the two pad-0 stacks are excluded from *selection* while
+remaining present for measurement and regression. R1 is narrowed, not closed.
+
+**9. What stays open, deliberately.** `D`/`Nd` (their millisecond span is `2^m x 10 ms` per step, so they cannot
+be ruled before the stack), vocabulary size and blank id, capacity, normalisation kind's *placement*, the A1
+question of what the source's `T` counts (provisionally ruled for this implementation, unresolved against the
+paper), and every training, dataset, teacher-target and checkpoint decision. `expected_positions` remains
+**optional**, and a seam-free low-level scoring route (`validate` composed with `alpha_table`) still exists.
+
+**Residual the scope could not reach.** The same policy text is currently carried inside executable modules as
+data and prose - `lengths.KNOWN_OPEN_DEFECTS`, `config.OPEN_ARCHITECTURE_DECISIONS`, and the two `modeling`
+docstrings - where it still states the single-length figures "10 ms and 30 ms of unread tail at 1 s". Those
+remain true at `F = 98` but are a parity sample, not the rule recorded above. Reconciling them is an edit to
+executable source and was outside this task, so it is flagged rather than done; this subsection is now the
+precise record.
+
 ## 8. What Phases 1 and 1B do **not** entitle anyone to claim
 
 * That recognition works, improved, was measured, or is competitive with anything. No model ran, no accuracy
@@ -390,7 +532,9 @@ and both configs remain selectable.
 * That `frozen=True` on `FeatureGrid` makes the feature buffer immutable. It does not: `values` is a mutable
   `array('d')` by design, the same convention as `AudioBuffer.samples`, and a test pins that fact. What the
   review added is the shape invariant, so a malformed grid cannot silently yield a short row.
-* That a Conformer–TDT student, its trainer, its tokenizer or its checkpoint exists. None does.
+* That a Conformer–TDT student has been trained, or that its trainer, tokenizer, checkpoint or decoder exists. None
+  of those does. What exists is an untrained shape skeleton and a loss reference verified against an exact-rational
+  oracle — arithmetic about lattices, not evidence about speech, and not a complete ASR system.
 * That any capability status was raised. Every language row in `docs/capability-matrix.md` remains as generated
   on 2026-10-12; `CapabilityStatus` was not imported by the frontend and no status was written.
 
